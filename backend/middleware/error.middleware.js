@@ -23,11 +23,17 @@ const errorHandler = (err, req, res, next) => {
     message = `Invalid ${err.path}`;
   }
 
-  // Duplicate key error (e.g. unique phone, email)
+  // Duplicate key error (e.g. unique phone, email, or compound medicine key)
   if (err.code === 11000) {
     statusCode = 400;
-    const field = Object.keys(err.keyValue)[0];
-    message = `${field} already exists`;
+    const fields = Object.keys(err.keyValue);
+    // If it's a compound index error (like medicalStoreId + name + dosage)
+    if (fields.includes('medicalStoreId') && fields.length > 1) {
+      message = "This medicine already exists in your catalog (matching name, dosage, and form)";
+    } else {
+      const field = fields[0];
+      message = `${field} already exists`;
+    }
   }
 
   // Mongoose validation error
@@ -53,4 +59,4 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-module.exports = errorHandler;
+export default errorHandler;

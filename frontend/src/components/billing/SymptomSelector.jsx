@@ -1,0 +1,111 @@
+/**
+ * SymptomSelector - Quick symptom selection for billing
+ * Tracks WHY customers are buying medicines
+ */
+
+import { useState, useEffect } from 'react';
+import { cn } from '../../lib/utils';
+import symptomApi from '../../api/symptom.api';
+
+// Default symptoms (used before API loads)
+const defaultSymptoms = [
+  { _id: 'fever', name: 'fever', displayName: 'Fever', icon: '🌡️' },
+  { _id: 'cold', name: 'cold', displayName: 'Cold', icon: '🤧' },
+  { _id: 'cough', name: 'cough', displayName: 'Cough', icon: '😷' },
+  { _id: 'headache', name: 'headache', displayName: 'Headache', icon: '🤕' },
+  { _id: 'body_ache', name: 'body_ache', displayName: 'Body Ache', icon: '💪' },
+  { _id: 'stomach', name: 'stomach', displayName: 'Stomach', icon: '🤢' },
+  { _id: 'allergy', name: 'allergy', displayName: 'Allergy', icon: '🤧' },
+  { _id: 'other', name: 'other', displayName: 'Other', icon: '📋' },
+];
+
+export default function SymptomSelector({ 
+  selected = [], 
+  onChange, 
+  maxSelections = 3,
+  className = '' 
+}) {
+  const [symptoms, setSymptoms] = useState(defaultSymptoms);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadSymptoms();
+  }, []);
+
+  const loadSymptoms = async () => {
+    try {
+      const response = await symptomApi.getAll();
+      if (response?.length > 0) {
+        setSymptoms(response);
+      }
+    } catch (error) {
+      console.log('Using default symptoms');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSymptom = (symptom) => {
+    const isSelected = selected.some(s => s.symptomId === symptom._id);
+    
+    if (isSelected) {
+      // Remove
+      onChange(selected.filter(s => s.symptomId !== symptom._id));
+    } else if (selected.length < maxSelections) {
+      // Add
+      onChange([...selected, { 
+        symptomId: symptom._id, 
+        symptomName: symptom.displayName 
+      }]);
+    }
+  };
+
+  const isSelected = (symptomId) => selected.some(s => s.symptomId === symptomId);
+
+  return (
+    <div className={cn('space-y-2', className)}>
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium text-gray-700">
+          Why buying? <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        {selected.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="text-xs text-gray-500 hover:text-gray-700"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      
+      <div className="flex flex-wrap gap-2">
+        {symptoms.slice(0, 8).map((symptom) => (
+          <button
+            key={symptom._id}
+            type="button"
+            onClick={() => toggleSymptom(symptom)}
+            disabled={!isSelected(symptom._id) && selected.length >= maxSelections}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
+              'border flex items-center gap-1.5',
+              isSelected(symptom._id)
+                ? 'bg-brand-100 border-brand-300 text-brand-700'
+                : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100',
+              !isSelected(symptom._id) && selected.length >= maxSelections && 'opacity-50 cursor-not-allowed'
+            )}
+          >
+            <span>{symptom.icon}</span>
+            <span>{symptom.displayName}</span>
+          </button>
+        ))}
+      </div>
+      
+      {selected.length > 0 && (
+        <p className="text-xs text-gray-500">
+          Selected: {selected.map(s => s.symptomName).join(', ')}
+        </p>
+      )}
+    </div>
+  );
+}

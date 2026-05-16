@@ -24,11 +24,24 @@ const stockAlertSchema = new mongoose.Schema(
       index: true,
     },
 
-    alertType: {
+    // For quick display
+    medicineName: {
       type: String,
-      enum: ["LOW_STOCK", "EXPIRY"],
+      trim: true
+    },
+
+    type: {
+      type: String,
+      enum: ["LOW_STOCK", "NEAR_EXPIRY", "EXPIRED", "OUT_OF_STOCK"],
       required: true,
       index: true,
+    },
+
+    priority: {
+      type: String,
+      enum: ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+      default: "MEDIUM",
+      index: true
     },
 
     message: {
@@ -42,6 +55,9 @@ const stockAlertSchema = new mongoose.Schema(
       default: false,
       index: true,
     },
+    
+    resolvedAt: Date,
+    resolutionNote: String
   },
   {
     timestamps: true,
@@ -53,7 +69,7 @@ stockAlertSchema.index(
   {
     medicalStoreId: 1,
     batchId: 1,
-    alertType: 1,
+    type: 1,
     isResolved: 1,
   },
   {

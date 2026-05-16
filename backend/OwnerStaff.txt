@@ -1,0 +1,78 @@
+owner - {
+  "storeName": "Neeraj Medical Store",
+  "ownerName": "Neeraj Yadav",
+  "storePhone": "9876543210",
+  "storeEmail": "neerajmedical01@storei.com",
+  "address": "123 Main Road, Agra, Uttar Pradesh, India",
+  "drugLicenseNumber": "DL-AGRA-12345",
+  "gstNumber": "22NEERAJ0000A1Z5",
+  "ownerEmail": "neeraj01@ydvvi.com",
+  "ownerPhone": "9123456789",
+  "password": "SecurePass2026!"
+}
+
+
+// - ***********************************
+
+created his tokan and postman info after *signup* - {
+    "success": true,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTc4NTFhOTlhZmUwYzY3Mzg5NTFiNzEiLCJyb2xlIjoiT1dORVIiLCJtZWRpY2FsU3RvcmVJZCI6IjY5Nzg1MWE5OWFmZTBjNjczODk1MWI2ZiIsImlhdCI6MTc2OTQ5MjkwNSwiZXhwIjoxNzY5NTc5MzA1fQ.mMyHIKk2X-gP0VqZbnTGOO_GhFYJDetfrMKcxSpZqm4",
+    "medicalStoreId": "697851a99afe0c6738951b6f",
+    "user": {
+        "id": "697851a99afe0c6738951b71",
+        "name": "Neeraj Yadav",
+        "role": "OWNER",
+        "medicalStoreId": "697851a99afe0c6738951b6f"
+    }
+}
+
+***********************************************
+
+postman info during *login*- {
+    "success": true,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTc4NTFhOTlhZmUwYzY3Mzg5NTFiNzEiLCJyb2xlIjoiT1dORVIiLCJtZWRpY2FsU3RvcmVJZCI6IjY5Nzg1MWE5OWFmZTBjNjczODk1MWI2ZiIsImlhdCI6MTc2OTQ5Mzg5OSwiZXhwIjoxNzY5NTgwMjk5fQ.coKbYv4kgooC6I_kGlZKDR7e36j4YJ0KhcQaDq1llkc",
+    "user": {
+        "id": "697851a99afe0c6738951b71",
+        "name": "Neeraj Yadav",
+        "role": "OWNER",
+        "medicalStoreId": "697851a99afe0c6738951b6f"
+    }
+}
+
+---------------------------------------------------------------------------------------------
+
+
+staff - {
+  "name": "Staff Member 5",
+  "email": "staff01@storei.com",
+  "phone": "9988776657889",
+  "password": "StaffPass2026!"
+}
+
+
+
+ ********************************
+created info form postman - {
+    "success": true,
+    "message": "Staff created successfully",
+    "staff": {
+        "id": "697852ae9afe0c6738951b76",
+        "name": "Staff Member 5",
+        "email": "staff01@storei.com",
+        "phone": "9988776657889",
+        "role": "STAFF",
+        "medicalStoreId": "697851a99afe0c6738951b6f"
+    }
+}
+
+***********************************
+postman info while *login* - {
+    "success": true,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTc4NTJhZTlhZmUwYzY3Mzg5NTFiNzYiLCJyb2xlIjoiU1RBRkYiLCJtZWRpY2FsU3RvcmVJZCI6IjY5Nzg1MWE5OWFmZTBjNjczODk1MWI2ZiIsImlhdCI6MTc2OTQ5NDEwNSwiZXhwIjoxNzY5NTgwNTA1fQ.-VDKKlZS0bsHfwLk9OPH9ppltAft5rVZPQxxy3cxreI",
+    "user": {
+        "id": "697852ae9afe0c6738951b76",
+        "name": "Staff Member 5",
+        "role": "STAFF",
+        "medicalStoreId": "697851a99afe0c6738951b6f"
+    }
+}
