@@ -9,8 +9,8 @@
  * This file is imported ONCE in server.js
  */
 
-const mongoose = require('mongoose');
-const env = require('./env');
+import mongoose from 'mongoose';
+import env from './env.js';
 
 const connectDB = async () => {
   try {
@@ -22,22 +22,22 @@ const connectDB = async () => {
       socketTimeoutMS: 45000,
     });
 
-    console.log(` MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
 
     /**
      * Connection event listeners
      * Important for production visibility
      */
     mongoose.connection.on('error', (err) => {
-      console.error(' MongoDB runtime error:', err);
+      console.error('MongoDB runtime error:', err);
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.warn(' MongoDB disconnected');
+      console.warn('MongoDB disconnected');
     });
 
     mongoose.connection.on('reconnected', () => {
-      console.log(' MongoDB reconnected');
+      console.log('MongoDB reconnected');
     });
 
   } catch (error) {
@@ -47,4 +47,4 @@ const connectDB = async () => {
   }
 };
 
-module.exports = connectDB;
+export default connectDB;

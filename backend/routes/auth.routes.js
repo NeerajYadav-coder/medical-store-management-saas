@@ -74,8 +74,14 @@ import {
   login,
   getMe,
   logout,
+  createStaff,
+  getStaff,
 } from '../controllers/auth.controller.js';
-import { createStaff } from '../controllers/auth.controller.js';
+import {
+  sendOtp,
+  verifyOtp,
+  checkVerification,
+} from '../controllers/otp.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 import { ownerOnly } from '../middleware/role.middleware.js';
 
@@ -88,7 +94,12 @@ const router = express.Router();
  * -----------------------
  */
 
-// Signup (OWNER / STAFF)
+// OTP Routes (for signup verification)
+router.post('/send-otp', sendOtp);
+router.post('/verify-otp', verifyOtp);
+router.get('/check-verification', checkVerification);
+
+// Signup (OWNER)
 router.post('/signup', signup);
 
 // Login
@@ -108,10 +119,13 @@ router.post('/logout', protect, logout);
 
 /**
  * -----------------------
- * OWNER → CREATE STAFF
+ * OWNER → STAFF MANAGEMENT
  * -----------------------
- * POST /api/v1/auth/staff
  */
+// Create new staff
 router.post('/staff', protect, ownerOnly, createStaff);
+
+// Get list of staff
+router.get('/staff', protect, ownerOnly, getStaff);
 
 export default router;

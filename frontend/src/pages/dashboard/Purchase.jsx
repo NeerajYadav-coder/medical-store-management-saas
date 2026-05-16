@@ -1,0 +1,964 @@
+/**
+ * pages/dashboard/Purchase.jsx
+ * 
+ * RESPONSIBILITY:
+ * - Professional Purchase (Inward) Stock Entry
+ * - Purchase History and Bill Tracking
+ * - Automatic Landing Cost & Margin Calculation
+ * - Tax (GST) Split Handling
+ */
+
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  Truck,
+  Plus,
+  Search,
+  Calendar,
+  Save,
+  Trash2,
+  FileText,
+  Package,
+  IndianRupee,
+  History,
+  Info,
+  ArrowRight,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle2,
+  X
+} from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import { cn } from '@/utils/cn'
+import { formatCurrency } from '@utils/formatCurrency'
+import { formatDate } from '@utils/formatDate'
+
+// APIS
+import purchaseApi from '@api/purchase.api'
+import supplierApi from '@api/supplier.api'
+import medicineApi from '@api/medicine.api'
+
+// COMPONENTS
+import Button from '@components/common/Button'
+import { Input, Select, SearchInput } from '@components/common/Input'
+import { Table, TablePagination } from '@components/common/Table'
+import { Modal } from '@components/common/Modal'
+import { Skeleton, SkeletonTableRows } from '@components/common/Loader'
+
+/**
+ * Purchase Page Component
+ */
+export default function Purchase() {
+  const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState('entry') // 'entry' or 'history'
+  
+  // --- Tab: HISTORY State ---
+  const [historyPage, setHistoryPage] = useState(1)
+  const [historyFilters, setHistoryFilters] = useState({
+    supplierId: '',
+    startDate: '',
+    endDate: '',
+  })
+
+  // --- Tab: ENTRY State ---
+  const [formData, setFormData] = useState({
+    supplierId: '',
+    supplierName: '',
+    supplierBillNumber: '',
+    supplierBillDate: new Date().toISOString().split('T')[0],
+    dueDate: '',
+    paymentMode: 'CREDIT',
+    amountPaid: 0,
+    notes: '',
+  })
+  const [items, setItems] = useState([])
+  const [currentItem, setCurrentItem] = useState(null)
+  const [viewPurchase, setViewPurchase] = useState(null)
+  const [showAddMedicineModal, setShowAddMedicineModal] = useState(false)
+  const [newMedicine, setNewMedicine] = useState({
+    name: '',
+    genericName: '',
+    dosage: '',
+    form: 'TABLET',
+    unitType: 'STRIP',
+    unitsPerPack: 10,
+    stripsPerBox: 1,
+    hsnCode: '',
+    reorderLevel: 10,
+    defaultMRP: 0,
+    defaultSellingPrice: 0,
+    manufacturer: '',
+    gstRate: 12
+  })
+  const [medicineSearch, setMedicineSearch] = useState('')
+  const [medicineResults, setMedicineResults] = useState([])
+  
+  const searchInputRef = useRef(null)
+
+  // --- DATA FETCHING ---
+  
+  // Fetch Suppliers
+  const { data: suppliersResponse } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: () => supplierApi.getAll(),
+  })
+  const suppliers = suppliersResponse?.data || []
+
+  // Fetch History
+  const { data: historyResponse, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['purchases', historyPage, historyFilters],
+    queryFn: () => purchaseApi.getAll({ 
+      page: historyPage, 
+      limit: 20,
+      ...historyFilters 
+    }),
+    enabled: activeTab === 'history'
+  })
+  const historyData = historyResponse?.data || []
+  const historyPagination = historyResponse?.pagination || { page: 1, total: 0, pages: 1 }
+
+  // Get selected supplier details (for outstanding balance)
+  const selectedSupplier = useMemo(() => 
+    suppliers.find(s => s._id === formData.supplierId),
+    [formData.supplierId, suppliers]
+  )
+
+  // Search medicines for entry
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (medicineSearch.length >= 2) {
+        try {
+          const res = await medicineApi.search(medicineSearch)
+          setMedicineResults(res || [])
+        } catch (err) {
+          console.error('Search failed', err)
+        }
+      } else {
+        setMedicineResults([])
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [medicineSearch])
+
+  // --- CALCULATIONS ---
+
+  // --- PACKAGING HELPERS ---
+  const getPackagingLabels = (form) => {
+    const f = form?.toUpperCase() || ''
+    if (['TABLET', 'CAPSULE'].includes(f)) return { pack: 'Strips', unit: 'Units/Strip', item: 'Tablet/Cap' }
+    if (['SYRUP', 'SUSPENSION', 'DROPS', 'LOTION'].includes(f)) return { pack: 'Bottles', unit: 'Volume/Pack', item: 'Bottle' }
+    if (['INJECTION', 'VIAL'].includes(f)) return { pack: 'Vials', unit: 'Size', item: 'Vial' }
+    if (['CREAM', 'OINTMENT', 'GEL'].includes(f)) return { pack: 'Tubes', unit: 'Weight', item: 'Tube' }
+    return { pack: 'Packs', unit: 'Units/Pack', item: 'Unit' }
+  }
+
+  const totals = useMemo(() => {
+    let subtotal = 0
+    let totalTax = 0
+    let totalDiscount = 0
+    
+    items.forEach(item => {
+      subtotal += item.subtotal
+      totalTax += item.taxAmount
+      totalDiscount += item.discountValue || 0
+    })
+
+    const grandTotal = Math.round(subtotal + totalTax - totalDiscount)
+    const roundOff = (subtotal + totalTax - totalDiscount) - grandTotal
+
+    return { subtotal, totalTax, totalDiscount, grandTotal, roundOff }
+  }, [items])
+
+  const calculateItemTotals = (updatedItem) => {
+    const packs = parseFloat(updatedItem.quantity) || 0 // Qty of Strips/Bottles
+    const unitsPerPack = parseFloat(updatedItem.unitsPerPack) || 1
+    const ptr = parseFloat(updatedItem.purchasePrice) || 0 // Purchase Price per Strip/Pack (Pack Price)
+    const gstRate = parseFloat(updatedItem.gstRate) || 0
+    const discPercent = parseFloat(updatedItem.discountPercent) || 0
+    const freePacks = parseFloat(updatedItem.freeQuantity) || 0
+
+    const subtotal = packs * ptr
+    const discountValue = (subtotal * discPercent) / 100
+    const taxableAmount = subtotal - discountValue
+    const taxAmount = (taxableAmount * gstRate) / 100
+    const totalAmount = taxableAmount + taxAmount
+    
+    // Total Units for Inventory
+    const totalUnits = (packs + freePacks) * unitsPerPack
+    
+    // Landing Cost per individual UNIT (e.g. per Tablet)
+    const landingCost = totalUnits > 0 ? totalAmount / totalUnits : 0
+    
+    // Margin calculation (on MRP per base unit)
+    const mrpPerUnit = (parseFloat(updatedItem.mrp) || 0) / unitsPerPack
+    const margin = mrpPerUnit > 0 ? ((mrpPerUnit - landingCost) / mrpPerUnit) * 100 : 0
+
+    return { 
+      ...updatedItem, 
+      subtotal, 
+      taxableAmount, 
+      taxAmount, 
+      totalAmount, 
+      totalUnits,
+      landingCost, 
+      margin,
+      discountValue 
+    }
+  }
+
+  // --- HANDLERS ---
+
+  const handleSelectMedicine = (med) => {
+    const unitsPerPack = med.unitsPerPack || 1
+    setCurrentItem(calculateItemTotals({
+      medicineId: med._id,
+      medicineName: med.name,
+      dosage: med.dosage,
+      form: med.form,
+      unitsPerPack: unitsPerPack,
+      batchNumber: '',
+      expiryDate: '',
+      quantity: 1, // Number of Strips/Packs
+      freeQuantity: 0,
+      mrp: (med.defaultMRP || 0) * unitsPerPack, // Convert unit master price to pack price for entry
+      purchasePrice: (med.defaultPurchasePrice || 0) * unitsPerPack, // Convert unit master price to pack price for entry
+      gstRate: med.gstRate || 12,
+      discountPercent: 0,
+    }))
+    setMedicineSearch('')
+    setMedicineResults([])
+  }
+
+  const handleUpdateItem = (field, value) => {
+    if (!currentItem) return
+    const updated = { ...currentItem, [field]: value }
+    setCurrentItem(calculateItemTotals(updated))
+  }
+
+  const handleAddItem = () => {
+    if (!currentItem.batchNumber) return toast.error('Batch number is required')
+    if (!currentItem.expiryDate) return toast.error('Expiry date is required')
+    if (currentItem.quantity <= 0) return toast.error('Quantity must be greater than 0')
+    if (currentItem.purchasePrice <= 0) return toast.error('Purchase price is required')
+
+    // Check for duplicates in same bill
+    const exists = items.find(i => i.medicineId === currentItem.medicineId && i.batchNumber === currentItem.batchNumber)
+    if (exists) return toast.error('This batch is already added to the list')
+
+    setItems([currentItem, ...items])
+    setCurrentItem(null)
+    searchInputRef.current?.focus()
+  }
+
+  const handleViewPurchase = async (id) => {
+      try {
+          const res = await purchaseApi.getById(id)
+          setViewPurchase(res)
+      } catch (err) {
+          toast.error('Failed to load purchase details')
+      }
+  }
+
+  const handleQuickAdd = async () => {
+    if (!newMedicine.name || !newMedicine.dosage) return toast.error('Name and Dosage are required')
+    try {
+      const res = await medicineApi.create(newMedicine)
+      handleSelectMedicine(res)
+      setShowAddMedicineModal(false)
+      toast.success('Medicine added to master list')
+    } catch (err) {
+      toast.error(err.message || 'Failed to add medicine')
+    }
+  }
+
+  const handleRemoveItem = (idx) => {
+    setItems(items.filter((_, i) => i !== idx))
+  }
+
+  const handleSubmit = async () => {
+    if (!formData.supplierId) return toast.error('Please select a supplier')
+    if (!formData.supplierBillNumber) return toast.error('Bill number is required')
+    if (items.length === 0) return toast.error('Add at least one item')
+
+    try {
+      const payload = {
+        ...formData,
+        ...totals,
+        items: items.map(i => ({
+            ...i,
+            cgst: i.taxAmount / 2,
+            sgst: i.taxAmount / 2,
+        })),
+        paymentStatus: formData.paymentMode === 'CASH' ? 'PAID' : (formData.amountPaid > 0 ? 'PARTIAL' : 'PENDING'),
+        amountPaid: parseFloat(formData.amountPaid) || 0
+      }
+
+      await purchaseApi.create(payload)
+      toast.success('Purchase Invoice Recorded Successfully!')
+      
+      // Reset
+      setItems([])
+      setFormData({
+        supplierId: '',
+        supplierName: '',
+        supplierBillNumber: '',
+        supplierBillDate: new Date().toISOString().split('T')[0],
+        dueDate: '',
+        paymentMode: 'CREDIT',
+        amountPaid: 0,
+        notes: '',
+      })
+      queryClient.invalidateQueries(['purchases'])
+      queryClient.invalidateQueries(['suppliers'])
+      queryClient.invalidateQueries(['medicines']) // Update stock
+    } catch (err) {
+      toast.error(err.message || 'Failed to record purchase')
+    }
+  }
+
+  // --- COLUMNS ---
+
+  const historyColumns = [
+    {
+      key: 'supplierBillNumber',
+      label: 'Bill No',
+      render: (val) => <span className="font-bold text-gray-900">{val}</span>
+    },
+    {
+      key: 'supplierName',
+      label: 'Supplier',
+    },
+    {
+      key: 'supplierBillDate',
+      label: 'Bill Date',
+      render: (val) => formatDate(val)
+    },
+    {
+      key: 'totalItems',
+      label: 'Items',
+      align: 'center'
+    },
+    {
+      key: 'grandTotal',
+      label: 'Total Amount',
+      align: 'right',
+      render: (val) => <span className="font-semibold">{formatCurrency(val)}</span>
+    },
+    {
+      key: 'paymentStatus',
+      label: 'Status',
+      render: (val) => (
+        <span className={cn(
+          "px-2.5 py-1 rounded-full text-xs font-medium",
+          val === 'PAID' ? "bg-success-100 text-success-700" : 
+          val === 'PENDING' ? "bg-danger-100 text-danger-700" : "bg-warning-100 text-warning-700"
+        )}>
+          {val}
+        </span>
+      )
+    },
+    {
+        key: 'actions',
+        label: '',
+        align: 'right',
+        render: (_, row) => (
+            <Button variant="ghost" size="sm" onClick={() => handleViewPurchase(row._id)}>
+                View
+            </Button>
+        )
+    }
+  ]
+
+  return (
+    <div className="space-y-6">
+      {/* Header with Stats Sidebar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Purchase (Inward)</h1>
+          <p className="text-gray-500">Record incoming stock and manage supplier invoices</p>
+        </div>
+
+        <div className="flex bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
+          <button
+            onClick={() => setActiveTab('entry')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+              activeTab === 'entry' ? "bg-brand-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            )}
+          >
+            <Plus className="h-4 w-4" />
+            New Entry
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+              activeTab === 'history' ? "bg-brand-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            )}
+          >
+            <History className="h-4 w-4" />
+            History
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'entry' ? (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+          
+          {/* Main Module: Item Entry */}
+          <div className="xl:col-span-2 space-y-6">
+            
+            {/* SEARCH & ENTRY GRID */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+               <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                  <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-brand-600" />
+                    Bill Item Details
+                  </h3>
+               </div>
+               
+               <div className="p-6 space-y-6">
+                  {/* Medicine Search */}
+                  <div className="relative">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Select Medicine</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Search medicine by name or generic salt..."
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 transition-all outline-none text-gray-900"
+                        value={medicineSearch}
+                        onChange={(e) => setMedicineSearch(e.target.value)}
+                      />
+                    </div>
+                    
+                    {!showAddMedicineModal && medicineResults.length === 0 && medicineSearch.length >= 2 && (
+                        <div className="absolute z-[60] left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 p-8 text-center animate-in fade-in zoom-in duration-200">
+                            <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+                                <Package className="h-8 w-8 text-gray-300" />
+                            </div>
+                            <p className="text-gray-900 font-bold text-lg">Medicine Not Found</p>
+                            <p className="text-sm text-gray-500 mb-6">"{medicineSearch}" is not in your master catalog.</p>
+                            <Button size="lg" onClick={() => {
+                                setNewMedicine({ ...newMedicine, name: medicineSearch })
+                                setShowAddMedicineModal(true)
+                                setMedicineSearch('') // Clear search to hide this popup
+                            }}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add New Medicine
+                            </Button>
+                        </div>
+                    )}
+
+                    {!showAddMedicineModal && medicineResults.length > 0 && (
+                      <div className="absolute z-[60] left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 max-h-[300px] overflow-y-auto overflow-x-hidden">
+                        {medicineResults.map(med => (
+                          <button
+                            key={med._id}
+                            onClick={() => handleSelectMedicine(med)}
+                            className="w-full text-left px-5 py-3 hover:bg-brand-50 border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between"
+                          >
+                            <div className="min-w-0 flex-1">
+                                <p className="font-bold text-gray-900 truncate">{med.name} <span className="text-gray-400 font-medium text-xs ml-1">{med.dosage}</span></p>
+                                <p className="text-xs text-gray-500 truncate mt-0.5 uppercase tracking-wide">{med.manufacturer} • {med.form} ({med.unitsPerPack || 1} Units/{getPackagingLabels(med.form).item})</p>
+                            </div>
+                            <div className="text-right">
+                                <span className="text-[10px] font-bold px-2 py-1 bg-gray-100 text-gray-600 rounded-full">Stock: {med.currentStock || 0}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ACTIVE ITEM FORM */}
+                  {currentItem && (
+                    <div className="bg-brand-50/40 rounded-2xl p-6 border border-brand-100 animate-in fade-in slide-in-from-top-4 duration-300">
+                      <div className="flex items-center justify-between mb-5 border-b border-brand-100/50 pb-3">
+                         <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 bg-brand-600 rounded-lg flex items-center justify-center">
+                                <Package className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-brand-900">{currentItem.medicineName}</h4>
+                                <p className="text-xs text-brand-600 font-medium uppercase">{currentItem.form}</p>
+                            </div>
+                         </div>
+                         <button onClick={() => setCurrentItem(null)} className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
+                            <X className="h-5 w-5" />
+                         </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Input 
+                          label="Batch Number *" 
+                          placeholder="ABC-123" 
+                          value={currentItem.batchNumber}
+                          onChange={(e) => handleUpdateItem('batchNumber', e.target.value.toUpperCase())}
+                        />
+                        <Input 
+                          label="Expiry Date *" 
+                          type="date" 
+                          value={currentItem.expiryDate}
+                          onChange={(e) => handleUpdateItem('expiryDate', e.target.value)}
+                        />
+                        <Input 
+                          label={`${getPackagingLabels(currentItem.form).pack} Qty *`} 
+                          type="number" 
+                          value={currentItem.quantity}
+                          onChange={(e) => handleUpdateItem('quantity', e.target.value)}
+                        />
+                         <Input 
+                          label={`Free ${getPackagingLabels(currentItem.form).pack}`} 
+                          type="number" 
+                          value={currentItem.freeQuantity}
+                          onChange={(e) => handleUpdateItem('freeQuantity', e.target.value)}
+                        />
+                         <Input 
+                          label={getPackagingLabels(currentItem.form).unit} 
+                          type="number" 
+                          value={currentItem.unitsPerPack}
+                          onChange={(e) => handleUpdateItem('unitsPerPack', e.target.value)}
+                        />
+                         <Input 
+                          label={`PTR (per ${getPackagingLabels(currentItem.form).item || 'Pack'}) *`} 
+                          type="number" 
+                          value={currentItem.purchasePrice}
+                          onChange={(e) => handleUpdateItem('purchasePrice', e.target.value)}
+                        />
+                        <Input 
+                          label={`MRP (per ${getPackagingLabels(currentItem.form).item || 'Unit'}) *`} 
+                          type="number" 
+                          value={currentItem.mrp}
+                          onChange={(e) => handleUpdateItem('mrp', e.target.value)}
+                        />
+                        <Input 
+                          label="Discount %" 
+                          type="number" 
+                          value={currentItem.discountPercent}
+                          onChange={(e) => handleUpdateItem('discountPercent', e.target.value)}
+                        />
+                         <Input 
+                          label="GST %" 
+                          type="number" 
+                          value={currentItem.gstRate}
+                          readOnly
+                          className="bg-gray-50"
+                        />
+                      </div>
+
+                      {/* ITEM INSIGHTS */}
+                      <div className="mt-5 pt-5 border-t border-brand-100 flex flex-wrap gap-4 items-center">
+                        <div className="bg-white px-4 py-2 rounded-lg border border-brand-200">
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Landing Cost (Per {getPackagingLabels(currentItem.form).item})</p>
+                            <p className="text-lg font-bold text-gray-900">{formatCurrency(currentItem.landingCost)}</p>
+                        </div>
+                        <div className="bg-white px-4 py-2 rounded-lg border border-brand-200">
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Total Inventory Units</p>
+                            <p className="text-lg font-bold text-brand-600">{currentItem.totalUnits} <span className="text-xs text-gray-400 font-medium">{getPackagingLabels(currentItem.form).item}s</span></p>
+                        </div>
+                        <div className="bg-white px-4 py-2 rounded-lg border border-brand-200">
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Profit Margin</p>
+                            <p className={cn("text-lg font-bold", currentItem.margin > 15 ? "text-green-600" : "text-amber-600")}>
+                                {currentItem.margin.toFixed(2)}%
+                            </p>
+                        </div>
+                        <div className="flex-1" />
+                        <Button onClick={handleAddItem} disabled={!currentItem.batchNumber || !currentItem.expiryDate}>
+                            Add Item to Bill
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ITEMS LIST */}
+                  <div className="border border-gray-100 rounded-xl overflow-hidden">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-gray-50 text-gray-500 font-semibold uppercase text-[10px] tracking-wider">
+                        <tr>
+                          <th className="px-5 py-4">Medicine</th>
+                          <th className="px-5 py-4">Batch/Exp</th>
+                          <th className="px-5 py-4 text-center">Pack Qty</th>
+                          <th className="px-5 py-4 text-right">Pack Price</th>
+                          <th className="px-5 py-4 text-right">Unit Landing</th>
+                          <th className="px-5 py-4 text-right">Total</th>
+                          <th className="px-5 py-4"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {items.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-5 py-12 text-center text-gray-400 italic">
+                               <div className="flex flex-col items-center gap-2 opacity-60">
+                                  <FileText className="h-10 w-10 text-gray-300" />
+                                  <p>No items added. Start by searching for a medicine.</p>
+                               </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          items.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-gray-50/50 transition-colors group">
+                              <td className="px-5 py-4">
+                                <p className="font-bold text-gray-900">{item.medicineName}</p>
+                                <p className="text-[10px] text-gray-500 uppercase">{item.dosage} • {item.form}</p>
+                              </td>
+                              <td className="px-5 py-4">
+                                <p className="font-mono text-gray-700 font-bold">{item.batchNumber}</p>
+                                <p className="text-[10px] text-red-500 font-medium">EXP: {formatDate(item.expiryDate)}</p>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                <p className="font-bold text-gray-900">{item.quantity} {getPackagingLabels(item.form).pack}</p>
+                                {item.freeQuantity > 0 && <span className="text-[10px] font-bold text-green-600">+{item.freeQuantity} FREE</span>}
+                                <p className="text-[10px] text-gray-400">({item.totalUnits} Units)</p>
+                              </td>
+                              <td className="px-5 py-4 text-right text-gray-600">
+                                {formatCurrency(item.purchasePrice)}
+                              </td>
+                              <td className="px-5 py-4 text-right">
+                                <span className="text-brand-700 font-medium">{formatCurrency(item.landingCost)}</span>
+                                <p className="text-[10px] text-gray-400">per {getPackagingLabels(item.form).item}</p>
+                              </td>
+                              <td className="px-5 py-4 text-right font-bold text-gray-900">
+                                {formatCurrency(item.totalAmount)}
+                              </td>
+                              <td className="px-5 py-4 text-right">
+                                <button onClick={() => handleRemoveItem(idx)} className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 rounded-lg transition-all">
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+               </div>
+            </div>
+          </div>
+
+          {/* RIGHT SIDEBAR: INVOICE INFO & SUMMARY */}
+          <div className="space-y-6">
+            
+            {/* INVOICE INFO */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 overflow-hidden relative">
+               <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                 <FileText className="h-5 w-5 text-gray-400" />
+                 Invoice Details
+               </h3>
+               
+               <div className="space-y-5">
+                  <div className="relative">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Supplier</label>
+                    <Select
+                      options={[
+                        { label: 'Select Supplier', value: '' },
+                        ...suppliers.map(s => ({ label: s.name, value: s._id }))
+                      ]}
+                      value={formData.supplierId}
+                      onChange={(e) => {
+                        const s = suppliers.find(sup => sup._id === e.target.value)
+                        setFormData({ ...formData, supplierId: e.target.value, supplierName: s?.name || '' })
+                      }}
+                    />
+                    {selectedSupplier && (
+                       <div className="mt-2 text-xs flex items-center gap-1.5 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100 text-amber-700">
+                          <AlertCircle className="h-3 w-3" />
+                          <span>Outstanding: <strong>{formatCurrency(selectedSupplier.currentCredit || 0)}</strong></span>
+                       </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input 
+                        label="Bill Number" 
+                        placeholder="PUR-001"
+                        value={formData.supplierBillNumber}
+                        onChange={(e) => setFormData({ ...formData, supplierBillNumber: e.target.value })}
+                    />
+                    <Input 
+                        label="Bill Date" 
+                        type="date"
+                        value={formData.supplierBillDate}
+                        onChange={(e) => setFormData({ ...formData, supplierBillDate: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div className="pt-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Payment Terms</label>
+                    <div className="grid grid-cols-2 bg-gray-50 p-1 rounded-xl border border-gray-200">
+                        <button 
+                            onClick={() => setFormData({ ...formData, paymentMode: 'CASH', amountPaid: totals.grandTotal })}
+                            className={cn("py-2 text-xs font-bold rounded-lg transition-all", formData.paymentMode === 'CASH' ? "bg-white text-brand-600 shadow-sm" : "text-gray-500")}
+                        >CASH</button>
+                        <button 
+                            onClick={() => setFormData({ ...formData, paymentMode: 'CREDIT', amountPaid: 0 })}
+                            className={cn("py-2 text-xs font-bold rounded-lg transition-all", formData.paymentMode === 'CREDIT' ? "bg-white text-brand-600 shadow-sm" : "text-gray-500")}
+                        >CREDIT</button>
+                    </div>
+                  </div>
+
+                  {formData.paymentMode === 'CREDIT' && (
+                     <div className="grid grid-cols-2 gap-4 animate-in fade-in duration-300">
+                        <Input 
+                            label="Due Date" 
+                            type="date" 
+                            value={formData.dueDate}
+                            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                        />
+                        <Input 
+                            label="Paid Amount" 
+                            type="number"
+                            value={formData.amountPaid}
+                            onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
+                        />
+                     </div>
+                  )}
+
+                  <textarea
+                    rows={3}
+                    placeholder="Notes or internal remarks..."
+                    className="w-full p-4 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all bg-gray-50"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  />
+               </div>
+            </div>
+
+            {/* BILL SUMMARY */}
+            <div className="bg-brand-900 rounded-2xl p-6 shadow-xl text-white">
+               <h3 className="text-lg font-bold mb-6 opacity-80 border-b border-brand-800 pb-3">Bill Summary</h3>
+               
+               <div className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="opacity-60 uppercase tracking-widest text-[10px] font-bold">Subtotal</span>
+                    <span className="font-bold">{formatCurrency(totals.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="opacity-60 uppercase tracking-widest text-[10px] font-bold">Total Tax (GST)</span>
+                    <span className="font-bold">{formatCurrency(totals.totalTax)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm border-b border-brand-800 pb-4">
+                    <span className="opacity-60 uppercase tracking-widest text-[10px] font-bold">Total Discount</span>
+                    <span className="font-bold text-green-400">-{formatCurrency(totals.totalDiscount)}</span>
+                  </div>
+                  
+                  <div className="pt-2 flex items-center justify-between">
+                     <div>
+                        <p className="opacity-40 uppercase tracking-widest text-[10px] font-bold">Payable Amount</p>
+                        <p className="text-3xl font-black">{formatCurrency(totals.grandTotal)}</p>
+                     </div>
+                     <CheckCircle2 className="h-10 w-10 text-brand-400 opacity-20" />
+                  </div>
+               </div>
+               
+               <Button 
+                onClick={handleSubmit} 
+                className="w-full mt-8 py-4 bg-brand-500 hover:bg-brand-400 text-white font-black text-lg shadow-lg"
+                disabled={items.length === 0}
+               >
+                 SUBMIT PURCHASE
+               </Button>
+            </div>
+
+          </div>
+        </div>
+      ) : (
+        /* --- HISTORY VIEW --- */
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+           <div className="p-6 border-b border-gray-100 flex flex-wrap gap-4 items-end">
+              <div className="w-60">
+                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Supplier</label>
+                 <Select
+                    options={[{ label: 'All Suppliers', value: '' }, ...suppliers.map(s => ({ label: s.name, value: s._id }))]}
+                    value={historyFilters.supplierId}
+                    onChange={(e) => setHistoryFilters({ ...historyFilters, supplierId: e.target.value })}
+                 />
+              </div>
+              <div className="w-40">
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">From</label>
+                <Input type="date" value={historyFilters.startDate} onChange={(e) => setHistoryFilters({ ...historyFilters, startDate: e.target.value })} />
+              </div>
+              <div className="w-40">
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">To</label>
+                <Input type="date" value={historyFilters.endDate} onChange={(e) => setHistoryFilters({ ...historyFilters, endDate: e.target.value })} />
+              </div>
+              <Button variant="outline" onClick={() => setHistoryFilters({ supplierId: '', startDate: '', endDate: '' })}>Reset</Button>
+           </div>
+
+           <Table 
+             columns={historyColumns}
+             data={historyData}
+             isLoading={isLoadingHistory}
+             emptyMessage="No purchases found in history."
+             pagination={{
+                 currentPage: historyPage,
+                 totalPages: historyPagination.pages,
+                 totalItems: historyPagination.total,
+                 itemsPerPage: 20
+             }}
+             onPageChange={setHistoryPage}
+           />
+        </div>
+      )}
+
+      {/* --- PURCHASE DETAILS MODAL --- */}
+      <Modal
+        isOpen={!!viewPurchase}
+        onClose={() => setViewPurchase(null)}
+        title={viewPurchase ? `Purchase Bill #${viewPurchase.supplierBillNumber}` : ''}
+        size="xl"
+      >
+        {viewPurchase && (
+            <div className="space-y-8">
+                <div className="grid grid-cols-2 gap-8">
+                    <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Supplier Info</p>
+                        <h4 className="text-lg font-bold text-gray-900">{viewPurchase.supplierName}</h4>
+                        <p className="text-sm text-gray-500 mt-1">{viewPurchase.supplierId?.phone}</p>
+                        <p className="text-sm text-gray-500">{viewPurchase.supplierId?.address?.street}, {viewPurchase.supplierId?.address?.city}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Invoice Meta</p>
+                        <p className="text-sm text-gray-600">Bill Date: <strong>{formatDate(viewPurchase.supplierBillDate)}</strong></p>
+                        <p className="text-sm text-gray-600">Payment Status: 
+                            <span className="ml-2 font-bold text-brand-600">{viewPurchase.paymentStatus}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div className="border border-gray-100 rounded-xl overflow-hidden">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-[10px]">
+                            <tr>
+                                <th className="px-5 py-3 text-left">Medicine</th>
+                                <th className="px-5 py-3 text-left">Batch</th>
+                                <th className="px-5 py-3 text-center">Qty</th>
+                                <th className="px-5 py-3 text-right">PTR</th>
+                                <th className="px-5 py-3 text-right">Tax</th>
+                                <th className="px-5 py-3 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {viewPurchase.items?.map((item, idx) => (
+                                <tr key={idx}>
+                                    <td className="px-5 py-4 font-bold">{item.medicineName}</td>
+                                    <td className="px-5 py-4 font-mono text-xs">{item.batchNumber}</td>
+                                    <td className="px-5 py-4 text-center">{item.quantity} {item.freeQuantity > 0 && <span className="text-green-600">+{item.freeQuantity}</span>}</td>
+                                    <td className="px-5 py-4 text-right">{formatCurrency(item.purchasePrice)}</td>
+                                    <td className="px-5 py-4 text-right">{formatCurrency(item.taxAmount)}</td>
+                                    <td className="px-5 py-4 text-right font-bold">{formatCurrency(item.totalAmount)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                    <div className="w-64 space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-400">Taxable Amount</span>
+                            <span className="font-bold">{formatCurrency(viewPurchase.taxableAmount)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-400">GST Total</span>
+                            <span className="font-bold">{formatCurrency(viewPurchase.totalGst)}</span>
+                        </div>
+                        <div className="flex justify-between text-xl font-black text-brand-900 pt-2 border-t border-gray-100">
+                            <span>Grand Total</span>
+                            <span>{formatCurrency(viewPurchase.grandTotal)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+      </Modal>
+
+      {/* --- QUICK ADD MEDICINE MODAL --- */}
+      <Modal
+        isOpen={showAddMedicineModal}
+        onClose={() => setShowAddMedicineModal(false)}
+        title="Add New Medicine to Master"
+        size="lg"
+      >
+        <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+                <Input label="Medicine Name" value={newMedicine.name} onChange={(e) => setNewMedicine({...newMedicine, name: e.target.value})} />
+                <Input label="Generic Name (Salt)" value={newMedicine.genericName} onChange={(e) => setNewMedicine({...newMedicine, genericName: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+                <Input label="Dosage (e.g. 500mg)" value={newMedicine.dosage} onChange={(e) => setNewMedicine({...newMedicine, dosage: e.target.value})} />
+                <Select 
+                    label="Form" 
+                    value={newMedicine.form}
+                    onChange={(e) => setNewMedicine({...newMedicine, form: e.target.value})}
+                    options={[
+                        { label: 'Tablet', value: 'TABLET' },
+                        { label: 'Capsule', value: 'CAPSULE' },
+                        { label: 'Syrup', value: 'SYRUP' },
+                        { label: 'Injection', value: 'INJECTION' },
+                        { label: 'Cream/Ointment', value: 'OINTMENT' },
+                        { label: 'Drops', value: 'DROPS' },
+                    ]}
+                />
+                <Input label="Manufacturer" value={newMedicine.manufacturer} onChange={(e) => setNewMedicine({...newMedicine, manufacturer: e.target.value})} />
+            </div>
+            {/* Unit Configuration - Dynamic based on Form */}
+            <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-2">
+                    <Package className="h-4 w-4 text-brand-600" />
+                    <h4 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Unit Configuration</h4>
+                </div>
+                
+                {['TABLET', 'CAPSULE'].includes(newMedicine.form) ? (
+                    <div className="grid grid-cols-4 gap-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase">Base Unit</label>
+                            <p className="text-sm font-bold text-gray-700 mt-1">Tablet / Cap</p>
+                        </div>
+                        <Input label="Units/Strip" type="number" value={newMedicine.unitsPerPack} onChange={(e) => setNewMedicine({...newMedicine, unitsPerPack: e.target.value})} />
+                        <Input label="Strips/Box" type="number" value={newMedicine.stripsPerBox} onChange={(e) => setNewMedicine({...newMedicine, stripsPerBox: e.target.value})} />
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase">Total/Box</label>
+                            <p className="text-sm font-bold text-brand-600 mt-1">{(newMedicine.unitsPerPack || 0) * (newMedicine.stripsPerBox || 0)} Units</p>
+                        </div>
+                    </div>
+                ) : ['SYRUP', 'SUSPENSION', 'DROPS'].includes(newMedicine.form) ? (
+                    <div className="grid grid-cols-3 gap-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase">Base Unit</label>
+                            <p className="text-sm font-bold text-gray-700 mt-1">Bottle</p>
+                        </div>
+                        <Input label="Bottle Size (e.g. 100ml)" value={newMedicine.dosage} onChange={(e) => setNewMedicine({...newMedicine, dosage: e.target.value})} />
+                        <Input label="Units/Outer Pack" type="number" value={newMedicine.unitsPerPack} onChange={(e) => setNewMedicine({...newMedicine, unitsPerPack: e.target.value})} />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase">Base Unit</label>
+                            <p className="text-sm font-bold text-gray-700 mt-1">Single Unit</p>
+                        </div>
+                        <Input label="Units per Pack" type="number" value={newMedicine.unitsPerPack} onChange={(e) => setNewMedicine({...newMedicine, unitsPerPack: e.target.value})} />
+                    </div>
+                )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+                <Input label="HSN Code" value={newMedicine.hsnCode} onChange={(e) => setNewMedicine({...newMedicine, hsnCode: e.target.value})} />
+                <Input label="Reorder Level" type="number" value={newMedicine.reorderLevel} onChange={(e) => setNewMedicine({...newMedicine, reorderLevel: e.target.value})} />
+                <Input label="GST %" type="number" value={newMedicine.gstRate} onChange={(e) => setNewMedicine({...newMedicine, gstRate: e.target.value})} />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 bg-brand-50/30 p-4 rounded-xl">
+                <Input label="Default MRP (Per Unit/Pill)" type="number" value={newMedicine.defaultMRP} onChange={(e) => setNewMedicine({...newMedicine, defaultMRP: e.target.value})} />
+                <Input label="Target Sale Price (Per Unit/Pill)" type="number" value={newMedicine.defaultSellingPrice} onChange={(e) => setNewMedicine({...newMedicine, defaultSellingPrice: e.target.value})} />
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+                <Button variant="ghost" onClick={() => setShowAddMedicineModal(false)}>Cancel</Button>
+                <Button onClick={handleQuickAdd}>Save & Add to Bill</Button>
+            </div>
+        </div>
+      </Modal>
+    </div>
+  )
+}

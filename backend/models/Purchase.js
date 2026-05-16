@@ -1,54 +1,116 @@
-import mongoose from "mongoose";
+/**
+ * Purchase.js
+ * Purchase invoice model
+ * Tracks incoming stock from suppliers
+ */
+
+import mongoose from 'mongoose';
 
 const purchaseSchema = new mongoose.Schema(
   {
-    // Multi-tenant isolation
     medicalStoreId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "MedicalStore",
+      ref: 'MedicalStore',
       required: true,
       index: true,
     },
-
-    // Who we bought from
+    // Supplier Information
     supplierId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Supplier",
+      ref: 'Supplier',
       required: true,
       index: true,
     },
-
-    invoiceNumber: {
+    supplierName: {
       type: String,
       required: true,
-      trim: true,
     },
-
-    invoiceDate: {
+    supplierBillNumber: {
+      type: String,
+      required: true,
+    },
+    supplierBillDate: {
       type: Date,
       required: true,
     },
-
-    totalAmount: {
+    // Financials
+    totalItems: {
       type: Number,
       required: true,
-      min: 0,
+      default: 0,
     },
-
-    paymentType: {
-      type: String,
-      enum: ["CASH", "CREDIT"],
+    subtotal: {
+      type: Number,
       required: true,
+      default: 0,
     },
-
-    paymentDueDate: {
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+    taxableAmount: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    totalGst: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    cgst: {
+      type: Number,
+      default: 0,
+    },
+    sgst: {
+      type: Number,
+      default: 0,
+    },
+    igst: {
+      type: Number,
+      default: 0,
+    },
+    roundOff: {
+      type: Number,
+      default: 0,
+    },
+    grandTotal: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['PAID', 'PARTIAL', 'PENDING', 'OVERDUE'],
+      default: 'PENDING',
+    },
+    amountPaid: {
+      type: Number,
+      default: 0,
+    },
+    balanceAmount: {
+      type: Number,
+      default: 0,
+    },
+    dueDate: {
       type: Date,
     },
-
+    // Metadata
+    receivedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    receivedByName: {
+      type: String,
+    },
     status: {
       type: String,
-      enum: ["PAID", "UNPAID", "PARTIAL"],
-      default: "UNPAID",
+      enum: ['COMPLETED', 'DRAFT', 'CANCELLED'],
+      default: 'COMPLETED',
+    },
+    notes: {
+      type: String,
     },
   },
   {
@@ -56,27 +118,31 @@ const purchaseSchema = new mongoose.Schema(
   }
 );
 
-// 🔒 Indexes for performance & reports
-purchaseSchema.index({
-  medicalStoreId: 1,
-  createdAt: -1,
-});
+// Indexes
+purchaseSchema.index({ medicalStoreId: 1, supplierBillDate: -1 });
+purchaseSchema.index({ medicalStoreId: 1, supplierId: 1 });
+purchaseSchema.index({ medicalStoreId: 1, paymentStatus: 1 });
 
-purchaseSchema.index({
-  medicalStoreId: 1,
-  supplierId: 1,
-});
+// Static methods
+purchaseSchema.statics.getPendingPayments = async function(medicalStoreId) {
+  return this.aggregate([
+    {
+      $match: {
+        medicalStoreId: new mongoose.Types.ObjectId(medicalStoreId),
+        paymentStatus: { $in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
+        status: 'COMPLETED',
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalPending: { $sum: '$balanceAmount' },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+};
 
-// 🧠 Business safety: CREDIT must have due date
-purchaseSchema.pre("save", function (next) {
-  if (this.paymentType === "CREDIT" && !this.paymentDueDate) {
-    return next(
-      new Error("Payment due date is required for CREDIT purchases")
-    );
-  }
-  next();
-});
-
-const Purchase = mongoose.model("Purchase", purchaseSchema);
+const Purchase = mongoose.model('Purchase', purchaseSchema);
 
 export default Purchase;

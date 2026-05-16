@@ -161,17 +161,23 @@ import customerRoutes from './routes/customer.routes.js';
 import supplierRoutes from './routes/supplier.routes.js';
 import discountRoutes from './routes/discount.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import symptomRoutes from './routes/symptom.routes.js';
+import doctorRoutes from './routes/doctor.routes.js';
+import auditRoutes from './routes/audit.routes.js';
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/store', storeRoutes);
-app.use('/api/v1/medicine', medicineRoutes);
+app.use('/api/v1/medicines', medicineRoutes);
 app.use('/api/v1/batch', batchRoutes);
 app.use('/api/v1/purchase', purchaseRoutes);
-app.use('/api/v1/sale', saleRoutes);
-app.use('/api/v1/customer', customerRoutes);
-app.use('/api/v1/supplier', supplierRoutes);
+app.use('/api/v1/sales', saleRoutes);
+app.use('/api/v1/customers', customerRoutes);
+app.use('/api/v1/suppliers', supplierRoutes);
 app.use('/api/v1/discount', discountRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/symptoms', symptomRoutes);
+app.use('/api/v1/doctors', doctorRoutes);
+app.use('/api/v1/audit', auditRoutes);
 
 /**
  * -----------------------

@@ -27,31 +27,27 @@ const auditLogSchema = new mongoose.Schema(
 
     entityType: {
       type: String,
-      enum: [
-        "SALE",
-        "PURCHASE",
-        "MEDICINE",
-        "BATCH",
-        "SUPPLIER",
-        "CUSTOMER",
-        "DISCOUNT_RULE",
-      ],
       required: true,
       index: true,
     },
 
     entityId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      required: false, // Sometimes ID might not be available immediately or valid
       index: true,
     },
 
-    beforeData: {
+    // Flexible details field for any extra info (old/new values)
+    details: {
       type: Object,
     },
 
-    afterData: {
-      type: Object,
+    ipAddress: {
+      type: String,
+    },
+
+    userAgent: {
+      type: String,
     },
   },
   {

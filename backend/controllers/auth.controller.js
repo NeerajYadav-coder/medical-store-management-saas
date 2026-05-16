@@ -371,8 +371,10 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import MedicalStore from '../models/MedicalStore.js';
+import OTP from '../models/OTP.js';
 import env from '../config/env.js';
 import { ROLES } from '../constants/roles.js';
+import { ROLE_PERMISSIONS } from '../constants/permissions.js';
 
 /**
  * Utility: Generate JWT Access Token
@@ -392,13 +394,28 @@ const generateAccessToken = (user) => {
 };
 
 /**
+ * Helper: Check if OTP is verified
+ */
+const isOTPVerified = async (destination, type, purpose = 'signup') => {
+  const verifiedOTP = await OTP.findOne({
+    destination,
+    type,
+    purpose,
+    isVerified: true,
+    // Check within last 30 minutes (verification window)
+    createdAt: { $gte: new Date(Date.now() - 30 * 60 * 1000) },
+  });
+  return !!verifiedOTP;
+};
+
+/**
  * -----------------------
  * SIGNUP → OWNER ONLY
  * -----------------------
  * POST /api/v1/auth/signup
  *
  * Creates MedicalStore + OWNER user atomically
- * Matches exact onboarding story
+ * Requires phone AND email OTP verification
  */
 export const signup = async (req, res, next) => {
   try {
@@ -427,6 +444,27 @@ export const signup = async (req, res, next) => {
       });
     }
 
+    // ===== OTP VERIFICATION CHECK =====
+    // Check if phone is verified
+    const phoneVerified = await isOTPVerified(ownerPhone, 'phone', 'signup');
+    if (!phoneVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number not verified. Please verify your phone number first.',
+        verificationRequired: 'phone',
+      });
+    }
+
+    // Check if email is verified
+    const emailVerified = await isOTPVerified(ownerEmail, 'email', 'signup');
+    if (!emailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email not verified. Please verify your email first.',
+        verificationRequired: 'email',
+      });
+    }
+
     // Prevent duplicate owner email (global check is OK for owner)
     const existingUser = await User.findOne({ email: ownerEmail });
     if (existingUser) {
@@ -437,12 +475,12 @@ export const signup = async (req, res, next) => {
     }
 
     const existingStore = await MedicalStore.findOne({ email: storeEmail });
-if (existingStore) {
-  return res.status(409).json({
-    success: false,
-    message: 'Medical store with this email already exists',
-  });
-}
+    if (existingStore) {
+      return res.status(409).json({
+        success: false,
+        message: 'Medical store with this email already exists',
+      });
+    }
 
 
     /**
@@ -468,6 +506,7 @@ if (existingStore) {
       phone: ownerPhone,
       passwordHash: password,
       role: ROLES.OWNER,
+      permissions: ROLE_PERMISSIONS.OWNER, // Assign full permissions
       medicalStoreId: store._id,
     });
 
@@ -555,7 +594,7 @@ export const login = async (req, res, next) => {
  */
 export const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.userId).select('-passwordHash');
+    const user = await User.findById(req.user._id).select('-passwordHash');
 
     if (!user) {
       return res.status(404).json({
@@ -592,7 +631,7 @@ export const logout = async (req, res) => {
  */
 export const createStaff = async (req, res, next) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, password, role } = req.body;
 
     if (!name || !email || !phone || !password) {
       return res.status(400).json({
@@ -623,8 +662,9 @@ export const createStaff = async (req, res, next) => {
       name,
       email,
       phone,
-      passwordHash: password,
-      role: 'STAFF',
+      passwordHash: password, // hashed by model hook
+      role: role === 'MANAGER' ? 'MANAGER' : 'STAFF', // Allow MANAGER role
+      permissions: role === 'MANAGER' ? ROLE_PERMISSIONS.MANAGER : ROLE_PERMISSIONS.STAFF, // Assign default permissions
       medicalStoreId: req.user.medicalStoreId,
     });
 
@@ -637,8 +677,41 @@ export const createStaff = async (req, res, next) => {
         email: staffUser.email,
         phone: staffUser.phone,
         role: staffUser.role,
+        permissions: staffUser.permissions,
         medicalStoreId: staffUser.medicalStoreId,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * -----------------------
+ * GET STAFF LIST (OWNER ONLY)
+ * -----------------------
+ * GET /api/v1/auth/staff
+ */
+export const getStaff = async (req, res, next) => {
+  try {
+    // Basic safety check
+    if (req.user.role !== 'OWNER') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only OWNER can view staff list',
+      });
+    }
+
+    const staff = await User.find({
+      medicalStoreId: req.user.medicalStoreId,
+      role: { $in: ['STAFF', 'MANAGER'] }, // capable of expanding
+    })
+      .select('-passwordHash')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: staff,
     });
   } catch (error) {
     next(error);
