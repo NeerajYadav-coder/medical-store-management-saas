@@ -49,7 +49,7 @@ export default function DashboardHome() {
   const [dateRange, setDateRange] = useState('today')
 
   // Fetch dashboard stats (Unified Request)
-  const { data: stats, isLoading: isLoadingStats } = useQuery({
+  const { data: stats, isLoading: isLoadingStats, isFetching, refetch } = useQuery({
     queryKey: ['dashboard', 'stats'],
     queryFn: reportsApi.getDashboardStats,
     staleTime: 60 * 1000, // 1 minute
@@ -64,6 +64,24 @@ export default function DashboardHome() {
   }
   
   // Map real data to UI props
+  const trends = stats?.trends || []
+  
+  // Chart calculation
+  let chartData = []
+  if (dateRange === '7d') {
+    chartData = trends.slice(-7)
+  } else if (dateRange === '30d') {
+    chartData = trends.slice(-30)
+  } else {
+    chartData = trends
+  }
+  const maxSales = Math.max(...chartData.map(d => d.sales), 1)
+
+  // Weekly stats
+  const thisWeekSales = trends.slice(-7).reduce((sum, d) => sum + (d.sales || 0), 0)
+  const lastWeekSales = trends.slice(-14, -7).reduce((sum, d) => sum + (d.sales || 0), 0)
+  const weeklyGrowth = lastWeekSales ? ((thisWeekSales - lastWeekSales) / lastWeekSales) * 100 : 0
+
   const dashboardData = {
     todaySales: stats?.daily?.sales || 0,
     todayTransactions: stats?.daily?.bills || 0,
@@ -72,8 +90,8 @@ export default function DashboardHome() {
     pendingPurchases: 0, // Placeholder if backend doesn't support yet
     activeStaff: 0, // Placeholder
     
-    // Trends (Simplified logic)
-    salesGrowth: stats?.monthly?.sales > 0 ? ((stats?.daily?.sales / (stats?.monthly?.sales / 30)) * 100) : 0, 
+    // Trends
+    salesGrowth: stats?.monthly?.sales > 0 ? (((stats?.daily?.sales || 0) - ((stats?.monthly?.sales || 0) / 30)) / ((stats?.monthly?.sales || 1) / 30)) * 100 : 0, 
     transactionsGrowth: 0,
     
     // Activity & Alerts
@@ -102,9 +120,11 @@ export default function DashboardHome() {
           <Button
             variant="outline"
             size="sm"
-            leftIcon={<RefreshCcw className="h-4 w-4" />}
+            leftIcon={!isFetching ? <RefreshCcw className="h-4 w-4" /> : undefined}
+            isLoading={isFetching}
+            onClick={() => refetch()}
           >
-            Refresh
+            {isFetching ? 'Refreshing...' : 'Refresh'}
           </Button>
           <Button
             variant="primary"
@@ -206,19 +226,39 @@ export default function DashboardHome() {
               </div>
             </div>
 
-            {/* Chart placeholder */}
-            <div className="h-64 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-200">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Sales chart will appear here</p>
-                <p className="text-xs text-gray-400 mt-1">Integration with backend pending</p>
-              </div>
+            {/* Simple CSS Bar Chart */}
+            <div className="h-64 flex items-end justify-between gap-1 mt-6">
+              {chartData.length > 0 ? (
+                chartData.map((day, idx) => {
+                  const heightPercent = Math.max((day.sales / maxSales) * 100, 2);
+                  return (
+                    <div key={idx} className="relative group w-full flex flex-col items-center justify-end h-full">
+                      {/* Tooltip */}
+                      <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 pointer-events-none">
+                        {formatCurrency(day.sales)}<br/>
+                        <span className="text-gray-300">{new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</span>
+                      </div>
+                      
+                      {/* Bar */}
+                      <div 
+                        className="w-full bg-brand-500 hover:bg-brand-600 rounded-t-sm transition-all duration-300" 
+                        style={{ height: `${heightPercent}%` }}
+                      ></div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 border-2 border-dashed border-gray-100 rounded-lg">
+                  <BarChart3 className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">No sales data for this period</p>
+                </div>
+              )}
             </div>
 
             {/* Quick stats below chart */}
             <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900">{formatCompactCurrency(stats?.weekly?.sales || 0)}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCompactCurrency(thisWeekSales)}</p>
                 <p className="text-sm text-gray-500">This Week</p>
               </div>
               <div className="text-center">
@@ -226,8 +266,10 @@ export default function DashboardHome() {
                 <p className="text-sm text-gray-500">This Month</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-success-600">+18.2%</p>
-                <p className="text-sm text-gray-500">Growth</p>
+                <p className={cn("text-2xl font-bold", weeklyGrowth >= 0 ? "text-success-600" : "text-danger-600")}>
+                  {weeklyGrowth > 0 ? '+' : ''}{weeklyGrowth.toFixed(1)}%
+                </p>
+                <p className="text-sm text-gray-500">Growth (vs last wk)</p>
               </div>
             </div>
           </div>
@@ -263,7 +305,7 @@ export default function DashboardHome() {
                         </p>
                       </div>
                     </div>
-                    <p className="font-semibold text-gray-900">{formatCurrency(sale.finalAmount)}</p>
+                    <p className="font-semibold text-gray-900">{formatCurrency(sale.grandTotal)}</p>
                   </div>
                 ))
               ) : (
@@ -325,50 +367,6 @@ export default function DashboardHome() {
             </Button>
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <Link
-                to={ROUTES.BILLING}
-                className="flex flex-col items-center p-4 rounded-xl bg-brand-50 border border-brand-100 hover:bg-brand-100 transition-colors"
-              >
-                <ShoppingCart className="h-6 w-6 text-brand-600 mb-2" />
-                <span className="text-sm font-medium text-brand-700">New Sale</span>
-              </Link>
-
-              {canAddInventory && (
-              <Link
-                to={ROUTES.INVENTORY_ADD}
-                className="flex flex-col items-center p-4 rounded-xl bg-success-50 border border-success-100 hover:bg-success-100 transition-colors"
-              >
-                <Package className="h-6 w-6 text-success-600 mb-2" />
-                <span className="text-sm font-medium text-success-700">Add Medicine</span>
-              </Link>
-              )}
-
-              {canPurchase && (
-              <Link
-                to={ROUTES.PURCHASE_NEW}
-                className="flex flex-col items-center p-4 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors"
-              >
-                <Truck className="h-6 w-6 text-purple-600 mb-2" />
-                <span className="text-sm font-medium text-purple-700">New Purchase</span>
-              </Link>
-              )}
-
-              {showFinancials && (
-              <Link
-                to={ROUTES.REPORTS}
-                className="flex flex-col items-center p-4 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors"
-              >
-                <BarChart3 className="h-6 w-6 text-orange-600 mb-2" />
-                <span className="text-sm font-medium text-orange-700">View Reports</span>
-              </Link>
-              )}
-            </div>
-          </div>
 
           {/* Today's Schedule */}
           <div className="bg-gradient-to-br from-brand-600 to-brand-700 rounded-xl p-6 text-white">

@@ -203,11 +203,11 @@ export default function Login() {
       {/* Demo credentials */}
       <div className="mt-6 p-4 rounded-lg bg-gray-100 border border-gray-200">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-          Demo Credentials
+          Test Credentials (Owner)
         </p>
         <div className="space-y-1 text-sm text-gray-600">
-          <p><span className="font-medium">Email:</span> demo@medstore.com</p>
-          <p><span className="font-medium">Password:</span> Demo@123</p>
+          <p><span className="font-medium">Email:</span> neeraj01@ydvvi.com</p>
+          <p><span className="font-medium">Password:</span> SecurePass2026!</p>
         </div>
       </div>
     </div>

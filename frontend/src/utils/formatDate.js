@@ -93,7 +93,7 @@ export function formatRelativeTime(date) {
  * @returns {number} Days until date (negative if past)
  */
 export function getDaysUntil(date) {
-  if (!date) return 0
+  if (!date) return null
 
   const d = new Date(date)
   if (isNaN(d.getTime())) return 0
@@ -115,6 +115,7 @@ export function formatExpiryDate(date) {
   if (!date) return { text: 'No expiry', status: 'ok' }
 
   const days = getDaysUntil(date)
+  if (days === null) return { text: 'No expiry', status: 'ok' }
 
   if (days < 0) {
     return { text: `Expired ${Math.abs(days)} days ago`, status: 'expired' }

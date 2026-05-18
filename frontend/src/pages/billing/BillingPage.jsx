@@ -7,8 +7,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  Search, Plus, Minus, Trash2, Receipt, Printer, 
+import {
+  Search, Plus, Minus, Trash2, Receipt, Printer,
   Send, CreditCard, Banknote, Smartphone, ShoppingCart,
   AlertCircle, CheckCircle, User, Stethoscope, Clock, Loader2
 } from 'lucide-react';
@@ -34,7 +34,7 @@ const PAYMENT_MODES = [
 export default function BillingPage() {
   const { user } = useAuth();
   const searchInputRef = useRef(null);
-  
+
   // State
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -70,13 +70,18 @@ export default function BillingPage() {
 
   const generateBillNumber = async () => {
     try {
+      // axios interceptor does NOT unwrap this response since it has no 'data' key
+      // response = { success: true, billNumber: '...' }
       const response = await saleApi.generateBillNumber();
-      setBillNumber(response.billNumber);
+      setBillNumber(response?.billNumber || response?.data?.billNumber || generateLocalBillNumber());
     } catch (error) {
-      // Fallback to local generation
-      const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      setBillNumber(`${date}0001`);
+      setBillNumber(generateLocalBillNumber());
     }
+  };
+
+  const generateLocalBillNumber = () => {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    return `${date}${String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0')}`;
   };
 
   // Search medicines
@@ -92,8 +97,10 @@ export default function BillingPage() {
     try {
       setLoadingMedicines(true);
       setShowResults(true);
+      // axios interceptor unwraps { success, data: [...] } → returns the array directly
       const response = await medicineApi.searchWithStock(searchQuery);
-      setSearchResults(response || []);
+      const results = Array.isArray(response) ? response : (response?.data || []);
+      setSearchResults(results);
     } catch (error) {
       console.error('Error searching medicines:', error);
       setSearchResults([]);
@@ -115,8 +122,14 @@ export default function BillingPage() {
 
   // Add item to cart
   const addToCart = (medicine) => {
-    const existingIndex = cartItems.findIndex(item => 
-      item.medicineId === medicine._id && item.batchId === medicine.batchId
+    if (medicine.availableQty <= 0) {
+      toast.error(`${medicine.name} is out of stock`);
+      return;
+    }
+
+    // Check if item exists in cart
+    const existingIndex = cartItems.findIndex(
+      item => item.medicineId === medicine._id && item.batchId === medicine.batchId
     );
 
     if (existingIndex >= 0) {
@@ -160,7 +173,7 @@ export default function BillingPage() {
       toast.error('Not enough stock');
       return;
     }
-    
+
     const updatedItems = [...cartItems];
     updatedItems[index].quantity = newQty;
     setCartItems(updatedItems);
@@ -190,7 +203,7 @@ export default function BillingPage() {
       const itemDisc = (itemSubtotal * (item.discountPercent || 0)) / 100;
       const taxable = itemSubtotal - itemDisc;
       const gst = (taxable * (item.gstRate || 12)) / 100;
-      
+
       subtotal += itemSubtotal;
       itemDiscountAmount += itemDisc;
       totalGst += gst;
@@ -207,7 +220,7 @@ export default function BillingPage() {
 
     const totalDiscount = itemDiscountAmount + billDiscount;
     const taxableAmount = subtotal - totalDiscount;
-    
+
     // Recalculate GST on final taxable amount if bill discount exists
     // For simplicity, we'll assume bill discount reduces taxable amount proportionally across all items
     // So we just scale the totalGst
@@ -216,7 +229,7 @@ export default function BillingPage() {
 
     const grandTotal = Math.round(taxableAmount + finalGst);
     const roundOff = grandTotal - (taxableAmount + finalGst);
-    
+
     const grossProfit = subtotal - totalCost;
     const netProfit = grossProfit - totalDiscount;
 
@@ -254,28 +267,27 @@ export default function BillingPage() {
         billNumber,
         customerName: customer?.customerName || 'Walk-in Customer',
         customerPhone: customer?.customerPhone || '',
-        customerId: customer?.customerId,
-        doctorId: doctor?.doctorId,
-        doctorName: doctor?.doctorName,
+        customerId: customer?.customerId || null,
+        doctorId: doctor?.doctorId || null,
+        doctorName: doctor?.doctorName || '',
         isPrescribed: !!doctor,
-        symptoms: symptoms,
+        symptoms: symptoms || [],
         isRepeatCustomer: customer?.isRepeatBuyer || false,
 
         items: cartItems.map(item => ({
           medicineId: item.medicineId,
           medicineName: item.medicineName,
-          medicineDosage: item.medicineDosage,
-          medicineForm: item.medicineForm,
+          medicineDosage: item.medicineDosage || '',
+          medicineForm: item.medicineForm || '',
           batchId: item.batchId,
           batchNumber: item.batchNumber,
           expiryDate: item.expiryDate,
           quantity: item.quantity,
           mrp: item.mrp,
           sellingPrice: item.sellingPrice,
-          purchasePrice: item.purchasePrice,
-          discountPercent: item.discountPercent,
-          gstRate: item.gstRate,
-          totalAmount: item.quantity * item.sellingPrice * (1 - item.discountPercent / 100), // Calculate item total
+          purchasePrice: item.purchasePrice || 0,
+          discountPercent: item.discountPercent || 0,
+          gstRate: item.gstRate || 0,
         })),
 
         paymentMode: paymentMethod.toUpperCase(),
@@ -298,17 +310,20 @@ export default function BillingPage() {
       };
 
       const response = await saleApi.create(saleData);
+      // axios unwraps { success, data } → response is the sale object with items
+      const billData = response?.data || response;
 
-      setLastBill(response);
+      setLastBill(billData);
       setShowSuccessModal(true);
-      toast.success(`Bill #${response?.billNumber || billNumber} created!`);
+      toast.success(`Bill #${billData?.billNumber || billNumber} created!`);
 
       // Reset form
       resetForm();
       generateBillNumber(); // Generate new bill number for next sale
     } catch (error) {
       console.error('Sale error:', error);
-      toast.error(error.response?.data?.message || 'Failed to complete sale');
+      // error.message is standardized by the axios interceptor
+      toast.error(error?.message || 'Failed to complete sale');
     } finally {
       setProcessing(false);
     }
@@ -320,7 +335,7 @@ export default function BillingPage() {
     setDoctor(null);
     setSymptoms([]);
     setPaymentMethod('cash');
-    setDiscountType('PERCENTAGE');
+    setDiscountType('NONE');
     setDiscountValue(0);
     setDiscountReason('');
     setNotes('');
@@ -443,45 +458,53 @@ export default function BillingPage() {
       {/* Main Content - Left Side */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between shrink-0">
+        <header className="h-20 bg-white/90 backdrop-blur-md border-b border-gray-200/50 px-8 flex items-center justify-between shrink-0 sticky top-0 z-10 shadow-sm">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-gray-900">Billing (POS)</h1>
-            <div className="px-3 py-1 bg-brand-50 rounded-full border border-brand-100">
-              <p className="text-xs font-medium text-brand-700">
-                Bill No: <span className="font-mono">{billNumber}</span>
+            <div className="h-10 w-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+              <ShoppingCart className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-gray-900 tracking-tight">Point of Sale</h1>
+              <p className="text-xs font-medium text-gray-500 flex items-center gap-1.5 mt-0.5">
+                <span>Bill No:</span>
+                <span className="font-mono bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-[10px] tracking-wider">{billNumber}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
-              <span>{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          <div className="flex items-center gap-6 bg-gray-50 px-5 py-2.5 rounded-2xl border border-gray-100 shadow-inner">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-brand-500" />
+              <span className="text-sm font-bold text-gray-700">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-            <div className="h-4 w-px bg-gray-200" />
-            <div className="flex items-center gap-1.5">
-              <User className="h-4 w-4" />
-              <span className="font-medium text-gray-700 capitalize">{user?.name}</span>
+            <div className="h-5 w-px bg-gray-200" />
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 bg-brand-100 rounded-full flex items-center justify-center border border-brand-200">
+                <User className="h-3 w-3 text-brand-600" />
+              </div>
+              <span className="text-sm font-bold text-gray-700 capitalize">{user?.name}</span>
             </div>
           </div>
         </header>
 
         {/* Product Search */}
-        <div className="p-4 shrink-0">
-          <div className="relative max-w-2xl mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <div className="p-6 shrink-0 bg-white border-b border-gray-100 shadow-sm relative z-20">
+          <div className="relative max-w-3xl mx-auto">
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 h-8 w-8 bg-brand-50 rounded-lg flex items-center justify-center">
+              <Search className="h-4 w-4 text-brand-600" />
+            </div>
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Search medicine by name or batch number..."
+              placeholder="Scan barcode or search medicine by name / batch..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchQuery.length >= 2 && setShowResults(true)}
               className={cn(
-                'w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all',
-                'text-lg placeholder:text-gray-400',
-                'focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500',
-                showResults ? 'border-brand-500 rounded-b-none shadow-lg' : 'border-gray-200'
+                'w-full pl-16 pr-6 py-5 rounded-2xl border-2 transition-all bg-gray-50 hover:bg-white',
+                'text-lg font-medium placeholder:text-gray-400 placeholder:font-normal',
+                'focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 focus:bg-white',
+                showResults ? 'border-brand-500 rounded-b-none shadow-xl' : 'border-gray-200 shadow-sm'
               )}
             />
 
@@ -506,7 +529,11 @@ export default function BillingPage() {
                       key={`${medicine._id}-${medicine.batchId}`}
                       type="button"
                       onClick={() => addToCart(medicine)}
-                      className="w-full flex items-center justify-between p-4 hover:bg-brand-50 transition-colors border-b border-gray-100 last:border-0 text-left"
+                      disabled={medicine.availableQty <= 0}
+                      className={cn(
+                        "w-full flex items-center justify-between p-4 transition-colors border-b border-gray-100 last:border-0 text-left",
+                        medicine.availableQty <= 0 ? "opacity-60 cursor-not-allowed bg-gray-50" : "hover:bg-brand-50"
+                      )}
                     >
                       <div>
                         <h4 className="font-semibold text-gray-900">
@@ -516,26 +543,32 @@ export default function BillingPage() {
                           <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
                             Batch: {medicine.batchNumber}
                           </span>
-                          <span className={cn(
-                            'text-xs px-2 py-0.5 rounded',
-                            new Date(medicine.expiryDate) < new Date(Date.now() + 90 * 24 * 60 * 60000)
-                              ? 'bg-red-100 text-red-600'
-                              : 'bg-green-100 text-green-600'
-                          )}>
-                            Exp: {new Date(medicine.expiryDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
-                          </span>
+                          {medicine.availableQty > 0 && (
+                            <span className={cn(
+                              'text-xs px-2 py-0.5 rounded',
+                              new Date(medicine.expiryDate) < new Date(Date.now() + 90 * 24 * 60 * 60000)
+                                ? 'bg-red-100 text-red-600'
+                                : 'bg-green-100 text-green-600'
+                            )}>
+                              Exp: {new Date(medicine.expiryDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-gray-900">
                           {formatCurrency(medicine.sellingPrice)}
                         </p>
-                        <p className={cn(
-                          'text-xs font-medium',
-                          medicine.availableQty < 10 ? 'text-red-500' : 'text-gray-500'
-                        )}>
-                          Stock: {medicine.availableQty}
-                        </p>
+                        {medicine.availableQty > 0 ? (
+                          <p className={cn(
+                            'text-xs font-medium',
+                            medicine.availableQty < 10 ? 'text-red-500' : 'text-gray-500'
+                          )}>
+                            Stock: {medicine.availableQty}
+                          </p>
+                        ) : (
+                          <p className="text-xs font-bold text-red-500 mt-0.5">OUT OF STOCK</p>
+                        )}
                       </div>
                     </button>
                   ))
@@ -546,46 +579,64 @@ export default function BillingPage() {
         </div>
 
         {/* Cart Panel */}
-        <div className="flex-1 overflow-auto p-4">
+        {/* Cart Panel */}
+        <div className="flex-1 overflow-auto p-6 bg-gray-50/50">
           {cartItems.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-500">
-              <ShoppingCart className="h-16 w-16 text-gray-300 mb-4" />
-              <p className="text-lg font-medium">Cart is empty</p>
-              <p className="text-sm">Search and add medicines to start billing</p>
+            <div className="h-full flex flex-col items-center justify-center text-gray-400 animate-in fade-in duration-500">
+              <div className="h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <ShoppingCart className="h-10 w-10 text-gray-300" />
+              </div>
+              <p className="text-xl font-bold text-gray-600">Cart is empty</p>
+              <p className="text-sm mt-2">Search and add medicines to start billing</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4 max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-2 px-2">
+                <h3 className="font-bold text-gray-700">Current Order ({cartItems.length} items)</h3>
+                <button
+                  onClick={() => setCartItems([])}
+                  className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Clear Cart
+                </button>
+              </div>
+
               {cartItems.map((item, index) => (
                 <div
                   key={`${item.medicineId}-${item.batchId}`}
-                  className="bg-white rounded-xl border border-gray-200 p-4"
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow group relative overflow-hidden"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  {/* Decorative Side Bar */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-l-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                  <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h4 className="font-medium text-gray-900">
+                      <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                         {item.medicineName} {item.medicineDosage}
                       </h4>
-                      <p className="text-sm text-gray-500">
-                        Batch: {item.batchNumber} • Exp: {new Date(item.expiryDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                      <p className="text-xs font-medium text-gray-500 mt-1 flex items-center gap-2">
+                        <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-600">Batch: {item.batchNumber}</span>
+                        <span>Exp: {new Date(item.expiryDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeFromCart(index)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-5 w-5" />
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    {/* Quantity */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
+                    {/* Quantity Control */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                         <button
                           type="button"
                           onClick={() => updateQuantity(index, item.quantity - 1)}
-                          className="p-1.5 hover:bg-gray-50 text-gray-600 border-r border-gray-200"
+                          className="p-2 hover:bg-gray-50 text-gray-600 border-r border-gray-200 transition-colors"
                         >
                           <Minus className="h-4 w-4" />
                         </button>
@@ -593,60 +644,52 @@ export default function BillingPage() {
                           type="number"
                           value={item.quantity}
                           onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
-                          className="w-12 text-center py-1.5 focus:outline-none text-sm font-medium"
+                          className="w-14 text-center py-2 focus:outline-none text-base font-bold text-brand-700"
                           min="1"
                           max={item.availableQty}
                         />
                         <button
                           type="button"
                           onClick={() => updateQuantity(index, item.quantity + 1)}
-                          className="p-1.5 hover:bg-gray-50 text-gray-600 border-l border-gray-200"
+                          className="p-2 hover:bg-gray-50 text-gray-600 border-l border-gray-200 transition-colors"
                         >
                           <Plus className="h-4 w-4" />
                         </button>
                       </div>
-                      <span className="text-[10px] text-gray-400">
-                        /{item.availableQty}
+                      <span className="text-xs font-medium text-gray-400">
+                        of {item.availableQty} in stock
                       </span>
                     </div>
 
-                    {/* Item Discount */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">Disc%:</span>
-                      <input
-                        type="number"
-                        value={item.discountPercent}
-                        onChange={(e) => updateItemDiscount(index, parseFloat(e.target.value) || 0)}
-                        className="w-12 px-1 py-1 rounded border border-gray-200 text-xs text-center"
-                        min="0"
-                        max="100"
-                      />
-                    </div>
+                    {/* Item Discount & Total */}
+                    <div className="flex items-center gap-6">
+                      <div className="flex flex-col items-end">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Discount %</label>
+                        <input
+                          type="number"
+                          value={item.discountPercent}
+                          onChange={(e) => updateItemDiscount(index, parseFloat(e.target.value) || 0)}
+                          className="w-16 px-2 py-1 rounded-md border border-gray-200 text-sm font-medium text-center focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
 
-                    {/* Price */}
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">
-                        {formatCurrency(item.quantity * item.sellingPrice * (1 - item.discountPercent / 100))}
-                      </p>
-                      {item.discountPercent > 0 && (
-                        <p className="text-[10px] text-gray-400 line-through">
-                          {formatCurrency(item.quantity * item.sellingPrice)}
+                      <div className="text-right min-w-[100px]">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Item Total</p>
+                        <p className="text-xl font-black text-gray-900">
+                          {formatCurrency(item.quantity * item.sellingPrice * (1 - item.discountPercent / 100))}
                         </p>
-                      )}
+                        {item.discountPercent > 0 && (
+                          <p className="text-xs text-gray-400 line-through font-medium">
+                            {formatCurrency(item.quantity * item.sellingPrice)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
-
-              <div className="pt-4 flex justify-center">
-                <button
-                  onClick={() => setCartItems([])}
-                  className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Clear Cart
-                </button>
-              </div>
             </div>
           )}
         </div>
@@ -710,6 +753,7 @@ export default function BillingPage() {
                     onChange={(e) => setDiscountType(e.target.value)}
                     className="text-xs border border-gray-200 rounded px-1 py-1"
                   >
+                    <option value="NONE">None</option>
                     <option value="PERCENTAGE">%</option>
                     <option value="FLAT">₹</option>
                   </select>
@@ -775,41 +819,41 @@ export default function BillingPage() {
         </div>
 
         {/* Total & Checkout */}
-        <div className="p-6 bg-gray-50 border-t border-gray-200 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600 font-medium">Grand Total</span>
-            <span className="text-3xl font-bold text-gray-900">
+        <div className="p-6 bg-brand-900 text-white border-t border-brand-800 space-y-5">
+          <div className="flex items-center justify-between opacity-90">
+            <span className="font-semibold uppercase tracking-wider text-xs">Grand Total</span>
+            <span className="text-4xl font-black text-brand-50">
               {formatCurrency(totals.grandTotal)}
             </span>
           </div>
 
           {/* Profit indicator (owner only) */}
           {user?.role === 'OWNER' && totals.netProfit > 0 && (
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>Profit</span>
-              <span className="text-green-500">+{formatCurrency(totals.netProfit)}</span>
+            <div className="flex justify-between text-xs font-medium px-3 py-2 bg-brand-800/50 rounded-lg border border-brand-700/50">
+              <span className="opacity-80">Estimated Profit</span>
+              <span className="text-green-400">+{formatCurrency(totals.netProfit)}</span>
             </div>
           )}
 
           <Button
             size="lg"
-            className="w-full h-14 text-lg"
+            className="w-full h-14 text-lg font-black bg-brand-500 hover:bg-brand-400 text-white shadow-lg border-none"
             onClick={processSale}
             isLoading={processing}
             disabled={cartItems.length === 0}
           >
-            <Receipt className="h-5 w-5 mr-2" />
+            <Receipt className="h-5 w-5 mr-2 opacity-80" />
             Complete Sale
           </Button>
 
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               variant="outline"
               onClick={handlePrint}
-              className="flex-1"
+              className="flex-1 bg-brand-800/50 border-brand-700/50 text-brand-50 hover:bg-brand-800 hover:text-white hover:border-brand-600"
               disabled={!lastBill}
             >
-              <Printer className="h-4 w-4 mr-1" />
+              <Printer className="h-4 w-4 mr-2 opacity-70" />
               Print
             </Button>
             <Button
@@ -819,10 +863,10 @@ export default function BillingPage() {
                 const text = `Hi ${lastBill.customerName}, your bill from ${user?.medicalStoreId?.name || 'our store'} is ready. Total: ${formatCurrency(lastBill.grandTotal)}. View here: ${window.location.origin}/invoice/${lastBill._id}`;
                 window.open(`https://wa.me/${lastBill.customerPhone}?text=${encodeURIComponent(text)}`);
               }}
-              className="flex-1"
+              className="flex-1 bg-green-900/40 border-green-800/40 text-green-50 hover:bg-green-800/60 hover:text-white hover:border-green-600"
               disabled={!lastBill || !lastBill.customerPhone}
             >
-              <Send className="h-4 w-4 mr-1" />
+              <Send className="h-4 w-4 mr-2 opacity-70" />
               WhatsApp
             </Button>
           </div>

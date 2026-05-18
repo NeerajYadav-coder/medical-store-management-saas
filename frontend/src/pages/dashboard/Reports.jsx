@@ -28,72 +28,74 @@ import { formatCurrency, formatCompactCurrency } from '@utils/formatCurrency'
 import Button from '@components/common/Button'
 import { Select } from '@components/common/Input'
 
+import { useQuery } from '@tanstack/react-query'
+import { reportsApi } from '@api/reports.api'
+import { Skeleton } from '@components/common/Loader'
+
 /**
  * Reports Page
  */
 export default function Reports() {
   const [dateRange, setDateRange] = useState('month')
-  const [reportType, setReportType] = useState('sales')
 
-  // Mock data
+  // Fetch stats from backend
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: reportsApi.getDashboardStats,
+  })
+
+  // Map real data
+  const monthlySales = stats?.monthly?.sales || 0;
+  const monthlyBills = stats?.monthly?.bills || 0;
+  const monthlyProfit = stats?.monthly?.profit || 0;
+  const avgOrderValue = monthlyBills > 0 ? monthlySales / monthlyBills : 0;
+  
+  const trends = stats?.trends || [];
+  let chartData = [];
+  if (dateRange === 'week') {
+    chartData = trends.slice(-7);
+  } else if (dateRange === 'month') {
+    chartData = trends.slice(-30);
+  } else {
+    chartData = trends;
+  }
+  const maxSales = Math.max(...chartData.map(d => d.sales), 1);
+
+  const topProducts = stats?.topMedicines || [];
+
   const summaryStats = [
     {
       title: 'Total Revenue',
-      value: formatCurrency(524000),
-      change: '+12.5%',
+      value: formatCurrency(monthlySales),
+      change: 'This Month',
       isPositive: true,
       icon: IndianRupee,
       color: 'brand',
     },
     {
-      title: 'Total Sales',
-      value: '1,248',
-      change: '+8.3%',
+      title: 'Total Transactions',
+      value: monthlyBills.toString(),
+      change: 'This Month',
       isPositive: true,
       icon: ShoppingCart,
       color: 'success',
     },
     {
       title: 'Avg. Order Value',
-      value: formatCurrency(420),
-      change: '+4.1%',
+      value: formatCurrency(avgOrderValue),
+      change: 'This Month',
       isPositive: true,
       icon: TrendingUp,
       color: 'purple',
     },
     {
-      title: 'New Customers',
-      value: '156',
-      change: '-2.4%',
-      isPositive: false,
-      icon: Users,
+      title: 'Total Profit',
+      value: formatCurrency(monthlyProfit),
+      change: 'This Month',
+      isPositive: monthlyProfit >= 0,
+      icon: IndianRupee,
       color: 'warning',
     },
-  ]
-
-  const topProducts = [
-    { name: 'Paracetamol 500mg', quantity: 450, revenue: 11250 },
-    { name: 'Amoxicillin 250mg', quantity: 320, revenue: 27200 },
-    { name: 'Pan 40', quantity: 280, revenue: 23800 },
-    { name: 'Vitamin D3', quantity: 245, revenue: 85750 },
-    { name: 'Cough Syrup', quantity: 210, revenue: 25200 },
-  ]
-
-  const revenueByCategory = [
-    { category: 'Tablets', percentage: 35, value: 183400 },
-    { category: 'Capsules', percentage: 28, value: 146720 },
-    { category: 'Syrups', percentage: 18, value: 94320 },
-    { category: 'Injections', percentage: 12, value: 62880 },
-    { category: 'Others', percentage: 7, value: 36680 },
-  ]
-
-  const monthlyTrend = [
-    { month: 'Jan', sales: 380000, orders: 890 },
-    { month: 'Feb', sales: 420000, orders: 1024 },
-    { month: 'Mar', sales: 390000, orders: 945 },
-    { month: 'Apr', sales: 450000, orders: 1120 },
-    { month: 'May', sales: 480000, orders: 1189 },
-    { month: 'Jun', sales: 524000, orders: 1248 },
   ]
 
   const colorMap = {
@@ -134,29 +136,32 @@ export default function Reports() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {summaryStats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <div key={stat.title} className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className="flex items-start justify-between">
-                <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', colorMap[stat.color].split(' ')[0])}>
-                  <Icon className={cn('h-5 w-5', colorMap[stat.color].split(' ')[1])} />
+        {isLoading ? (
+          Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)
+        ) : (
+          summaryStats.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <div key={stat.title} className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="flex items-start justify-between">
+                  <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', colorMap[stat.color].split(' ')[0])}>
+                    <Icon className={cn('h-5 w-5', colorMap[stat.color].split(' ')[1])} />
+                  </div>
+                  <div className={cn(
+                    'flex items-center gap-1 text-sm font-medium',
+                    stat.isPositive ? 'text-success-600' : 'text-danger-600'
+                  )}>
+                    {stat.change}
+                  </div>
                 </div>
-                <div className={cn(
-                  'flex items-center gap-1 text-sm font-medium',
-                  stat.isPositive ? 'text-success-600' : 'text-danger-600'
-                )}>
-                  {stat.isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                  {stat.change}
+                <div className="mt-4">
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-sm text-gray-500 mt-1">{stat.title}</p>
                 </div>
               </div>
-              <div className="mt-4">
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm text-gray-500 mt-1">{stat.title}</p>
-              </div>
-            </div>
-          )
-        })}
+            )
+          })
+        )}
       </div>
 
       {/* Charts Row */}
@@ -180,49 +185,34 @@ export default function Reports() {
             </div>
           </div>
 
-          {/* Chart placeholder */}
-          <div className="h-64 flex items-end justify-between gap-2 px-4">
-            {monthlyTrend.map((item, index) => (
-              <div key={item.month} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full flex flex-col gap-1">
-                  <div
-                    className="w-full bg-brand-500 rounded-t-md transition-all"
-                    style={{ height: `${(item.sales / 600000) * 200}px` }}
-                  />
-                </div>
-                <span className="text-xs text-gray-500">{item.month}</span>
+          {/* Real Dynamic CSS Bar Chart */}
+          <div className="h-64 flex items-end justify-between gap-2 px-4 mt-8">
+            {chartData.length > 0 ? (
+              chartData.map((day, index) => {
+                const heightPercent = Math.max((day.sales / maxSales) * 100, 2);
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center gap-2 group relative h-full justify-end">
+                    {/* Tooltip */}
+                    <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 pointer-events-none">
+                      {formatCurrency(day.sales)}<br/>
+                      <span className="text-gray-300">{new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</span>
+                    </div>
+                    <div
+                      className="w-full max-w-[40px] bg-brand-500 hover:bg-brand-600 rounded-t-sm transition-all duration-300"
+                      style={{ height: `${heightPercent}%` }}
+                    />
+                    <span className="text-[10px] text-gray-500 hidden sm:block">
+                      {new Date(day._id).getDate()}
+                    </span>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 border-2 border-dashed border-gray-100 rounded-lg">
+                <BarChart3 className="h-8 w-8 mb-2 opacity-50" />
+                <p className="text-sm">No trend data available</p>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Category Distribution */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Category</h3>
-          
-          <div className="space-y-4">
-            {revenueByCategory.map((item, index) => (
-              <div key={item.category}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{item.category}</span>
-                  <span className="text-sm text-gray-500">{item.percentage}%</span>
-                </div>
-                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={cn(
-                      'h-full rounded-full transition-all',
-                      index === 0 && 'bg-brand-500',
-                      index === 1 && 'bg-success-500',
-                      index === 2 && 'bg-purple-500',
-                      index === 3 && 'bg-warning-500',
-                      index === 4 && 'bg-gray-400'
-                    )}
-                    style={{ width: `${item.percentage}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-400 mt-1">{formatCurrency(item.value)}</p>
-              </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
@@ -251,26 +241,34 @@ export default function Reports() {
               </tr>
             </thead>
             <tbody>
-              {topProducts.map((product, index) => (
-                <tr key={product.name} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-500">{index + 1}</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-brand-100 flex items-center justify-center">
-                        <Package className="h-4 w-4 text-brand-600" />
+              {topProducts.length > 0 ? (
+                topProducts.map((product, index) => (
+                  <tr key={product._id || index} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="py-3 px-4 text-sm text-gray-500">{index + 1}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-brand-100 flex items-center justify-center">
+                          <Package className="h-4 w-4 text-brand-600" />
+                        </div>
+                        <span className="font-medium text-gray-900">{product.name} {product.dosage}</span>
                       </div>
-                      <span className="font-medium text-gray-900">{product.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-right text-sm text-gray-600">{product.quantity}</td>
-                  <td className="py-3 px-4 text-right font-semibold text-gray-900">{formatCurrency(product.revenue)}</td>
-                  <td className="py-3 px-4 text-right">
-                    <span className="px-2 py-1 bg-brand-50 text-brand-700 text-xs rounded-full">
-                      {((product.revenue / topProducts.reduce((sum, p) => sum + p.revenue, 0)) * 100).toFixed(1)}%
-                    </span>
+                    </td>
+                    <td className="py-3 px-4 text-right text-sm text-gray-600">{product.totalQuantity}</td>
+                    <td className="py-3 px-4 text-right font-semibold text-gray-900">{formatCurrency(product.totalRevenue)}</td>
+                    <td className="py-3 px-4 text-right">
+                      <span className="px-2 py-1 bg-brand-50 text-brand-700 text-xs rounded-full">
+                        {((product.totalRevenue / topProducts.reduce((sum, p) => sum + p.totalRevenue, 0)) * 100).toFixed(1)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="py-8 text-center text-gray-500">
+                    No sales data available yet
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
