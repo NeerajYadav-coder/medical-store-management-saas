@@ -16,28 +16,114 @@ const router = express.Router();
 // All routes require authentication
 router.use(protect);
 
-// Get all medicines
+// Get all medicines with live stock summary
 router.get('/', async (req, res, next) => {
   try {
-    const { therapeuticClass, page = 1, limit = 50 } = req.query;
-    
-    const query = { 
-      medicalStoreId: req.user.medicalStoreId,
-      isActive: true,
-    };
-    
-    if (therapeuticClass) {
-      query.therapeuticClass = therapeuticClass;
+    const {
+      page = 1,
+      limit = 50,
+      search = '',
+      form = '',
+      lowStock,
+      outOfStock,
+      expiring,
+      expired,
+      sortBy = 'name',
+      sortOrder = 'asc',
+    } = req.query;
+
+    const storeId = req.user.medicalStoreId;
+
+    // Build medicine match
+    const matchStage = { medicalStoreId: storeId, isActive: true };
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      matchStage.$or = [
+        { name: regex },
+        { genericName: regex },
+        { manufacturer: regex },
+      ];
     }
-    
-    const medicines = await Medicine.find(query)
-      .sort({ name: 1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
-    
+    if (form) {
+      matchStage.form = form.toUpperCase();
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Aggregation: join with batches for live stock data
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: 'medicinebatches',
+          let: { medId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$medicineId', '$$medId'] },
+                    { $eq: ['$medicalStoreId', storeId] },
+                    { $eq: ['$isActive', true] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'batches',
+        },
+      },
+      {
+        $addFields: {
+          currentStock: { $sum: '$batches.quantityRemaining' },
+          batchCount: { $size: '$batches' },
+          nearestExpiry: { $min: '$batches.expiryDate' },
+        },
+      },
+    ];
+
+    // Apply stock-status filters after enrichment
+    const postMatch = {};
+    if (outOfStock === 'true') {
+      postMatch.currentStock = 0;
+    } else if (lowStock === 'true') {
+      postMatch.$expr = { $and: [{ $gt: ['$currentStock', 0] }, { $lte: ['$currentStock', '$reorderLevel'] }] };
+    } else if (expired === 'true') {
+      postMatch.nearestExpiry = { $lt: new Date() };
+    } else if (expiring === 'true') {
+      const thirtyDays = new Date();
+      thirtyDays.setDate(thirtyDays.getDate() + 30);
+      postMatch.nearestExpiry = { $lte: thirtyDays, $gte: new Date() };
+    }
+    if (Object.keys(postMatch).length > 0) {
+      pipeline.push({ $match: postMatch });
+    }
+
+    // Sort
+    const sortDir = sortOrder === 'desc' ? -1 : 1;
+    const sortField = sortBy === 'stock' ? 'currentStock' : sortBy === 'expiry' ? 'nearestExpiry' : 'name';
+    pipeline.push({ $sort: { [sortField]: sortDir } });
+
+    // Count total for pagination
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    pipeline.push({ $skip: skip }, { $limit: parseInt(limit) });
+
+    const [medicines, countResult] = await Promise.all([
+      Medicine.aggregate(pipeline),
+      Medicine.aggregate(countPipeline),
+    ]);
+
+    const total = countResult[0]?.total || 0;
+
     res.status(200).json({
       success: true,
       data: medicines,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
     next(error);
@@ -99,7 +185,26 @@ router.get('/search-with-stock', async (req, res, next) => {
         .limit(3)
         .lean();
       
-      for (const batch of batches) {
+      if (batches.length > 0) {
+        for (const batch of batches) {
+          results.push({
+            _id: medicine._id,
+            name: medicine.name,
+            genericName: medicine.genericName,
+            dosage: medicine.dosage,
+            form: medicine.form,
+            manufacturer: medicine.manufacturer,
+            gstRate: medicine.gstRate,
+            batchId: batch._id,
+            batchNumber: batch.batchNumber,
+            expiryDate: batch.expiryDate,
+            mrp: batch.mrp,
+            sellingPrice: batch.sellingPrice,
+            purchasePrice: batch.purchasePrice,
+            availableQty: batch.quantityRemaining,
+          });
+        }
+      } else {
         results.push({
           _id: medicine._id,
           name: medicine.name,
@@ -108,13 +213,13 @@ router.get('/search-with-stock', async (req, res, next) => {
           form: medicine.form,
           manufacturer: medicine.manufacturer,
           gstRate: medicine.gstRate,
-          batchId: batch._id,
-          batchNumber: batch.batchNumber,
-          expiryDate: batch.expiryDate,
-          mrp: batch.mrp,
-          sellingPrice: batch.sellingPrice,
-          purchasePrice: batch.purchasePrice,
-          availableQty: batch.quantityRemaining,
+          batchId: 'OUT_OF_STOCK',
+          batchNumber: 'N/A',
+          expiryDate: new Date(),
+          mrp: medicine.defaultMRP || 0,
+          sellingPrice: medicine.defaultSellingPrice || 0,
+          purchasePrice: 0,
+          availableQty: 0,
         });
       }
     }
@@ -236,6 +341,68 @@ router.get('/:id', async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: medicine,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Generate next batch number for a medicine (auto-generation)
+router.get('/:id/next-batch', async (req, res, next) => {
+  try {
+    const medicine = await Medicine.findOne({
+      _id: req.params.id,
+      medicalStoreId: req.user.medicalStoreId,
+    }).lean();
+
+    if (!medicine) {
+      return res.status(404).json({ success: false, message: 'Medicine not found' });
+    }
+
+    // Fetch the most recent batch to detect persistence pattern
+    const lastBatch = await MedicineBatch.findOne({
+      medicalStoreId: req.user.medicalStoreId,
+      medicineId: req.params.id,
+    }).sort({ createdAt: -1 }).lean();
+
+    let batchNumber = '';
+    let basePrefix = '';
+    let sequenceStr = '';
+
+    if (lastBatch && lastBatch.batchNumber) {
+      const lastNo = lastBatch.batchNumber;
+      // Match pattern: prefix, optional hyphen/underscore, then digits at the end
+      const match = lastNo.match(/^(.*?)([-_])?(\d+)$/);
+      if (match) {
+        const pfx = match[1];
+        const separator = match[2] || '';
+        const oldSeq = match[3];
+        const newSeq = parseInt(oldSeq, 10) + 1;
+        
+        basePrefix = `${pfx}${separator}`;
+        sequenceStr = oldSeq.startsWith('0') ? String(newSeq).padStart(oldSeq.length, '0') : String(newSeq);
+        batchNumber = `${basePrefix}${sequenceStr}`;
+      } else {
+        // Doesn't end in numbers (e.g., BT-426CGP)
+        basePrefix = `${lastNo}-`;
+        sequenceStr = '001';
+        batchNumber = `${basePrefix}${sequenceStr}`;
+      }
+    } else {
+      // Fallback: No previous batch exists, use default naming convention
+      const rawName = (medicine.name || 'MED').replace(/[^a-zA-Z]/g, '');
+      const prefix = rawName.substring(0, Math.min(4, rawName.length)).toUpperCase();
+      const now = new Date();
+      const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
+      
+      basePrefix = `${prefix}-${yyyymm}-`;
+      sequenceStr = '001';
+      batchNumber = `${basePrefix}${sequenceStr}`;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { batchNumber, basePrefix, sequenceStr },
     });
   } catch (error) {
     next(error);
