@@ -76,6 +76,8 @@ import {
   logout,
   createStaff,
   getStaff,
+  updateStaff,
+  deleteStaff,
 } from '../controllers/auth.controller.js';
 import {
   sendOtp,
@@ -127,5 +129,11 @@ router.post('/staff', protect, ownerOnly, createStaff);
 
 // Get list of staff
 router.get('/staff', protect, ownerOnly, getStaff);
+
+// Update staff member
+router.put('/staff/:id', protect, ownerOnly, updateStaff);
+
+// Delete staff member
+router.delete('/staff/:id', protect, ownerOnly, deleteStaff);
 
 export default router;

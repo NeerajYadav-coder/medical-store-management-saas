@@ -7,7 +7,7 @@
  * - Activity tracking
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Search,
@@ -58,6 +58,29 @@ export default function Staff() {
     password: ''
   })
 
+  // Edit Form State
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'STAFF',
+    isActive: true,
+    password: ''
+  })
+
+  useEffect(() => {
+    if (editUser) {
+      setEditFormData({
+        name: editUser.name || '',
+        email: editUser.email || '',
+        phone: editUser.phone || '',
+        role: editUser.role || 'STAFF',
+        isActive: editUser.isActive !== false,
+        password: ''
+      })
+    }
+  }, [editUser])
+
   // Fetch Staff
   const { data: staffData, isLoading } = useQuery({
     queryKey: ['staff'],
@@ -84,12 +107,62 @@ export default function Staff() {
     }
   })
 
+  // Update Staff Mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => authApi.updateStaff(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['staff'])
+      setEditUser(null)
+      toast.success('Staff member updated successfully')
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Failed to update staff'
+      if (error.response?.status === 409) {
+        toast.error('A user with this email or phone number already exists.')
+      } else {
+        toast.error(message)
+      }
+    }
+  })
+
+  // Delete Staff Mutation
+  const deleteMutation = useMutation({
+    mutationFn: authApi.deleteStaff,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['staff'])
+      setDeleteModal({ isOpen: false, item: null })
+      toast.success('Staff member deleted successfully')
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Failed to delete staff member'
+      toast.error(message)
+    }
+  })
+
   const staffList = (Array.isArray(staffData) ? staffData : staffData?.data) || []
 
   // Handle Form Submit
   const handleSubmit = (e) => {
     e.preventDefault()
     createMutation.mutate(formData)
+  }
+
+  // Handle Edit Submit
+  const handleEditSubmit = (e) => {
+    e.preventDefault()
+    if (editUser?._id) {
+      updateMutation.mutate({
+        id: editUser._id,
+        data: {
+          name: editFormData.name,
+          email: editFormData.email,
+          phone: editFormData.phone,
+          role: editFormData.role,
+          isActive: editFormData.isActive,
+          password: editFormData.password || undefined
+        }
+      })
+    }
   }
 
   const columns = [
@@ -161,14 +234,12 @@ export default function Staff() {
       width: '120px',
       render: (_, user) => (
         <div className="flex items-center gap-1">
-          {/* 
           <button
             onClick={() => setEditUser(user)}
             className="p-2 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50"
           >
             <Edit className="h-4 w-4" />
           </button>
-          */}
           <button
             onClick={() => setDeleteModal({ isOpen: true, item: user })}
             className="p-2 rounded-lg text-gray-400 hover:text-danger-600 hover:bg-danger-50"
@@ -324,15 +395,100 @@ export default function Staff() {
         </form>
       </Modal>
 
+      {/* Edit Staff Modal */}
+      <Modal
+        isOpen={!!editUser}
+        onClose={() => setEditUser(null)}
+        title="Edit Staff Member"
+        size="md"
+        footer={null}
+      >
+        {editUser && (
+          <form onSubmit={handleEditSubmit} className="space-y-4" autoComplete="off">
+            <Input
+              label="Full Name"
+              placeholder="Enter full name"
+              value={editFormData.name}
+              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+              required
+              disabled={updateMutation.isLoading}
+              autoComplete="off"
+            />
+            <Input
+              label="Email Address"
+              type="email"
+              placeholder="staff@example.com"
+              value={editFormData.email}
+              onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+              required
+              disabled={updateMutation.isLoading}
+            />
+            <Input
+              label="Phone Number"
+              type="tel"
+              placeholder="9876543210"
+              maxLength={10}
+              value={editFormData.phone}
+              onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+              required
+              disabled={updateMutation.isLoading}
+            />
+            <Select
+              label="Role"
+              options={ROLES}
+              value={editFormData.role}
+              onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+              disabled={updateMutation.isLoading}
+            />
+            <Select
+              label="Status"
+              options={[
+                { value: 'true', label: 'Active' },
+                { value: 'false', label: 'Inactive' }
+              ]}
+              value={editFormData.isActive.toString()}
+              onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.value === 'true' })}
+              disabled={updateMutation.isLoading}
+            />
+            <PasswordInput
+              label="New Password (optional)"
+              placeholder="Leave blank to keep current password"
+              value={editFormData.password}
+              onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+              disabled={updateMutation.isLoading}
+              autoComplete="new-password"
+            />
+            
+            <div className="flex justify-end gap-3 pt-4">
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={() => setEditUser(null)}
+                disabled={updateMutation.isLoading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                isLoading={updateMutation.isLoading}
+              >
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
       {/* Delete Modal */}
       <DeleteModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, item: null })}
         onConfirm={() => {
-          // Implement delete mutation if needed
-          toast.error("Delete functionality comming soon")
-          setDeleteModal({ isOpen: false, item: null })
+          if (deleteModal.item?._id) {
+            deleteMutation.mutate(deleteModal.item._id)
+          }
         }}
+        isLoading={deleteMutation.isLoading}
         itemName={deleteModal.item?.name}
       />
     </div>

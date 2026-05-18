@@ -128,6 +128,20 @@ export const authApi = {
   getStaff: async () => {
     return await api.get('/auth/staff')
   },
+
+  /**
+   * Update staff member (OWNER only)
+   */
+  updateStaff: async (id, staffData) => {
+    return await api.put(`/auth/staff/${id}`, staffData)
+  },
+
+  /**
+   * Delete staff member (OWNER only)
+   */
+  deleteStaff: async (id) => {
+    return await api.delete(`/auth/staff/${id}`)
+  },
 }
 
 export default authApi
