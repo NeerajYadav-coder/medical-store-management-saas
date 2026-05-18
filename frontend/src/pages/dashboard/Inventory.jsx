@@ -2,31 +2,29 @@
  * pages/dashboard/Inventory.jsx
  * 
  * RESPONSIBILITY:
- * - Medicine inventory management
- * - Stock tracking and alerts
- * - Batch management
- * - Search, filter, and pagination
+ * - Medicine inventory management with LIVE stock data
+ * - Stock tracking from MedicineBatch aggregation
+ * - Search, filter by form type, stock status, pagination
  */
 
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Plus,
   Search,
-  Filter,
-  Download,
-  Upload,
   Package,
   AlertTriangle,
   Clock,
-  MoreVertical,
   Edit,
   Trash2,
   Eye,
   RefreshCcw,
-  ChevronDown,
   X,
+  Download,
+  Upload,
+  Layers,
+  TrendingDown,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { formatCurrency } from '@utils/formatCurrency'
@@ -41,20 +39,23 @@ import { Skeleton, SkeletonTableRows } from '@components/common/Loader'
 import { useDebouncedSearch } from '@hooks/useDebounce'
 import { useAuth } from '@context/AuthContext'
 
-// Medicine categories
-const CATEGORIES = [
-  { value: '', label: 'All Categories' },
-  { value: 'tablets', label: 'Tablets' },
-  { value: 'capsules', label: 'Capsules' },
-  { value: 'syrups', label: 'Syrups' },
-  { value: 'injections', label: 'Injections' },
-  { value: 'ointments', label: 'Ointments' },
-  { value: 'drops', label: 'Drops' },
-  { value: 'powders', label: 'Powders' },
-  { value: 'others', label: 'Others' },
+// Medicine form types matching backend enum
+const FORM_FILTERS = [
+  { value: '', label: 'All Forms' },
+  { value: 'TABLET', label: 'Tablets' },
+  { value: 'CAPSULE', label: 'Capsules' },
+  { value: 'SYRUP', label: 'Syrups' },
+  { value: 'INJECTION', label: 'Injections' },
+  { value: 'CREAM', label: 'Creams' },
+  { value: 'OINTMENT', label: 'Ointments' },
+  { value: 'DROPS', label: 'Drops' },
+  { value: 'POWDER', label: 'Powders' },
+  { value: 'GEL', label: 'Gels' },
+  { value: 'SUSPENSION', label: 'Suspensions' },
+  { value: 'OTHER', label: 'Others' },
 ]
 
-// Stock filters
+// Stock status filters
 const STOCK_FILTERS = [
   { value: '', label: 'All Stock' },
   { value: 'low', label: 'Low Stock' },
@@ -64,7 +65,7 @@ const STOCK_FILTERS = [
 ]
 
 /**
- * Inventory Page
+ * Inventory Page — Live data from backend
  */
 export default function Inventory() {
   const queryClient = useQueryClient()
@@ -76,31 +77,31 @@ export default function Inventory() {
   // State
   const [page, setPage] = useState(1)
   const [selectedMedicines, setSelectedMedicines] = useState([])
-  const [showFilters, setShowFilters] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, item: null })
+  const [batchModal, setBatchModal] = useState({ isOpen: false, medicine: null })
 
   // Search with debounce
   const { value: searchValue, debouncedValue: search, onChange: onSearchChange, clear: clearSearch } = useDebouncedSearch()
 
   // Filters from URL params
-  const category = searchParams.get('category') || ''
+  const formFilter = searchParams.get('form') || ''
   const stockFilter = searchParams.get('filter') || ''
   const sortBy = searchParams.get('sortBy') || 'name'
   const sortOrder = searchParams.get('sortOrder') || 'asc'
 
-  // Fetch medicines
+  // Fetch medicines with live stock data
   const {
-    data: medicinesData,
+    data: medicinesResponse,
     isLoading,
     isFetching,
     refetch,
   } = useQuery({
-    queryKey: ['medicines', { page, search, category, stockFilter, sortBy, sortOrder }],
+    queryKey: ['medicines', { page, search, formFilter, stockFilter, sortBy, sortOrder }],
     queryFn: () => inventoryApi.getMedicines({
       page,
       limit: 20,
       search,
-      category,
+      form: formFilter,
       lowStock: stockFilter === 'low',
       outOfStock: stockFilter === 'out',
       expiring: stockFilter === 'expiring',
@@ -112,85 +113,37 @@ export default function Inventory() {
     staleTime: 30 * 1000,
   })
 
-  // Mock data for demonstration
-  const mockMedicines = [
-    {
-      _id: '1',
-      name: 'Paracetamol 500mg',
-      genericName: 'Acetaminophen',
-      category: 'Tablets',
-      manufacturer: 'Cipla Ltd',
-      currentStock: 45,
-      minStockLevel: 50,
-      mrp: 25.50,
-      expiryDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-      batches: 3,
-    },
-    {
-      _id: '2',
-      name: 'Amoxicillin 250mg',
-      genericName: 'Amoxicillin Trihydrate',
-      category: 'Capsules',
-      manufacturer: 'Sun Pharma',
-      currentStock: 120,
-      minStockLevel: 30,
-      mrp: 85.00,
-      expiryDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-      batches: 2,
-    },
-    {
-      _id: '3',
-      name: 'Omeprazole 20mg',
-      genericName: 'Omeprazole',
-      category: 'Capsules',
-      manufacturer: 'Dr. Reddy\'s',
-      currentStock: 8,
-      minStockLevel: 25,
-      mrp: 45.00,
-      expiryDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
-      batches: 1,
-    },
-    {
-      _id: '4',
-      name: 'Cough Syrup',
-      genericName: 'Dextromethorphan',
-      category: 'Syrups',
-      manufacturer: 'Lupin Ltd',
-      currentStock: 0,
-      minStockLevel: 15,
-      mrp: 120.00,
-      expiryDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-      batches: 0,
-    },
-    {
-      _id: '5',
-      name: 'Vitamin D3',
-      genericName: 'Cholecalciferol',
-      category: 'Tablets',
-      manufacturer: 'Abbott',
-      currentStock: 200,
-      minStockLevel: 50,
-      mrp: 350.00,
-      expiryDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
-      batches: 4,
-    },
-  ]
+  // The axios interceptor does NOT unwrap paginated responses (they have 'pagination' key)
+  // so medicinesResponse = { success, data, pagination }
+  const medicines = medicinesResponse?.data || []
+  const pagination = medicinesResponse?.pagination || { total: 0, pages: 1, page: 1 }
 
-  const medicines = medicinesData?.data || mockMedicines
-  const pagination = medicinesData?.pagination || { total: mockMedicines.length, totalPages: 1, page: 1 }
-
-  // Get stock status
+  // Get stock status for a medicine
   const getStockStatus = (medicine) => {
-    if (medicine.currentStock === 0) {
+    const stock = medicine.currentStock ?? 0
+    const reorder = medicine.reorderLevel ?? 10
+    if (stock === 0) {
       return { label: 'Out of Stock', color: 'bg-danger-100 text-danger-700', priority: 3 }
     }
-    if (medicine.currentStock <= medicine.minStockLevel) {
+    if (stock <= reorder) {
       return { label: 'Low Stock', color: 'bg-warning-100 text-warning-700', priority: 2 }
     }
     return { label: 'In Stock', color: 'bg-success-100 text-success-700', priority: 1 }
   }
 
-  // Table columns
+  // Form display label
+  const getFormLabel = (form) => {
+    const map = {
+      TABLET: 'Tablet', CAPSULE: 'Capsule', SYRUP: 'Syrup',
+      INJECTION: 'Injection', CREAM: 'Cream', OINTMENT: 'Ointment',
+      DROPS: 'Drops', POWDER: 'Powder', GEL: 'Gel',
+      SPRAY: 'Spray', INHALER: 'Inhaler', SUSPENSION: 'Suspension',
+      LOTION: 'Lotion', PATCH: 'Patch', SUPPOSITORY: 'Suppository', OTHER: 'Other',
+    }
+    return map[form] || form || '—'
+  }
+
+  // Table columns — mapped to real backend fields
   const columns = [
     {
       key: 'name',
@@ -201,19 +154,22 @@ export default function Inventory() {
             <Package className="h-5 w-5 text-brand-600" />
           </div>
           <div>
-            <p className="font-medium text-gray-900">{medicine.name}</p>
-            <p className="text-sm text-gray-500">{medicine.genericName}</p>
+            <p className="font-semibold text-gray-900">{medicine.name}</p>
+            <p className="text-xs text-gray-500">{medicine.genericName || medicine.manufacturer || '—'}</p>
           </div>
         </div>
       ),
     },
     {
-      key: 'category',
-      label: 'Category',
-      render: (value) => (
-        <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-          {value}
-        </span>
+      key: 'form',
+      label: 'Form',
+      render: (value, medicine) => (
+        <div>
+          <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+            {getFormLabel(value)}
+          </span>
+          <p className="text-[10px] text-gray-400 mt-1">{medicine.dosage}</p>
+        </div>
       ),
     },
     {
@@ -221,34 +177,39 @@ export default function Inventory() {
       label: 'Stock',
       render: (value, medicine) => {
         const status = getStockStatus(medicine)
+        const stock = value ?? 0
         return (
           <div>
-            <span className="font-medium text-gray-900">{value} units</span>
+            <span className="font-semibold text-gray-900">{stock} units</span>
             <span className={cn('ml-2 px-2 py-0.5 text-xs rounded-full', status.color)}>
               {status.label}
             </span>
+            <p className="text-[10px] text-gray-400 mt-0.5">Reorder at {medicine.reorderLevel ?? 10}</p>
           </div>
         )
       },
     },
     {
-      key: 'mrp',
+      key: 'defaultMRP',
       label: 'MRP',
-      render: (value) => formatCurrency(value),
+      render: (value) => <span className="font-medium">{formatCurrency(value ?? 0)}</span>,
     },
     {
-      key: 'expiryDate',
+      key: 'nearestExpiry',
       label: 'Nearest Expiry',
       render: (value) => {
+        if (!value) return <span className="text-gray-400 text-sm">No batches</span>
         const expiry = formatExpiryDate(value)
         return (
           <div className="flex items-center gap-2">
             {expiry.status === 'expired' && <AlertTriangle className="h-4 w-4 text-danger-500" />}
             {expiry.status === 'critical' && <Clock className="h-4 w-4 text-warning-500" />}
             <span className={cn(
-              expiry.status === 'expired' && 'text-danger-600',
-              expiry.status === 'critical' && 'text-warning-600',
-              expiry.status === 'warning' && 'text-orange-600'
+              'text-sm',
+              expiry.status === 'expired' && 'text-danger-600 font-medium',
+              expiry.status === 'critical' && 'text-warning-600 font-medium',
+              expiry.status === 'warning' && 'text-orange-600',
+              expiry.status === 'ok' && 'text-gray-600',
             )}>
               {expiry.text}
             </span>
@@ -257,11 +218,16 @@ export default function Inventory() {
       },
     },
     {
-      key: 'batches',
+      key: 'batchCount',
       label: 'Batches',
       align: 'center',
       render: (value) => (
-        <span className="font-medium text-gray-900">{value}</span>
+        <span className={cn(
+          'font-semibold text-sm',
+          value > 0 ? 'text-brand-600' : 'text-gray-400'
+        )}>
+          {value ?? 0}
+        </span>
       ),
     },
     {
@@ -271,10 +237,11 @@ export default function Inventory() {
       render: (_, medicine) => (
         <div className="flex items-center justify-end gap-1">
           <button
+            onClick={() => setBatchModal({ isOpen: true, medicine })}
             className="p-2 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors"
-            title="View"
+            title="View Batches"
           >
-            <Eye className="h-4 w-4" />
+            <Layers className="h-4 w-4" />
           </button>
           {canManageInventory && (
           <>
@@ -310,15 +277,22 @@ export default function Inventory() {
     setPage(1)
   }
 
-  // Stats summary
+  // Live stats from real data
   const stats = useMemo(() => {
-    const total = medicines.length
-    const lowStock = medicines.filter(m => m.currentStock <= m.minStockLevel && m.currentStock > 0).length
-    const outOfStock = medicines.filter(m => m.currentStock === 0).length
-    const expiringSoon = medicines.filter(m => getDaysUntil(m.expiryDate) <= 30 && getDaysUntil(m.expiryDate) > 0).length
+    const total = pagination.total || medicines.length
+    const lowStock = medicines.filter(m => {
+      const s = m.currentStock ?? 0
+      const r = m.reorderLevel ?? 10
+      return s > 0 && s <= r
+    }).length
+    const outOfStock = medicines.filter(m => (m.currentStock ?? 0) === 0).length
+    const expiringSoon = medicines.filter(m => {
+      const days = getDaysUntil(m.nearestExpiry)
+      return days !== null && days <= 30 && days > 0
+    }).length
 
     return { total, lowStock, outOfStock, expiringSoon }
-  }, [medicines])
+  }, [medicines, pagination.total])
 
   return (
     <div className="space-y-6">
@@ -326,7 +300,7 @@ export default function Inventory() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
-          <p className="text-gray-500 mt-1">Manage your medicine stock and batches</p>
+          <p className="text-gray-500 mt-1">Live stock from batches · {pagination.total ?? 0} medicines</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" leftIcon={<Download className="h-4 w-4" />}>
@@ -347,7 +321,7 @@ export default function Inventory() {
         </div>
       </div>
 
-      {/* Stats Summary */}
+      {/* Stats Summary — from live API data */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-500">Total Medicines</p>
@@ -383,9 +357,9 @@ export default function Inventory() {
           {/* Filter toggles */}
           <div className="flex items-center gap-2">
             <Select
-              options={CATEGORIES}
-              value={category}
-              onChange={(e) => updateFilter('category', e.target.value)}
+              options={FORM_FILTERS}
+              value={formFilter}
+              onChange={(e) => updateFilter('form', e.target.value)}
               className="w-40"
             />
             <Select
@@ -406,7 +380,7 @@ export default function Inventory() {
         </div>
 
         {/* Active filters */}
-        {(category || stockFilter || search) && (
+        {(formFilter || stockFilter || search) && (
           <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
             <span className="text-sm text-gray-500">Active filters:</span>
             {search && (
@@ -417,10 +391,10 @@ export default function Inventory() {
                 </button>
               </span>
             )}
-            {category && (
+            {formFilter && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-100 text-brand-700 rounded-full text-sm">
-                {CATEGORIES.find(c => c.value === category)?.label}
-                <button onClick={() => updateFilter('category', '')}>
+                {FORM_FILTERS.find(f => f.value === formFilter)?.label}
+                <button onClick={() => updateFilter('form', '')}>
                   <X className="h-3 w-3" />
                 </button>
               </span>
@@ -451,17 +425,18 @@ export default function Inventory() {
         columns={columns}
         data={medicines}
         isLoading={isLoading}
-        emptyMessage="No medicines found"
+        emptyMessage={
+          search || formFilter || stockFilter
+            ? 'No medicines match your filters'
+            : 'No medicines found. Add medicines via Purchase (Inward) to see stock here.'
+        }
         emptyIcon={<Package className="h-12 w-12" />}
         selectable
         selectedRows={selectedMedicines}
         onSelectRows={setSelectedMedicines}
-        onRowClick={(medicine) => {
-          // Navigate to medicine detail
-        }}
         pagination={{
           currentPage: page,
-          totalPages: pagination.totalPages,
+          totalPages: pagination.pages,
           totalItems: pagination.total,
           itemsPerPage: 20,
         }}
@@ -491,6 +466,18 @@ export default function Inventory() {
         </div>
       )}
 
+      {/* Batch Detail Modal */}
+      <Modal
+        isOpen={batchModal.isOpen}
+        onClose={() => setBatchModal({ isOpen: false, medicine: null })}
+        title={batchModal.medicine ? `Batches — ${batchModal.medicine.name}` : ''}
+        size="lg"
+      >
+        {batchModal.medicine && (
+          <BatchDetailView medicine={batchModal.medicine} />
+        )}
+      </Modal>
+
       {/* Delete Modal */}
       <DeleteModal
         isOpen={deleteModal.isOpen}
@@ -501,6 +488,62 @@ export default function Inventory() {
         }}
         itemName={deleteModal.item?.name}
       />
+    </div>
+  )
+}
+
+/**
+ * Mini component to show batch details in the modal
+ */
+function BatchDetailView({ medicine }) {
+  const { data: batches, isLoading } = useQuery({
+    queryKey: ['medicine-batches', medicine._id],
+    queryFn: () => inventoryApi.getBatches(medicine._id),
+  })
+
+  const batchList = Array.isArray(batches) ? batches : (batches?.data || [])
+
+  if (isLoading) {
+    return <div className="text-center py-8 text-gray-400">Loading batches...</div>
+  }
+
+  if (!batchList.length) {
+    return (
+      <div className="text-center py-12 text-gray-400">
+        <Layers className="h-10 w-10 mx-auto mb-3 opacity-30" />
+        <p>No active batches found for this medicine.</p>
+        <p className="text-sm mt-1">Purchase this medicine to create a batch.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {batchList.map((batch) => {
+        const expiry = formatExpiryDate(batch.expiryDate)
+        return (
+          <div key={batch._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <div>
+              <p className="font-bold text-gray-900 font-mono">{batch.batchNumber}</p>
+              <p className={cn(
+                'text-xs mt-0.5',
+                expiry.status === 'expired' ? 'text-danger-600' :
+                expiry.status === 'critical' ? 'text-warning-600' : 'text-gray-500'
+              )}>
+                Expiry: {expiry.text}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="font-bold text-brand-700 text-lg">{batch.quantityRemaining}</p>
+              <p className="text-[10px] text-gray-400">units remaining</p>
+            </div>
+            <div className="text-right ml-6">
+              <p className="font-medium text-gray-700">{formatCurrency(batch.sellingPrice)}</p>
+              <p className="text-[10px] text-gray-400">selling price</p>
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

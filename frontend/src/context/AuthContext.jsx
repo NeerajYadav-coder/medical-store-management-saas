@@ -39,8 +39,9 @@ export function AuthProvider({ children }) {
 
   // Prevent double initialization
   const initRef = useRef(false)
+  // Track whether we're in the middle of the initial auth check
+  const isCheckingAuthRef = useRef(false)
 
-  // ==================== INITIAL AUTH CHECK ====================
   // ==================== INITIAL AUTH CHECK ====================
   useEffect(() => {
     // Prevent double execution in StrictMode
@@ -51,20 +52,32 @@ export function AuthProvider({ children }) {
       const token = localStorage.getItem('token')
 
       if (!token) {
+        // No token stored → user is definitely not logged in
         setIsLoading(false)
         setIsInitialized(true)
         return
       }
 
+      isCheckingAuthRef.current = true
       try {
         const response = await authApi.getCurrentUser()
+        // /auth/me returns { success: true, user: {...} } — no 'data' key
+        // so axios interceptor returns the full object
         const userData = response?.user || response
-        setUser(userData)
+        // /auth/me returns full Mongoose doc with _id
+        if (userData && (userData._id || userData.id)) {
+          setUser(userData)
+        } else {
+          // Unexpected response shape — treat as unauthenticated
+          localStorage.removeItem('token')
+          setUser(null)
+        }
       } catch (error) {
-        // 401 is expected when not logged in - just set user to null
+        // 401 / network error → clear stale token, user stays null
         localStorage.removeItem('token')
         setUser(null)
       } finally {
+        isCheckingAuthRef.current = false
         setIsLoading(false)
         setIsInitialized(true)
       }
@@ -76,6 +89,12 @@ export function AuthProvider({ children }) {
   // ==================== EVENT LISTENERS ====================
   useEffect(() => {
     const handleUnauthorized = () => {
+      // Don't act on 401s that happen during the initial auth check —
+      // those are handled by checkAuth() itself.
+      // Also don't fire if user was never authenticated (no token in storage)
+      if (isCheckingAuthRef.current) return
+      if (!localStorage.getItem('token')) return
+
       setUser(null)
       localStorage.removeItem('token')
       navigate(ROUTES.LOGIN, { 
@@ -104,14 +123,21 @@ export function AuthProvider({ children }) {
     
     try {
       const response = await authApi.login(credentials)
-      const userData = response?.user || response
+      // Login returns { success, token, user } — no 'data' key
+      // axios interceptor returns the full object since there's no 'data' key
+      const token = response?.token || response?.data?.token
+      // login returns { user: { id, name, role, medicalStoreId } } — note 'id' not '_id'
+      const userData = response?.user || response?.data?.user
       
-      // Save token if present
-      if (response?.token) {
-        localStorage.setItem('token', response.token)
+      // Save token — this is what persists the session across refreshes
+      if (token) {
+        localStorage.setItem('token', token)
       }
       
-      setUser(userData)
+      // Accept both 'id' and '_id' shapes from the server
+      if (userData && (userData._id || userData.id)) {
+        setUser(userData)
+      }
       
       // Navigate to intended destination or dashboard
       const from = location.state?.from?.pathname || ROUTES.DASHBOARD

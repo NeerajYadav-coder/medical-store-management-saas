@@ -70,6 +70,11 @@ const medicineApi = {
     return await api.get(`/medicines/${id}/batches`);
   },
 
+  // Get auto-generated next batch number for a medicine
+  getNextBatchNumber: async (id) => {
+    return await api.get(`/medicines/${id}/next-batch`);
+  },
+
   // Add symptoms to medicine
   updateSymptoms: async (id, symptoms) => {
     return await api.patch(`/medicines/${id}/symptoms`, { symptoms });
