@@ -319,117 +319,178 @@ router.post('/', auditAction('CREATE', 'SALE'), async (req, res, next) => {
       notes,
     } = req.body;
 
-    // 🛡 DISCOUNT CONTROL POLICY
-    // Staff/Manager max discount check (e.g. 10%)
-    if (req.user.role !== ROLES.OWNER && discountValue > 10) {
-      // unless they have a specific override permission (future)
+    // Validate items array
+    if (!items || items.length === 0) {
+      await session.abortTransaction();
+      return res.status(400).json({ success: false, message: 'Cart is empty' });
+    }
+
+    // 🛡 DISCOUNT CONTROL POLICY — non-owners limited to 10%
+    const effectiveDiscount = parseFloat(discountValue) || 0;
+    if (req.user.role !== 'OWNER' && discountType !== 'NONE' && effectiveDiscount > 10) {
+      await session.abortTransaction();
       return res.status(403).json({
         success: false,
         message: 'Discount exceeds authorized limit (10%). Ask owner for approval.',
       });
     }
     
-    // Create sale
+    // ✅ STEP 1: Pre-validate ALL batches before writing anything
+    const batchDocs = [];
+    for (const item of items) {
+      if (!item.batchId) {
+        await session.abortTransaction();
+        return res.status(400).json({ success: false, message: `Batch ID missing for ${item.medicineName}` });
+      }
+      const batch = await MedicineBatch.findOne({
+        _id: item.batchId,
+        medicalStoreId: req.user.medicalStoreId,
+        isActive: true,
+      }).session(session);
+
+      if (!batch) {
+        await session.abortTransaction();
+        return res.status(404).json({ success: false, message: `Batch not found for: ${item.medicineName}` });
+      }
+      if (batch.expiryDate <= new Date()) {
+        await session.abortTransaction();
+        return res.status(400).json({ success: false, message: `Batch ${batch.batchNumber} of ${item.medicineName} is expired` });
+      }
+      if (batch.quantityRemaining < item.quantity) {
+        await session.abortTransaction();
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for ${item.medicineName}. Available: ${batch.quantityRemaining}, Requested: ${item.quantity}`,
+        });
+      }
+      batchDocs.push(batch);
+    }
+
+    // ✅ STEP 2: Create sale record
     const sale = await Sale.create([{
       medicalStoreId: req.user.medicalStoreId,
       billNumber,
-      customerId,
-      customerName,
-      customerPhone,
-      doctorId,
-      doctorName,
-      isPrescribed,
-      symptoms,
-      isRepeatCustomer,
+      customerId: customerId || null,
+      customerName: customerName || 'Walk-in Customer',
+      customerPhone: customerPhone || '',
+      doctorId: doctorId || null,
+      doctorName: doctorName || '',
+      isPrescribed: !!isPrescribed,
+      symptoms: symptoms || [],
+      isRepeatCustomer: !!isRepeatCustomer,
       totalItems: items.length,
-      subtotal,
-      discountType,
-      discountValue,
-      discountAmount,
-      taxableAmount,
-      cgstAmount: totalGst / 2,
-      sgstAmount: totalGst / 2,
-      totalGst,
-      roundOff,
-      grandTotal,
-      totalCost,
-      grossProfit,
-      netProfit,
-      paymentMode,
+      subtotal: parseFloat(subtotal) || 0,
+      discountType: discountType || 'NONE',
+      discountValue: effectiveDiscount,
+      discountAmount: parseFloat(discountAmount) || 0,
+      discountReason: discountReason || '',
+      taxableAmount: parseFloat(taxableAmount) || 0,
+      cgstAmount: (parseFloat(totalGst) || 0) / 2,
+      sgstAmount: (parseFloat(totalGst) || 0) / 2,
+      totalGst: parseFloat(totalGst) || 0,
+      roundOff: parseFloat(roundOff) || 0,
+      grandTotal: parseFloat(grandTotal) || 0,
+      totalCost: parseFloat(totalCost) || 0,
+      grossProfit: parseFloat(grossProfit) || 0,
+      netProfit: parseFloat(netProfit) || 0,
+      paymentMode: (paymentMode || 'CASH').toUpperCase(),
       paymentDetails: {
-        [paymentMode.toLowerCase()]: grandTotal,
+        [(paymentMode || 'CASH').toLowerCase()]: parseFloat(grandTotal) || 0,
       },
-      paymentStatus,
-      amountPaid,
-      balanceAmount: grandTotal - amountPaid,
+      paymentStatus: paymentStatus || 'PAID',
+      amountPaid: parseFloat(amountPaid) || parseFloat(grandTotal) || 0,
+      balanceAmount: Math.max(0, (parseFloat(grandTotal) || 0) - (parseFloat(amountPaid) || 0)),
       billedBy: req.user._id,
       billedByName: req.user.name,
-      notes,
+      notes: notes || '',
     }], { session });
     
-    // Create sale items and update stock
+    // ✅ STEP 3: Create sale items and update stock within transaction
     const saleItems = [];
     
-    for (const item of items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const batch = batchDocs[i];
+
+      const itemSubtotal = item.quantity * item.sellingPrice;
+      const discPct = parseFloat(item.discountPercent) || 0;
+      const itemDiscount = (itemSubtotal * discPct) / 100;
+      const itemTotalAmount = itemSubtotal - itemDiscount;
+      const itemCost = item.quantity * (item.purchasePrice || 0);
+      const itemProfit = itemTotalAmount - itemCost;
+
       // Create sale item
       const saleItem = await SaleItem.create([{
         medicalStoreId: req.user.medicalStoreId,
         saleId: sale[0]._id,
         medicineId: item.medicineId,
         medicineName: item.medicineName,
-        medicineDosage: item.medicineDosage,
-        medicineForm: item.medicineForm,
+        medicineDosage: item.medicineDosage || '',
+        medicineForm: item.medicineForm || '',
         batchId: item.batchId,
         batchNumber: item.batchNumber,
         expiryDate: item.expiryDate,
         quantity: item.quantity,
         mrp: item.mrp,
         sellingPrice: item.sellingPrice,
-        purchasePrice: item.purchasePrice,
-        discountPercent: item.discountPercent || 0,
-        gstRate: item.gstRate || 12,
-        subtotal: item.quantity * item.sellingPrice,
-        totalAmount: item.quantity * item.sellingPrice * (1 - (item.discountPercent || 0) / 100),
-        costAmount: item.quantity * item.purchasePrice,
-        profitAmount: (item.quantity * item.sellingPrice * (1 - (item.discountPercent || 0) / 100)) - (item.quantity * item.purchasePrice),
+        purchasePrice: item.purchasePrice || 0,
+        discountPercent: discPct,
+        gstRate: item.gstRate || 0,
+        subtotal: itemSubtotal,
+        totalAmount: itemTotalAmount,
+        costAmount: itemCost,
+        profitAmount: Math.max(0, itemProfit),
       }], { session });
       
       saleItems.push(saleItem[0]);
       
-      // Update batch stock
-      const batch = await MedicineBatch.findById(item.batchId).session(session);
-      if (batch) {
-        await batch.sell(item.quantity);
-      }
+      // ✅ Update batch stock within session using atomic operator
+      await MedicineBatch.findByIdAndUpdate(
+        item.batchId,
+        {
+          $inc: {
+            quantitySold: item.quantity,
+            quantityRemaining: -item.quantity,
+          },
+        },
+        { session, new: true }
+      );
       
-      // Update medicine stats
+      // Update medicine sales stats
       await Medicine.findByIdAndUpdate(
         item.medicineId,
         {
           $inc: {
             totalUnitsSold: item.quantity,
-            totalRevenue: item.quantity * item.sellingPrice,
-            totalProfit: saleItem[0].profitAmount,
+            totalRevenue: itemTotalAmount,
+            totalProfit: Math.max(0, itemProfit),
           },
         },
         { session }
       );
     }
     
-    // Update customer stats if exists
+    // ✅ STEP 4: Update customer stats if linked
     if (customerId) {
-      const customer = await Customer.findById(customerId).session(session);
-      if (customer) {
-        await customer.updateStatsAfterSale(grandTotal, netProfit, isPrescribed);
-      }
+      await Customer.findByIdAndUpdate(
+        customerId,
+        {
+          $inc: { totalPurchases: 1, totalSpent: parseFloat(grandTotal) || 0 },
+          $set: { lastVisit: new Date() },
+        },
+        { session }
+      );
     }
     
-    // Update doctor stats if exists
+    // Update doctor stats if linked
     if (doctorId) {
-      const doctor = await Doctor.findById(doctorId).session(session);
-      if (doctor) {
-        await doctor.updateStatsAfterSale(grandTotal);
-      }
+      await Doctor.findByIdAndUpdate(
+        doctorId,
+        {
+          $inc: { totalPrescriptions: 1, totalRevenue: parseFloat(grandTotal) || 0 },
+        },
+        { session }
+      );
     }
     
     await session.commitTransaction();
@@ -482,10 +543,17 @@ router.post('/:id/void', hasPermission(PERMISSIONS.DELETE_SALE), auditAction('UP
     const items = await SaleItem.find({ saleId: sale._id }).session(session);
     
     for (const item of items) {
-      const batch = await MedicineBatch.findById(item.batchId).session(session);
-      if (batch) {
-        await batch.returnStock(item.quantity);
-      }
+      // Restore batch stock atomically within the session
+      await MedicineBatch.findByIdAndUpdate(
+        item.batchId,
+        {
+          $inc: {
+            quantitySold: -item.quantity,
+            quantityRemaining: item.quantity,
+          },
+        },
+        { session }
+      );
     }
     
     // Update sale status

@@ -35,14 +35,14 @@ export const getDashboardSnapshot = async (req, res, next) => {
         $match: { 
           medicalStoreId, 
           createdAt: { $gte: startOfDay, $lte: endOfDay },
-          status: { $ne: 'CANCELLED' } 
+          status: { $ne: 'VOID' } 
         } 
       },
       {
         $group: {
           _id: null,
-          totalSales: { $sum: "$finalAmount" },
-          totalProfit: { $sum: "$profitAmount" },
+          totalSales: { $sum: "$grandTotal" },
+          totalProfit: { $sum: "$netProfit" },
           count: { $sum: 1 }
         }
       }
@@ -54,14 +54,14 @@ export const getDashboardSnapshot = async (req, res, next) => {
         $match: { 
           medicalStoreId, 
           createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-          status: { $ne: 'CANCELLED' } 
+          status: { $ne: 'VOID' } 
         } 
       },
       {
         $group: {
           _id: null,
-          totalSales: { $sum: "$finalAmount" },
-          totalProfit: { $sum: "$profitAmount" },
+          totalSales: { $sum: "$grandTotal" },
+          totalProfit: { $sum: "$netProfit" },
           count: { $sum: 1 }
         }
       }
@@ -73,14 +73,14 @@ export const getDashboardSnapshot = async (req, res, next) => {
         $match: {
           medicalStoreId,
           createdAt: { $gte: thirtyDaysAgo },
-          status: { $ne: 'CANCELLED' }
+          status: { $ne: 'VOID' }
         }
       },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          sales: { $sum: "$finalAmount" },
-          profit: { $sum: "$profitAmount" },
+          sales: { $sum: "$grandTotal" },
+          profit: { $sum: "$netProfit" },
           bills: { $sum: 1 }
         }
       },
@@ -153,7 +153,7 @@ export const getDashboardSnapshot = async (req, res, next) => {
     // 7. Recent Sales Activity
     const recentSales = await Sale.find({
       medicalStoreId,
-      status: { $ne: 'CANCELLED' } // Include VOID? Maybe not for activity stream
+      status: { $ne: 'VOID' } 
     })
     .sort({ createdAt: -1 })
     .limit(5)
