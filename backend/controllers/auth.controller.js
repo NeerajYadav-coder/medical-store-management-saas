@@ -717,3 +717,132 @@ export const getStaff = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * -----------------------
+ * UPDATE STAFF (OWNER ONLY)
+ * -----------------------
+ * PUT /api/v1/auth/staff/:id
+ */
+export const updateStaff = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, role, password, isActive } = req.body;
+
+    if (req.user.role !== 'OWNER') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only OWNER can update staff',
+      });
+    }
+
+    const staffUser = await User.findOne({
+      _id: id,
+      medicalStoreId: req.user.medicalStoreId,
+      role: { $in: ['STAFF', 'MANAGER'] },
+    });
+
+    if (!staffUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Staff member not found',
+      });
+    }
+
+    // Check if updated email/phone already exists in other users
+    if (email && email !== staffUser.email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(409).json({
+          success: false,
+          message: 'User with this email already exists',
+        });
+      }
+      staffUser.email = email;
+    }
+
+    if (phone && phone !== staffUser.phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) {
+        return res.status(409).json({
+          success: false,
+          message: 'User with this phone already exists',
+        });
+      }
+      staffUser.phone = phone;
+    }
+
+    if (name) staffUser.name = name;
+    
+    if (role) {
+      staffUser.role = role === 'MANAGER' ? 'MANAGER' : 'STAFF';
+      staffUser.permissions = role === 'MANAGER' ? ROLE_PERMISSIONS.MANAGER : ROLE_PERMISSIONS.STAFF;
+    }
+
+    if (password) {
+      staffUser.passwordHash = password; // pre-save hook will hash it automatically
+    }
+
+    if (typeof isActive === 'boolean') {
+      staffUser.isActive = isActive;
+    }
+
+    await staffUser.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Staff updated successfully',
+      staff: {
+        id: staffUser._id,
+        name: staffUser.name,
+        email: staffUser.email,
+        phone: staffUser.phone,
+        role: staffUser.role,
+        permissions: staffUser.permissions,
+        isActive: staffUser.isActive,
+        medicalStoreId: staffUser.medicalStoreId,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * -----------------------
+ * DELETE STAFF (OWNER ONLY)
+ * -----------------------
+ * DELETE /api/v1/auth/staff/:id
+ */
+export const deleteStaff = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (req.user.role !== 'OWNER') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only OWNER can delete staff',
+      });
+    }
+
+    const staffUser = await User.findOneAndDelete({
+      _id: id,
+      medicalStoreId: req.user.medicalStoreId,
+      role: { $in: ['STAFF', 'MANAGER'] },
+    });
+
+    if (!staffUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Staff member not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Staff deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};

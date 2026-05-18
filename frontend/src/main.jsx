@@ -15,6 +15,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '@context/AuthContext'
 import { StoreProvider } from '@context/StoreContext'
 import { UIProvider } from '@context/UIContext'
+import { Toaster } from 'react-hot-toast'
 import App from './App'
 import '@styles/global.css'
 
@@ -41,6 +42,7 @@ createRoot(document.getElementById('root')).render(
           <AuthProvider>
             <StoreProvider>
               <App />
+              <Toaster position="top-right" />
             </StoreProvider>
           </AuthProvider>
         </UIProvider>
