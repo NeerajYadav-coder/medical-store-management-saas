@@ -86,6 +86,7 @@ import {
 } from '../controllers/otp.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 import { ownerOnly } from '../middleware/role.middleware.js';
+import { auditAction } from '../middleware/audit.middleware.js';
 
 
 const router = express.Router();
@@ -105,7 +106,7 @@ router.get('/check-verification', checkVerification);
 router.post('/signup', signup);
 
 // Login
-router.post('/login', login);
+router.post('/login', auditAction('LOGIN', 'USER'), login);
 
 /**
  * -----------------------
@@ -125,15 +126,15 @@ router.post('/logout', protect, logout);
  * -----------------------
  */
 // Create new staff
-router.post('/staff', protect, ownerOnly, createStaff);
+router.post('/staff', protect, ownerOnly, auditAction('CREATE', 'USER'), createStaff);
 
 // Get list of staff
 router.get('/staff', protect, ownerOnly, getStaff);
 
 // Update staff member
-router.put('/staff/:id', protect, ownerOnly, updateStaff);
+router.put('/staff/:id', protect, ownerOnly, auditAction('UPDATE', 'USER'), updateStaff);
 
 // Delete staff member
-router.delete('/staff/:id', protect, ownerOnly, deleteStaff);
+router.delete('/staff/:id', protect, ownerOnly, auditAction('DELETE', 'USER'), deleteStaff);
 
 export default router;

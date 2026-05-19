@@ -50,6 +50,12 @@ const medicalStoreSchema = new mongoose.Schema(
       default: true,
     },
 
+    plan: {
+      type: String,
+      enum: ["FREE", "PREMIUM"],
+      default: "FREE",
+    },
+
     // Who created this store (OWNER user)
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
