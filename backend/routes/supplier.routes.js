@@ -7,6 +7,7 @@ import express from 'express';
 import Supplier from '../models/Supplier.js';
 import { protect } from '../middleware/auth.middleware.js';
 import { ownerOnly } from '../middleware/role.middleware.js';
+import { auditAction } from '../middleware/audit.middleware.js';
 
 const router = express.Router();
 
@@ -144,7 +145,7 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // Create supplier
-router.post('/', async (req, res, next) => {
+router.post('/', auditAction('CREATE', 'SUPPLIER'), async (req, res, next) => {
   try {
     const supplier = await Supplier.create({
       ...req.body,
@@ -161,7 +162,7 @@ router.post('/', async (req, res, next) => {
 });
 
 // Update supplier
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', auditAction('UPDATE', 'SUPPLIER'), async (req, res, next) => {
   try {
     const supplier = await Supplier.findOneAndUpdate(
       { _id: req.params.id, medicalStoreId: req.user.medicalStoreId },
@@ -213,7 +214,7 @@ router.patch('/:id/rating', async (req, res, next) => {
 });
 
 // Delete supplier (soft delete)
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', auditAction('DELETE', 'SUPPLIER'), async (req, res, next) => {
   try {
     const supplier = await Supplier.findOneAndUpdate(
       { _id: req.params.id, medicalStoreId: req.user.medicalStoreId },

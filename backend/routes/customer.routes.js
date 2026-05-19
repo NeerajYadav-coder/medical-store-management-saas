@@ -7,6 +7,7 @@ import express from 'express';
 import Customer from '../models/Customer.js';
 import { protect } from '../middleware/auth.middleware.js';
 import { ownerOnly } from '../middleware/role.middleware.js';
+import { auditAction } from '../middleware/audit.middleware.js';
 
 const router = express.Router();
 
@@ -154,7 +155,7 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // Create customer
-router.post('/', async (req, res, next) => {
+router.post('/', auditAction('CREATE', 'CUSTOMER'), async (req, res, next) => {
   try {
     const customer = await Customer.create({
       ...req.body,
@@ -171,7 +172,7 @@ router.post('/', async (req, res, next) => {
 });
 
 // Quick create customer (minimal data)
-router.post('/quick', async (req, res, next) => {
+router.post('/quick', auditAction('CREATE', 'CUSTOMER'), async (req, res, next) => {
   try {
     const { name, phone } = req.body;
     
@@ -206,7 +207,7 @@ router.post('/quick', async (req, res, next) => {
 });
 
 // Update customer
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', auditAction('UPDATE', 'CUSTOMER'), async (req, res, next) => {
   try {
     const customer = await Customer.findOneAndUpdate(
       { _id: req.params.id, medicalStoreId: req.user.medicalStoreId },
@@ -285,7 +286,7 @@ router.patch('/:id/credit-limit', async (req, res, next) => {
 });
 
 // Delete customer (soft delete)
-router.delete('/:id', ownerOnly, async (req, res, next) => {
+router.delete('/:id', ownerOnly, auditAction('DELETE', 'CUSTOMER'), async (req, res, next) => {
   try {
     const customer = await Customer.findOneAndUpdate(
       { _id: req.params.id, medicalStoreId: req.user.medicalStoreId },
