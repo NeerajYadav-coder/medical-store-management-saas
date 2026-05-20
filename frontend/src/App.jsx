@@ -47,7 +47,7 @@ import NotFound from '@pages/NotFound'
  * Redirects to login if not authenticated
  */
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, isInitialized, isLoadingUser } = useAuth()
+  const { isAuthenticated, isInitialized, isLoadingUser, user } = useAuth()
   const location = useLocation()
 
   // Show loader while checking auth
@@ -60,6 +60,13 @@ function ProtectedRoute({ children }) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />
   }
 
+  // If staff, restrict access ONLY to billing and purchase routes
+  if (user?.role === 'STAFF' && 
+      !location.pathname.startsWith('/dashboard/billing') && 
+      !location.pathname.startsWith('/dashboard/purchase')) {
+    return <Navigate to="/dashboard/billing" replace />
+  }
+
   return children
 }
 
@@ -68,7 +75,7 @@ function ProtectedRoute({ children }) {
  * Redirects to dashboard if already authenticated
  */
 function PublicRoute({ children }) {
-  const { isAuthenticated, isInitialized, isLoadingUser } = useAuth()
+  const { isAuthenticated, isInitialized, isLoadingUser, user } = useAuth()
 
   // Show loader while checking auth
   if (!isInitialized || isLoadingUser) {
@@ -77,6 +84,9 @@ function PublicRoute({ children }) {
 
   // Redirect to dashboard if already authenticated
   if (isAuthenticated) {
+    if (user?.role === 'STAFF') {
+      return <Navigate to="/dashboard/billing" replace />
+    }
     return <Navigate to={ROUTES.DASHBOARD} replace />
   }
 

@@ -90,7 +90,12 @@ export default function DashboardLayout() {
 
   // Filter nav items based on user role
   const filteredNavItems = SIDEBAR_NAV_ITEMS.filter(
-    (item) => !item.permission || hasPermission(item.permission)
+    (item) => {
+      if (user?.role === 'STAFF') {
+        return item.path === ROUTES.BILLING || item.path === ROUTES.PURCHASE
+      }
+      return !item.permission || hasPermission(item.permission)
+    }
   )
 
   return (
@@ -115,7 +120,7 @@ export default function DashboardLayout() {
       >
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-slate-700/50">
-          <Link to={ROUTES.DASHBOARD} className="flex items-center gap-3">
+          <Link to={user?.role === 'STAFF' ? ROUTES.BILLING : ROUTES.DASHBOARD} className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-brand-600 flex items-center justify-center">
               <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
@@ -135,16 +140,18 @@ export default function DashboardLayout() {
         </div>
 
         {/* Search */}
-        <div className="px-4 py-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search medicines..."
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            />
+        {user?.role !== 'STAFF' && (
+          <div className="px-4 py-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search medicines..."
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 px-4 pb-4 overflow-y-auto scrollbar-hide">
@@ -185,17 +192,19 @@ export default function DashboardLayout() {
         </nav>
 
         {/* Alerts Card */}
-        <div className="mx-4 mb-4 p-4 rounded-xl bg-gradient-to-br from-warning-500/20 to-warning-600/10 border border-warning-500/30">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-warning-500/20">
-              <AlertTriangle className="h-5 w-5 text-warning-500" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">5 items expiring soon</p>
-              <p className="text-xs text-slate-400 mt-1">Check inventory alerts</p>
+        {user?.role !== 'STAFF' && (
+          <div className="mx-4 mb-4 p-4 rounded-xl bg-gradient-to-br from-warning-500/20 to-warning-600/10 border border-warning-500/30">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-warning-500/20">
+                <AlertTriangle className="h-5 w-5 text-warning-500" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">5 items expiring soon</p>
+                <p className="text-xs text-slate-400 mt-1">Check inventory alerts</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* User Profile */}
         <div className="p-4 border-t border-slate-700/50">
@@ -244,50 +253,54 @@ export default function DashboardLayout() {
           {/* Right side */}
           <div className="flex items-center gap-2">
             {/* Quick Actions */}
-            <Button
-              variant="primary"
-              size="sm"
-              className="hidden sm:flex"
-              onClick={() => navigate(ROUTES.SALES_NEW)}
-            >
-              + New Sale
-            </Button>
+            {user?.role !== 'STAFF' && (
+              <Button
+                variant="primary"
+                size="sm"
+                className="hidden sm:flex"
+                onClick={() => navigate(ROUTES.SALES_NEW)}
+              >
+                + New Sale
+              </Button>
+            )}
 
             {/* Notifications */}
-            <div className="notifications-menu relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setIsNotificationsOpen(!isNotificationsOpen)
-                }}
-                className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-danger-500" />
-              </button>
+            {user?.role !== 'STAFF' && (
+              <div className="notifications-menu relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsNotificationsOpen(!isNotificationsOpen)
+                  }}
+                  className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+                >
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-danger-500" />
+                </button>
 
-              {/* Notifications dropdown */}
-              {isNotificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                {/* Notifications dropdown */}
+                {isNotificationsOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
+                          <p className="text-sm text-gray-900">Low stock alert for Paracetamol</p>
+                          <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="px-4 py-2 border-t border-gray-100">
+                      <button className="text-sm text-brand-600 hover:text-brand-700 font-medium">
+                        View all notifications
+                      </button>
+                    </div>
                   </div>
-                  <div className="max-h-72 overflow-y-auto">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                        <p className="text-sm text-gray-900">Low stock alert for Paracetamol</p>
-                        <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="px-4 py-2 border-t border-gray-100">
-                    <button className="text-sm text-brand-600 hover:text-brand-700 font-medium">
-                      View all notifications
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* User menu */}
             <div className="user-menu relative">
@@ -311,33 +324,35 @@ export default function DashboardLayout() {
                     <p className="font-medium text-gray-900">{user?.name}</p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
-                  <div className="py-1">
-                    <Link
-                      to={ROUTES.SETTINGS_USER}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <User className="h-4 w-4" />
-                      Profile Settings
-                    </Link>
-                    <Link
-                      to={ROUTES.SETTINGS_STORE}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <Store className="h-4 w-4" />
-                      Store Settings
-                    </Link>
-                    <button
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full"
-                    >
-                      <HelpCircle className="h-4 w-4" />
-                      Help & Support
-                    </button>
-                  </div>
-                  <div className="border-t border-gray-100 pt-1">
+                  {user?.role !== 'STAFF' && (
+                    <div className="py-1">
+                      <Link
+                        to={ROUTES.SETTINGS_USER}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <User className="h-4 w-4" />
+                        Profile Settings
+                      </Link>
+                      <Link
+                        to={ROUTES.SETTINGS_STORE}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <Store className="h-4 w-4" />
+                        Store Settings
+                      </Link>
+                      <button
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                        Help & Support
+                      </button>
+                    </div>
+                  )}
+                  <div className={cn("pt-1", user?.role !== 'STAFF' && "border-t border-gray-100")}>
                     <button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 w-full"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 w-full text-left"
                     >
                       {isLoggingOut ? (
                         <Spinner size="sm" />
