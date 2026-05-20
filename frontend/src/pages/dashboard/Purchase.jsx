@@ -48,13 +48,17 @@ import { Input, Select, SearchInput } from '@components/common/Input'
 import { Table, TablePagination } from '@components/common/Table'
 import { Modal } from '@components/common/Modal'
 import { Skeleton, SkeletonTableRows } from '@components/common/Loader'
+import { useStore } from '@context/StoreContext'
+import PremiumModal from '@components/common/PremiumModal'
 
 /**
  * Purchase Page Component
  */
 export default function Purchase() {
   const queryClient = useQueryClient()
+  const { store } = useStore()
   const [activeTab, setActiveTab] = useState('entry') // 'entry' or 'history'
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
 
   // --- Tab: HISTORY State ---
   const [historyPage, setHistoryPage] = useState(1)
@@ -110,6 +114,13 @@ export default function Purchase() {
     queryFn: () => supplierApi.getAll(),
   })
   const suppliers = suppliersResponse?.data || []
+
+  // Fetch medicines count for premium check
+  const { data: medicinesCountResponse } = useQuery({
+    queryKey: ['medicines-count'],
+    queryFn: () => medicineApi.getAll({ page: 1, limit: 1 }),
+  })
+  const totalMedicines = medicinesCountResponse?.pagination?.total || 0
 
   // Fetch History
   const { data: historyResponse, isLoading: isLoadingHistory } = useQuery({
@@ -521,8 +532,13 @@ export default function Purchase() {
                       <p className="text-gray-900 font-bold text-lg">Medicine Not Found</p>
                       <p className="text-sm text-gray-500 mb-6">"{medicineSearch}" is not in your master catalog.</p>
                       <Button size="lg" onClick={() => {
-                        setNewMedicine({ ...newMedicine, name: medicineSearch })
-                        setShowAddMedicineModal(true)
+                        const isFree = store?.plan !== 'PREMIUM'
+                        if (isFree && totalMedicines >= 100) {
+                          setIsUpgradeModalOpen(true)
+                        } else {
+                          setNewMedicine({ ...newMedicine, name: medicineSearch })
+                          setShowAddMedicineModal(true)
+                        }
                         setMedicineSearch('') // Clear search to hide this popup
                       }}>
                         <Plus className="h-4 w-4 mr-2" />
@@ -1081,10 +1097,22 @@ export default function Purchase() {
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="ghost" onClick={() => setShowAddMedicineModal(false)}>Cancel</Button>
-            <Button onClick={handleQuickAdd}>Save & Add to Bill</Button>
+            <Button onClick={() => {
+              const isFree = store?.plan !== 'PREMIUM'
+              if (isFree && totalMedicines >= 100) {
+                setIsUpgradeModalOpen(true)
+              } else {
+                handleQuickAdd()
+              }
+            }}>Save & Add to Bill</Button>
           </div>
         </div>
       </Modal>
+
+      <PremiumModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={() => setIsUpgradeModalOpen(false)} 
+      />
     </div>
   )
 }

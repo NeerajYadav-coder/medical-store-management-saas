@@ -31,6 +31,9 @@ import {
   Sun,
   HelpCircle,
   AlertTriangle,
+  Lock,
+  Building2,
+  FileText,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useAuth } from '@context/AuthContext'
@@ -50,13 +53,15 @@ const ICONS = {
   UserCog,
   BarChart3,
   Settings,
+  Building2,
+  FileText,
 }
 
 export default function DashboardLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout, isLoggingOut, hasPermission } = useAuth()
-  const { storeName } = useStore()
+  const { store, storeName } = useStore()
   const { isSidebarOpen, toggleSidebar, closeSidebar, isMobile } = useUI()
   const { isDarkMode, toggleTheme } = useTheme()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -148,6 +153,8 @@ export default function DashboardLayout() {
               const Icon = ICONS[item.icon]
               const isActive = location.pathname === item.path || 
                                (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
+              const isFree = store?.plan !== 'PREMIUM'
+              const isPremiumItem = item.path === ROUTES.REPORTS || item.path === ROUTES.AUDIT_LOGS
 
               return (
                 <li key={item.path}>
@@ -162,6 +169,9 @@ export default function DashboardLayout() {
                   >
                     {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
                     <span>{item.label}</span>
+                    {isFree && isPremiumItem && (
+                      <Lock className="ml-auto h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors" />
+                    )}
                     {item.badge && (
                       <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-danger-500 text-white">
                         3

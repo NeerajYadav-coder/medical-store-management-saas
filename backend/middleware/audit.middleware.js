@@ -16,17 +16,20 @@ export const auditAction = (action, entity) => {
       // Only log if success
       if (res.statusCode >= 200 && res.statusCode < 300) {
         try {
-          // Extract relevant details
+          const safeBody = { ...req.body };
+          if (safeBody.password) delete safeBody.password;
+          if (safeBody.passwordHash) delete safeBody.passwordHash;
+
           const logData = {
-            medicalStoreId: req.user?.medicalStoreId,
-            userId: req.user?._id,
+            medicalStoreId: req.user?.medicalStoreId || data?.user?.medicalStoreId || data?.medicalStoreId,
+            userId: req.user?._id || data?.user?.id,
             action,
             entityType: entity,
-            entityId: data?.data?._id || req.params.id, // Try to find ID from response or params
+            entityId: data?.data?._id || data?.staff?._id || data?.staff?.id || req.params.id || data?.user?.id,
             details: {
               method: req.method,
               url: req.originalUrl,
-              body: action === 'LOGIN' ? {} : req.body, // Don't log passwords
+              body: action === 'LOGIN' ? {} : safeBody,
               params: req.params,
               query: req.query,
             },

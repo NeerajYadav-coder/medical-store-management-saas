@@ -54,6 +54,28 @@ export function StoreProvider({ children }) {
     },
   })
 
+  // ==================== UPGRADE STORE MUTATION ====================
+  const upgradeStoreMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post('/store/me/upgrade')
+      return response
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(STORE_QUERY_KEY, data?.store || data)
+    },
+  })
+
+  // ==================== DOWNGRADE STORE MUTATION ====================
+  const downgradeStoreMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post('/store/me/downgrade')
+      return response
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(STORE_QUERY_KEY, data?.store || data)
+    },
+  })
+
   // ==================== COMPUTED VALUES ====================
   const canEditStore = user?.role === 'OWNER'
 
@@ -82,6 +104,12 @@ export function StoreProvider({ children }) {
     updateStore: updateStoreMutation.mutateAsync,
     isUpdatingStore: updateStoreMutation.isPending,
     updateStoreError: updateStoreMutation.error,
+
+    upgradeStore: upgradeStoreMutation.mutateAsync,
+    isUpgradingStore: upgradeStoreMutation.isPending,
+
+    downgradeStore: downgradeStoreMutation.mutateAsync,
+    isDowngradingStore: downgradeStoreMutation.isPending,
 
     // Permissions
     canEditStore,

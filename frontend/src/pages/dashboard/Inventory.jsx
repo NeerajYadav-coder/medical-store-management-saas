@@ -38,6 +38,8 @@ import { Modal, DeleteModal } from '@components/common/Modal'
 import { Skeleton, SkeletonTableRows } from '@components/common/Loader'
 import { useDebouncedSearch } from '@hooks/useDebounce'
 import { useAuth } from '@context/AuthContext'
+import { useStore } from '@context/StoreContext'
+import PremiumModal from '@components/common/PremiumModal'
 
 // Medicine form types matching backend enum
 const FORM_FILTERS = [
@@ -75,8 +77,10 @@ export default function Inventory() {
   const canManageInventory = hasPermission('MANAGE_INVENTORY')
 
   // State
+  const { store } = useStore()
   const [page, setPage] = useState(1)
   const [selectedMedicines, setSelectedMedicines] = useState([])
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, item: null })
   const [batchModal, setBatchModal] = useState({ isOpen: false, medicine: null })
 
@@ -311,7 +315,16 @@ export default function Inventory() {
             <Button variant="outline" size="sm" leftIcon={<Upload className="h-4 w-4" />}>
               Import
             </Button>
-            <Link to={ROUTES.INVENTORY_ADD}>
+            <Link 
+              to={ROUTES.INVENTORY_ADD}
+              onClick={(e) => {
+                const isFree = store?.plan !== 'PREMIUM'
+                if (isFree && stats.total >= 100) {
+                  e.preventDefault()
+                  setIsUpgradeModalOpen(true)
+                }
+              }}
+            >
               <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
                 Add Medicine
               </Button>
@@ -487,6 +500,11 @@ export default function Inventory() {
           setDeleteModal({ isOpen: false, item: null })
         }}
         itemName={deleteModal.item?.name}
+      />
+
+      <PremiumModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={() => setIsUpgradeModalOpen(false)} 
       />
     </div>
   )
