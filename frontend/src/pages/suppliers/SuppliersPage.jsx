@@ -13,6 +13,7 @@ import SupplierForm from '../../components/suppliers/SupplierForm';
 import supplierApi from '../../api/supplier.api';
 import toast from 'react-hot-toast';
 import { cn } from '../../lib/utils';
+import { exportToPDF } from '../../utils/exportPDF';
 
 // Stats card component
 const StatCard = ({ icon: Icon, label, value, subValue, color }) => (
@@ -147,6 +148,45 @@ export default function SuppliersPage() {
     return `₹${amount}`;
   };
 
+  const EXPORT_COLUMNS = [
+    { label: 'Vendor Code', key: 'vendorCode', align: 'center' },
+    { label: 'Supplier Name', key: 'name', align: 'left' },
+    { label: 'Phone', key: 'phone', align: 'left' },
+    { label: 'Email', key: 'email', align: 'left', format: (val) => val || '—' },
+    { label: 'Margin Cat.', key: 'marginCategory', align: 'center' },
+    { label: 'Rating', key: 'rating', align: 'center', format: (val) => val ? `${val} ★` : '—' },
+    { label: 'Total Purchases', key: 'totalPurchaseValue', align: 'right', format: (val) => val ? `₹${val.toLocaleString('en-IN')}` : '₹0' },
+    { label: 'Outstanding Credit', key: 'currentCredit', align: 'right', format: (val) => val ? `₹${val.toLocaleString('en-IN')}` : '₹0' }
+  ];
+
+  const handleExport = () => {
+    if (!suppliers.length) {
+      toast.error('No supplier records to export');
+      return;
+    }
+    
+    try {
+      exportToPDF(
+        suppliers,
+        EXPORT_COLUMNS,
+        {
+          title: 'Supplier Registry Report',
+          subtitle: `Active Vendors Ledger · Filter: ${filter || 'ALL'}`,
+          summaryCards: [
+            { label: 'Total Suppliers', value: stats.total.toString() },
+            { label: 'High Margin Count', value: stats.highMargin.toString() },
+            { label: 'Total Purchase Vol', value: `₹${stats.totalPurchases.toLocaleString('en-IN')}` },
+            { label: 'Total Credit Due', value: `₹${stats.totalCredit.toLocaleString('en-IN')}` }
+          ]
+        }
+      );
+      toast.success(`Successfully generated PDF report.`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export suppliers PDF.');
+    }
+  };
+
   const FILTERS = [
     { value: 'ALL', label: 'All Suppliers' },
     { value: 'HIGH', label: 'High Margin' },
@@ -227,7 +267,7 @@ export default function SuppliersPage() {
           ))}
         </div>
 
-        <Button variant="outline">
+        <Button variant="outline" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>

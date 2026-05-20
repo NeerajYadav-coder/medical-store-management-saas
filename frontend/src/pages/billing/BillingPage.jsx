@@ -364,8 +364,39 @@ export default function BillingPage() {
     WinPrint.close();
   };
 
+  const handleQuickItemClick = async (item) => {
+    if (item.name === 'paracetamol' || item.name === 'cough syrup') {
+      const query = item.name;
+      try {
+        const response = await medicineApi.searchWithStock(query);
+        const results = Array.isArray(response) ? response : (response?.data || []);
+        if (results.length > 0) {
+          addToCart(results[0]);
+        } else {
+          toast.error(`No stock available for ${query}`);
+        }
+      } catch (error) {
+        console.error('Error adding quick item:', error);
+      }
+    } else {
+      const matchMap = {
+        'Headache': { _id: 'headache', displayName: 'Headache' },
+        'Stomach Ache': { _id: 'stomach', displayName: 'Stomach' }
+      };
+      const match = matchMap[item.name];
+      if (match) {
+        const isSelected = symptoms.some(s => s.symptomId === match._id);
+        if (isSelected) {
+          setSymptoms(symptoms.filter(s => s.symptomId !== match._id));
+        } else if (symptoms.length < 3) {
+          setSymptoms([...symptoms, { symptomId: match._id, symptomName: match.displayName }]);
+        }
+      }
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden font-sans">
       {/* Bill Success Modal */}
       {showSuccessModal && lastBill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -455,44 +486,47 @@ export default function BillingPage() {
         </div>
       )}
 
-      {/* Main Content - Left Side */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-20 bg-white/90 backdrop-blur-md border-b border-gray-200/50 px-8 flex items-center justify-between shrink-0 sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
-              <ShoppingCart className="h-5 w-5 text-white" />
+      {/* Header */}
+      <header className="h-16 bg-white px-8 flex items-center justify-between shrink-0 border-b border-gray-100 shadow-sm">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Billing (POS)</h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={resetForm}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Sale
+          </button>
+          <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-danger-500 rounded-full animate-pulse" />
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-base shadow-sm">
+              {user?.name ? user.name[0].toUpperCase() : 'W'}
             </div>
-            <div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Point of Sale</h1>
-              <p className="text-xs font-medium text-gray-500 flex items-center gap-1.5 mt-0.5">
-                <span>Bill No:</span>
-                <span className="font-mono bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-[10px] tracking-wider">{billNumber}</span>
+            <div className="text-left leading-none">
+              <p className="text-sm font-bold text-gray-800 capitalize">{user?.name || 'Weiyz'}</p>
+              <p className="text-[10px] text-gray-400 mt-1">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
               </p>
             </div>
           </div>
+        </div>
+      </header>
 
-          <div className="flex items-center gap-6 bg-gray-50 px-5 py-2.5 rounded-2xl border border-gray-100 shadow-inner">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-brand-500" />
-              <span className="text-sm font-bold text-gray-700">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-            <div className="h-5 w-px bg-gray-200" />
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6 bg-brand-100 rounded-full flex items-center justify-center border border-brand-200">
-                <User className="h-3 w-3 text-brand-600" />
-              </div>
-              <span className="text-sm font-bold text-gray-700 capitalize">{user?.name}</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Product Search */}
-        <div className="p-6 shrink-0 bg-white border-b border-gray-100 shadow-sm relative z-20">
-          <div className="relative max-w-3xl mx-auto">
-            <div className="absolute left-5 top-1/2 -translate-y-1/2 h-8 w-8 bg-brand-50 rounded-lg flex items-center justify-center">
-              <Search className="h-4 w-4 text-brand-600" />
-            </div>
+      {/* Main Grid Content */}
+      <div className="flex-1 grid grid-cols-[1.3fr_1.2fr_300px] gap-6 p-6 h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
+        
+        {/* Column 1: Billing Inputs Card */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col h-full overflow-y-auto space-y-6">
+          {/* Product Search */}
+          <div className="relative" ref={searchRef}>
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-brand-600" />
             <input
               ref={searchInputRef}
               type="text"
@@ -500,27 +534,18 @@ export default function BillingPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchQuery.length >= 2 && setShowResults(true)}
-              className={cn(
-                'w-full pl-16 pr-6 py-5 rounded-2xl border-2 transition-all bg-gray-50 hover:bg-white',
-                'text-lg font-medium placeholder:text-gray-400 placeholder:font-normal',
-                'focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 focus:bg-white',
-                showResults ? 'border-brand-500 rounded-b-none shadow-xl' : 'border-gray-200 shadow-sm'
-              )}
+              className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm font-medium shadow-sm transition-all"
             />
-
-            {/* Search Results */}
+            {/* Search results dropdown */}
             {showResults && searchQuery.length >= 2 && (
-              <div
-                ref={searchRef}
-                className="absolute top-full left-0 right-0 z-50 bg-white border-2 border-brand-500 border-t-0 rounded-b-xl shadow-xl max-h-[60vh] overflow-auto"
-              >
+              <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-[40vh] overflow-y-auto">
                 {loadingMedicines ? (
-                  <div className="p-8 text-center text-gray-500">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                  <div className="p-6 text-center text-gray-500">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-brand-600" />
                     Searching stock...
                   </div>
                 ) : searchResults.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
+                  <div className="p-6 text-center text-gray-500">
                     No medicine found with available stock
                   </div>
                 ) : (
@@ -531,44 +556,23 @@ export default function BillingPage() {
                       onClick={() => addToCart(medicine)}
                       disabled={medicine.availableQty <= 0}
                       className={cn(
-                        "w-full flex items-center justify-between p-4 transition-colors border-b border-gray-100 last:border-0 text-left",
+                        "w-full flex items-center justify-between p-3.5 transition-colors border-b border-gray-50 last:border-0 text-left",
                         medicine.availableQty <= 0 ? "opacity-60 cursor-not-allowed bg-gray-50" : "hover:bg-brand-50"
                       )}
                     >
                       <div>
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-semibold text-gray-900 text-sm">
                           {medicine.name} {medicine.dosage}
                         </h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
-                            Batch: {medicine.batchNumber}
-                          </span>
-                          {medicine.availableQty > 0 && (
-                            <span className={cn(
-                              'text-xs px-2 py-0.5 rounded',
-                              new Date(medicine.expiryDate) < new Date(Date.now() + 90 * 24 * 60 * 60000)
-                                ? 'bg-red-100 text-red-600'
-                                : 'bg-green-100 text-green-600'
-                            )}>
-                              Exp: {new Date(medicine.expiryDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
-                            </span>
-                          )}
-                        </div>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          Batch: {medicine.batchNumber} · Exp: {new Date(medicine.expiryDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                        </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-gray-900">
+                        <p className="text-sm font-bold text-gray-900">
                           {formatCurrency(medicine.sellingPrice)}
                         </p>
-                        {medicine.availableQty > 0 ? (
-                          <p className={cn(
-                            'text-xs font-medium',
-                            medicine.availableQty < 10 ? 'text-red-500' : 'text-gray-500'
-                          )}>
-                            Stock: {medicine.availableQty}
-                          </p>
-                        ) : (
-                          <p className="text-xs font-bold text-red-500 mt-0.5">OUT OF STOCK</p>
-                        )}
+                        <p className="text-[10px] text-gray-500">Stock: {medicine.availableQty}</p>
                       </div>
                     </button>
                   ))
@@ -576,143 +580,18 @@ export default function BillingPage() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* Cart Panel */}
-        {/* Cart Panel */}
-        <div className="flex-1 overflow-auto p-6 bg-gray-50/50">
-          {cartItems.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400 animate-in fade-in duration-500">
-              <div className="h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                <ShoppingCart className="h-10 w-10 text-gray-300" />
-              </div>
-              <p className="text-xl font-bold text-gray-600">Cart is empty</p>
-              <p className="text-sm mt-2">Search and add medicines to start billing</p>
-            </div>
-          ) : (
-            <div className="space-y-4 max-w-4xl mx-auto">
-              <div className="flex items-center justify-between mb-2 px-2">
-                <h3 className="font-bold text-gray-700">Current Order ({cartItems.length} items)</h3>
-                <button
-                  onClick={() => setCartItems([])}
-                  className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Clear Cart
-                </button>
-              </div>
-
-              {cartItems.map((item, index) => (
-                <div
-                  key={`${item.medicineId}-${item.batchId}`}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow group relative overflow-hidden"
-                >
-                  {/* Decorative Side Bar */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-l-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        {item.medicineName} {item.medicineDosage}
-                      </h4>
-                      <p className="text-xs font-medium text-gray-500 mt-1 flex items-center gap-2">
-                        <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-600">Batch: {item.batchNumber}</span>
-                        <span>Exp: {new Date(item.expiryDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFromCart(index)}
-                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
-                    {/* Quantity Control */}
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(index, item.quantity - 1)}
-                          className="p-2 hover:bg-gray-50 text-gray-600 border-r border-gray-200 transition-colors"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
-                          className="w-14 text-center py-2 focus:outline-none text-base font-bold text-brand-700"
-                          min="1"
-                          max={item.availableQty}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(index, item.quantity + 1)}
-                          className="p-2 hover:bg-gray-50 text-gray-600 border-l border-gray-200 transition-colors"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <span className="text-xs font-medium text-gray-400">
-                        of {item.availableQty} in stock
-                      </span>
-                    </div>
-
-                    {/* Item Discount & Total */}
-                    <div className="flex items-center gap-6">
-                      <div className="flex flex-col items-end">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Discount %</label>
-                        <input
-                          type="number"
-                          value={item.discountPercent}
-                          onChange={(e) => updateItemDiscount(index, parseFloat(e.target.value) || 0)}
-                          className="w-16 px-2 py-1 rounded-md border border-gray-200 text-sm font-medium text-center focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-                          min="0"
-                          max="100"
-                        />
-                      </div>
-
-                      <div className="text-right min-w-[100px]">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Item Total</p>
-                        <p className="text-xl font-black text-gray-900">
-                          {formatCurrency(item.quantity * item.sellingPrice * (1 - item.discountPercent / 100))}
-                        </p>
-                        {item.discountPercent > 0 && (
-                          <p className="text-xs text-gray-400 line-through font-medium">
-                            {formatCurrency(item.quantity * item.sellingPrice)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Right Panel - Customer & Payment */}
-      <div className="w-96 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-6 space-y-6">
           {/* Customer Selection */}
           <CustomerSelector
             selected={customer}
             onChange={setCustomer}
           />
 
-          <hr className="border-gray-100" />
-
           {/* Doctor Selection */}
           <DoctorSelector
             selected={doctor}
             onChange={setDoctor}
           />
-
-          <hr className="border-gray-100" />
 
           {/* Symptom Selection */}
           <SymptomSelector
@@ -722,36 +601,27 @@ export default function BillingPage() {
 
           <hr className="border-gray-100" />
 
-          {/* Billing Details */}
+          {/* Payment Summary */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-gray-800 uppercase tracking-widest">
               Payment Summary
             </h3>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Subtotal</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-gray-500 font-medium">Subtotal</span>
+                <span className="font-bold text-gray-900">
                   {formatCurrency(totals.subtotal)}
                 </span>
               </div>
 
-              {totals.itemDiscount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Item Discounts</span>
-                  <span className="font-medium text-green-600">
-                    -{formatCurrency(totals.itemDiscount)}
-                  </span>
-                </div>
-              )}
-
               <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-gray-500 whitespace-nowrap">Bill Discount</span>
+                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Bill Discount</span>
                 <div className="flex items-center gap-2">
                   <select
                     value={discountType}
                     onChange={(e) => setDiscountType(e.target.value)}
-                    className="text-xs border border-gray-200 rounded px-1 py-1"
+                    className="text-xs border border-gray-200 rounded px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-brand-500"
                   >
                     <option value="NONE">None</option>
                     <option value="PERCENTAGE">%</option>
@@ -762,22 +632,22 @@ export default function BillingPage() {
                     value={discountValue}
                     onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
                     placeholder="0"
-                    className="w-16 text-right text-sm border-b border-gray-200 focus:border-brand-500 outline-none"
+                    className="w-16 text-right text-sm border-b border-gray-200 focus:border-brand-500 outline-none pb-0.5"
                     min="0"
                   />
                 </div>
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Taxable Amount</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-gray-500 font-medium">Taxable Amount</span>
+                <span className="font-bold text-gray-900">
                   {formatCurrency(totals.taxableAmount)}
                 </span>
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Total GST (12%)</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-gray-500 font-medium">Total GST (12%)</span>
+                <span className="font-bold text-gray-900">
                   {formatCurrency(totals.totalGst)}
                 </span>
               </div>
@@ -788,89 +658,170 @@ export default function BillingPage() {
               </div>
             </div>
           </div>
+        </div>
 
-          <hr className="border-gray-100" />
+        {/* Column 2: Transaction Cart Card */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col h-full overflow-hidden">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50 shrink-0">
+            <div className="h-10 w-10 bg-brand-100 text-brand-600 rounded-xl flex items-center justify-center">
+              <ShoppingCart className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-900 text-base">Transaction Cart</h2>
+              <p className="text-xs text-gray-400">{cartItems.length} items added</p>
+            </div>
+            {cartItems.length > 0 && (
+              <button
+                onClick={() => setCartItems([])}
+                className="ml-auto text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1 rounded transition-all"
+              >
+                Clear Cart
+              </button>
+            )}
+          </div>
 
-          {/* Payment Method */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">Payment Method</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: 'cash', label: 'Cash', icon: Banknote },
-                { id: 'upi', label: 'UPI', icon: Smartphone },
-                { id: 'card', label: 'Card', icon: CreditCard },
-              ].map((method) => (
-                <button
-                  key={method.id}
-                  onClick={() => setPaymentMethod(method.id)}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all',
-                    paymentMethod === method.id
-                      ? 'bg-brand-600 border-brand-600 text-white shadow-md'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-brand-200'
-                  )}
+          {/* Cart Content Area (Scrollable) */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {cartItems.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-400 py-12">
+                <div className="h-20 w-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100 shadow-inner">
+                  <ShoppingCart className="h-8 w-8 text-gray-300" />
+                </div>
+                <p className="text-sm font-bold text-gray-600">Cart is empty</p>
+                <p className="text-xs text-gray-400 mt-1">Search or scan items to add</p>
+              </div>
+            ) : (
+              cartItems.map((item, index) => (
+                <div
+                  key={`${item.medicineId}-${item.batchId}`}
+                  className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-brand-200 transition-all group"
                 >
-                  <method.icon className="h-4 w-4" />
-                  {method.label}
-                </button>
-              ))}
+                  <div className="h-10 w-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-lg shrink-0">
+                    {item.medicineName.toLowerCase().includes('syrup') ? '🧪' : '💊'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate capitalize">{item.medicineName} {item.medicineDosage}</p>
+                    <p className="text-[10px] text-gray-400">Batch: {item.batchNumber} · Exp: {new Date(item.expiryDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</p>
+                  </div>
+                  <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(index, item.quantity - 1)}
+                      className="p-1.5 hover:bg-gray-50 text-gray-600 transition-colors"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="text-xs font-bold text-gray-800 w-6 text-center">{item.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(index, item.quantity + 1)}
+                      className="p-1.5 hover:bg-gray-50 text-gray-600 transition-colors"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="min-w-[60px] text-right text-sm font-bold text-gray-900 shrink-0">
+                    {formatCurrency(item.quantity * item.sellingPrice * (1 - item.discountPercent / 100))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFromCart(index)}
+                    className="p-1.5 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Current Cart Total Row */}
+          <div className="p-4 border-t border-gray-100 flex items-center justify-center bg-gray-50/50 shrink-0">
+            <span className="text-sm font-semibold text-gray-600">Current Cart Total: {formatCurrency(totals.subtotal - totals.totalDiscount)}</span>
+          </div>
+
+          {/* Checkout Area (Footer) */}
+          <div className="p-4 bg-[#1e1b4b] text-white space-y-4 shrink-0">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider opacity-85">GRAND TOTAL</span>
+              <span className="text-3xl font-black text-white">{formatCurrency(totals.grandTotal)}</span>
+            </div>
+
+            {user?.role === 'OWNER' && totals.netProfit > 0 && (
+              <div className="flex justify-between text-[11px] font-medium px-2.5 py-1.5 bg-white/10 rounded-lg">
+                <span className="opacity-80">Estimated Profit</span>
+                <span className="text-green-400">+{formatCurrency(totals.netProfit)}</span>
+              </div>
+            )}
+
+            <button
+              onClick={processSale}
+              disabled={processing || cartItems.length === 0}
+              className="w-full py-3.5 bg-brand-600 hover:bg-brand-500 disabled:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all"
+            >
+              {processing ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Receipt className="h-5 w-5" />
+              )}
+              Complete Sale
+            </button>
+
+            {/* Print & Whatsapp Action shortcuts */}
+            <div className="flex gap-2 text-xs">
+              <button
+                onClick={handlePrint}
+                disabled={!lastBill}
+                className="flex-1 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-30 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print Receipt
+              </button>
+              <button
+                onClick={() => {
+                  if (!lastBill) return;
+                  const text = `Hi ${lastBill.customerName}, your receipt from ${user?.medicalStoreId?.name || 'our pharmacy'} is ready. Amount: ${formatCurrency(lastBill.grandTotal)}.`;
+                  window.open(`https://wa.me/${lastBill.customerPhone}?text=${encodeURIComponent(text)}`);
+                }}
+                disabled={!lastBill || !lastBill.customerPhone}
+                className="flex-1 py-2 bg-green-600/40 hover:bg-green-600/60 disabled:opacity-30 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Send className="h-3.5 w-3.5" />
+                WhatsApp
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Total & Checkout */}
-        <div className="p-6 bg-brand-900 text-white border-t border-brand-800 space-y-5">
-          <div className="flex items-center justify-between opacity-90">
-            <span className="font-semibold uppercase tracking-wider text-xs">Grand Total</span>
-            <span className="text-4xl font-black text-brand-50">
-              {formatCurrency(totals.grandTotal)}
-            </span>
-          </div>
-
-          {/* Profit indicator (owner only) */}
-          {user?.role === 'OWNER' && totals.netProfit > 0 && (
-            <div className="flex justify-between text-xs font-medium px-3 py-2 bg-brand-800/50 rounded-lg border border-brand-700/50">
-              <span className="opacity-80">Estimated Profit</span>
-              <span className="text-green-400">+{formatCurrency(totals.netProfit)}</span>
-            </div>
-          )}
-
-          <Button
-            size="lg"
-            className="w-full h-14 text-lg font-black bg-brand-500 hover:bg-brand-400 text-white shadow-lg border-none"
-            onClick={processSale}
-            isLoading={processing}
-            disabled={cartItems.length === 0}
-          >
-            <Receipt className="h-5 w-5 mr-2 opacity-80" />
-            Complete Sale
-          </Button>
-
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handlePrint}
-              className="flex-1 bg-brand-800/50 border-brand-700/50 text-brand-50 hover:bg-brand-800 hover:text-white hover:border-brand-600"
-              disabled={!lastBill}
-            >
-              <Printer className="h-4 w-4 mr-2 opacity-70" />
-              Print
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (!lastBill) return;
-                const text = `Hi ${lastBill.customerName}, your bill from ${user?.medicalStoreId?.name || 'our store'} is ready. Total: ${formatCurrency(lastBill.grandTotal)}. View here: ${window.location.origin}/invoice/${lastBill._id}`;
-                window.open(`https://wa.me/${lastBill.customerPhone}?text=${encodeURIComponent(text)}`);
-              }}
-              className="flex-1 bg-green-900/40 border-green-800/40 text-green-50 hover:bg-green-800/60 hover:text-white hover:border-green-600"
-              disabled={!lastBill || !lastBill.customerPhone}
-            >
-              <Send className="h-4 w-4 mr-2 opacity-70" />
-              WhatsApp
-            </Button>
+        {/* Column 3: Quick Add Side Bar */}
+        <div className="bg-[#f1f5f9] p-6 flex flex-col gap-4 overflow-y-auto rounded-2xl border border-gray-200 shadow-sm h-full">
+          <div className="flex flex-col gap-3">
+            {[
+              { name: 'paracetamol', label: 'paracetamol', icon: '💊', color: 'bg-blue-100 text-blue-700' },
+              { name: 'cough syrup', label: 'cough syrup', icon: '🧪', color: 'bg-red-100 text-red-700' },
+              { name: 'Headache', label: 'Headache', icon: '💆', color: 'bg-yellow-100 text-yellow-700' },
+              { name: 'Stomach Ache', label: 'Stomach Ache', icon: '🤢', color: 'bg-green-100 text-green-700' },
+            ].map((item) => (
+              <button
+                key={item.name}
+                type="button"
+                onClick={() => handleQuickItemClick(item)}
+                className="flex items-center gap-3 p-3 bg-white hover:bg-brand-50 border border-gray-200 hover:border-brand-300 rounded-xl transition-all shadow-sm group text-left"
+              >
+                <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center text-lg", item.color)}>
+                  {item.icon}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-800 group-hover:text-brand-700 capitalize">
+                    {item.label}
+                  </p>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
+
       </div>
     </div>
   );

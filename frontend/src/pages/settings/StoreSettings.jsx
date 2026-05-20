@@ -7,7 +7,7 @@
  * - Preferences
  */
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import {
   Building2,
@@ -45,6 +45,15 @@ export default function StoreSettings() {
   } = useStore()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('profile')
+  const fileInputRef = useRef(null)
+  const [logoBase64, setLogoBase64] = useState(store?.logo || '')
+
+  // Reset logo state if store changes
+  useEffect(() => {
+    if (store?.logo) {
+      setLogoBase64(store.logo)
+    }
+  }, [store])
 
   const { register, handleSubmit, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -58,9 +67,40 @@ export default function StoreSettings() {
     },
   })
 
+  const handleLogoChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image size must be less than 2MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setLogoBase64(reader.result)
+    }
+    reader.onerror = () => {
+      toast.error('Failed to read image file')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveLogo = () => {
+    setLogoBase64('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const hasChanges = isDirty || logoBase64 !== (store?.logo || '')
+
   const onSubmit = async (data) => {
     try {
-      await updateStore(data)
+      await updateStore({
+        ...data,
+        logo: logoBase64
+      })
       toast.success('Store settings updated successfully')
     } catch (error) {
       toast.error(error.message || 'Failed to update settings')
@@ -112,13 +152,47 @@ export default function StoreSettings() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Store Logo</h3>
             <div className="flex items-center gap-6">
-              <div className="h-24 w-24 rounded-xl bg-brand-100 flex items-center justify-center">
-                <Building2 className="h-12 w-12 text-brand-600" />
+              <div className="h-24 w-24 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center relative group">
+                {logoBase64 ? (
+                  <img
+                    src={logoBase64}
+                    alt="Store Logo"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Building2 className="h-12 w-12 text-gray-400" />
+                )}
               </div>
               <div>
-                <Button variant="outline" size="sm" leftIcon={<Upload className="h-4 w-4" />}>
-                  Upload Logo
-                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleLogoChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Upload className="h-4 w-4" />}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Upload Logo
+                  </Button>
+                  {logoBase64 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-danger-600 hover:text-danger-700 hover:bg-danger-50"
+                      onClick={handleRemoveLogo}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500 mt-2">
                   PNG, JPG up to 2MB. Recommended: 200x200px
                 </p>
@@ -195,7 +269,7 @@ export default function StoreSettings() {
             <Button
               type="submit"
               isLoading={isUpdatingStore}
-              disabled={!isDirty}
+              disabled={!hasChanges}
               leftIcon={<Save className="h-4 w-4" />}
             >
               Save Changes

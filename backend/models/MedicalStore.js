@@ -44,6 +44,13 @@ const medicalStoreSchema = new mongoose.Schema(
       sparse: true, // allows null but unique if present
     },
 
+    logo: {
+      type: String,
+    },
+    website: {
+      type: String,
+      trim: true,
+    },
     // System control
     isActive: {
       type: Boolean,

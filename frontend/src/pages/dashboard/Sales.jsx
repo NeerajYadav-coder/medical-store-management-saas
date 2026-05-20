@@ -382,7 +382,7 @@ export default function Sales() {
                 <Button 
                     variant="primary" 
                     leftIcon={<Download className="h-4 w-4" />}
-                    disabled
+                    onClick={() => handlePrint(viewInvoice)}
                 >
                 Download PDF
                 </Button>

@@ -20,6 +20,8 @@ import { cn } from '@utils/cn'
 import { useStore } from '@context/StoreContext'
 import PremiumLockOverlay from '@components/common/PremiumLockOverlay'
 import PremiumModal from '@components/common/PremiumModal'
+import { exportToPDF } from '@utils/exportPDF'
+import toast from 'react-hot-toast'
 
 export default function ActivityLogs() {
   const { user } = useAuth()
@@ -52,6 +54,53 @@ export default function ActivityLogs() {
       currency: 'INR',
       maximumFractionDigits: 0
     }).format(amount)
+  }
+
+  const handleExport = async () => {
+    const toastId = toast.loading('Preparing Activity Logs PDF...')
+    try {
+      const response = await auditApi.getLogs({
+        page: 1,
+        limit: 10000,
+        ...filters
+      })
+      const allLogs = response?.data || []
+      if (!allLogs.length) {
+        toast.error('No activity logs found to export.', { id: toastId })
+        return
+      }
+
+      const createCount = allLogs.filter(l => l.action === 'CREATE').length;
+      const updateCount = allLogs.filter(l => l.action === 'UPDATE').length;
+      const deleteCount = allLogs.filter(l => l.action === 'DELETE').length;
+
+      exportToPDF(
+        allLogs,
+        [
+          { label: 'Timestamp', key: 'createdAt', align: 'center', format: (val) => val ? new Date(val).toLocaleString('en-IN') : '—' },
+          { label: 'User Name', key: 'userId.name', align: 'left', format: (val) => val || 'System' },
+          { label: 'User Role', key: 'userId.role', align: 'center', format: (val) => val || 'SYSTEM' },
+          { label: 'Action', key: 'action', align: 'center' },
+          { label: 'Entity', key: 'entity', align: 'center' },
+          { label: 'Method', key: 'details.method', align: 'center', format: (val) => val || '—' },
+          { label: 'Details', key: 'details.url', align: 'left', format: (val) => val || '—' }
+        ],
+        {
+          title: 'System Activity Logs',
+          subtitle: `Comprehensive Audit Trail Ledger · Filtered Logs`,
+          summaryCards: [
+            { label: 'Total Operations', value: allLogs.length.toString() },
+            { label: 'Data Creations', value: createCount.toString() },
+            { label: 'Data Updates', value: updateCount.toString() },
+            { label: 'Data Deletions', value: deleteCount.toString() }
+          ]
+        }
+      )
+      toast.success(`Successfully generated Activity Logs PDF.`, { id: toastId })
+    } catch (error) {
+      console.error('Export failed:', error)
+      toast.error('Failed to export activity logs PDF.', { id: toastId })
+    }
   }
 
   const getActionBadge = (action) => {
@@ -223,7 +272,7 @@ export default function ActivityLogs() {
             <Button variant="outline" leftIcon={<Filter className="h-4 w-4" />}>
               Filter
             </Button>
-            <Button variant="outline" leftIcon={<Download className="h-4 w-4" />}>
+            <Button variant="outline" onClick={handleExport} leftIcon={<Download className="h-4 w-4" />}>
               Export
             </Button>
           </div>
