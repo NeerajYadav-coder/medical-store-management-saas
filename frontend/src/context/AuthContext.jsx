@@ -140,7 +140,9 @@ export function AuthProvider({ children }) {
       }
       
       // Navigate to intended destination or dashboard
-      const from = location.state?.from?.pathname || ROUTES.DASHBOARD
+      const from = userData?.role === 'STAFF'
+        ? '/dashboard/billing'
+        : (location.state?.from?.pathname || ROUTES.DASHBOARD)
       navigate(from, { replace: true })
       
       return userData

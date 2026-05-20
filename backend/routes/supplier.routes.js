@@ -6,15 +6,19 @@
 import express from 'express';
 import Supplier from '../models/Supplier.js';
 import { protect } from '../middleware/auth.middleware.js';
+<<<<<<< HEAD
 import { ownerOnly } from '../middleware/role.middleware.js';
 import { auditAction } from '../middleware/audit.middleware.js';
+=======
+import { ownerOrStaff } from '../middleware/role.middleware.js';
+>>>>>>> 7772a34 (Fix:billing)
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(protect);
-// Strict: Suppliers are Owner-only business
-router.use(ownerOnly);
+// Suppliers are Owner and Staff business
+router.use(ownerOrStaff);
 
 // Get all suppliers
 router.get('/', async (req, res, next) => {
