@@ -20,6 +20,9 @@ import {
   Globe,
   Clock,
   IndianRupee,
+  Crown,
+  Check,
+  AlertTriangle,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useStore } from '@context/StoreContext'
@@ -31,7 +34,15 @@ import { Input, Textarea, Select } from '@components/common/Input'
  * Store Settings Page (Owner Only)
  */
 export default function StoreSettings() {
-  const { store, updateStore, isUpdatingStore } = useStore()
+  const { 
+    store, 
+    updateStore, 
+    isUpdatingStore,
+    upgradeStore,
+    isUpgradingStore,
+    downgradeStore,
+    isDowngradingStore
+  } = useStore()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('profile')
 
@@ -254,17 +265,119 @@ export default function StoreSettings() {
       {/* Billing Tab */}
       {activeTab === 'billing' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Plan</h3>
-            <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 text-white">
-              <div>
-                <p className="text-brand-100">Current Plan</p>
-                <p className="text-2xl font-bold">Professional</p>
-                <p className="text-sm text-brand-200 mt-1">Unlimited medicines, 5 staff accounts</p>
-              </div>
-              <Button variant="secondary" className="bg-white text-brand-600 hover:bg-brand-50">
-                Upgrade
-              </Button>
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-gray-150 bg-gray-50/50">
+              <h3 className="text-lg font-bold text-gray-900">Subscription Status</h3>
+              <p className="text-sm text-gray-500 mt-1">Manage store billing preferences and plans.</p>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {store?.plan === 'PREMIUM' ? (
+                // Premium Plan active UI
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-2xl bg-gradient-to-br from-yellow-500 via-amber-600 to-amber-700 text-white shadow-md relative overflow-hidden">
+                    <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 opacity-10">
+                      <Crown className="h-64 w-64" />
+                    </div>
+                    <div className="space-y-2 relative z-10">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider">
+                        <Crown className="h-3.5 w-3.5" />
+                        Premium Active
+                      </div>
+                      <p className="text-3xl font-extrabold tracking-tight">₹2,999<span className="text-sm font-normal text-amber-100">/year</span></p>
+                      <p className="text-sm text-amber-100 font-medium">Enjoying unlimited features and data insights.</p>
+                    </div>
+                    
+                    <div className="mt-4 md:mt-0 relative z-10">
+                      <Button 
+                        variant="danger" 
+                        isLoading={isDowngradingStore}
+                        onClick={async () => {
+                          try {
+                            await downgradeStore()
+                            toast.success('Successfully downgraded store to FREE plan.')
+                          } catch (err) {
+                            toast.error('Failed to downgrade store plan.')
+                          }
+                        }}
+                        className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md"
+                      >
+                        Downgrade to Free
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50/30 rounded-xl p-5 border border-amber-100">
+                    <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                      <Crown className="h-5 w-5 text-amber-600" /> Included Premium Benefits
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+                      {[
+                        'Unlimited medicines catalog',
+                        'Unlimited staff accounts & roles',
+                        'Interactive sales & profit reports',
+                        'Full compliance audit logs trail',
+                        'Priority customer assistance',
+                        'Automated stock alerts'
+                      ].map((item) => (
+                        <div key={item} className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Free Plan UI
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-2xl bg-gray-900 text-white shadow-md relative overflow-hidden">
+                    <div className="space-y-2 relative z-10">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300">
+                        Free Tier
+                      </div>
+                      <p className="text-3xl font-extrabold tracking-tight">₹0<span className="text-sm font-normal text-gray-400">/forever</span></p>
+                      <p className="text-sm text-gray-300 font-medium">Standard operations with basic capacities.</p>
+                    </div>
+                    
+                    <div className="mt-4 md:mt-0 relative z-10">
+                      <Button 
+                        isLoading={isUpgradingStore}
+                        onClick={async () => {
+                          try {
+                            await upgradeStore()
+                            toast.success('Congratulations! Upgraded to Premium Plan successfully.')
+                          } catch (err) {
+                            toast.error('Failed to upgrade store plan.')
+                          }
+                        }}
+                        className="bg-brand-500 hover:bg-brand-600 text-white"
+                      >
+                        Upgrade to Premium (₹2,999/yr)
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-warning-500" /> Active Free Limitations
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
+                      {[
+                        'Max 100 medicine listings cap',
+                        'Max 2 staff members limitation',
+                        'Interactive reports locked',
+                        'Compliance audit logs locked'
+                      ].map((item) => (
+                        <div key={item} className="flex items-center gap-2">
+                          <span className="h-1.5 w-1.5 rounded-full bg-warning-500 flex-shrink-0" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

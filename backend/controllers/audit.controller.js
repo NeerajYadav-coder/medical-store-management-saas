@@ -20,7 +20,7 @@ export const getAuditLogs = async (req, res, next) => {
       medicalStoreId: req.user.medicalStoreId,
     };
 
-    if (entity) query.entity = entity;
+    if (entity) query.entityType = entity;
     if (action) query.action = action;
     if (userId) query.userId = userId;
     

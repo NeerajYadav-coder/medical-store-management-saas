@@ -647,6 +647,21 @@ export const createStaff = async (req, res, next) => {
       });
     }
 
+    // Premium plan check: Free plan restricted to 2 staff accounts (STAFF + MANAGER)
+    const store = await MedicalStore.findById(req.user.medicalStoreId);
+    if (!store || store.plan !== 'PREMIUM') {
+      const staffCount = await User.countDocuments({
+        medicalStoreId: req.user.medicalStoreId,
+        role: { $in: ['STAFF', 'MANAGER'] },
+      });
+      if (staffCount >= 2) {
+        return res.status(403).json({
+          success: false,
+          message: 'Upgrade to Premium plan to add more than 2 staff members.',
+        });
+      }
+    }
+
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }],
     });
