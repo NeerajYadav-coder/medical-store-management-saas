@@ -110,6 +110,11 @@ export const updateMyStore = async (req, res) => {
       "name",
       "phone",
       "address",
+      "email",
+      "drugLicenseNumber",
+      "gstNumber",
+      "website",
+      "logo",
     ];
 
     allowedUpdates.forEach((field) => {
