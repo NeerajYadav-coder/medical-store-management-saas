@@ -365,15 +365,16 @@ export default function Sales() {
         title={viewInvoice ? `Bill Details #${viewInvoice.billNumber}` : ''}
         size="lg"
         footer={
-          <div className="flex justify-between w-full">
-            <div className="flex gap-2">
-                 <Button variant="outline" onClick={() => setViewInvoice(null)}>
+          <div className="flex flex-col-reverse sm:flex-row justify-between w-full gap-3 sm:gap-0">
+            <div className="flex gap-2 w-full sm:w-auto">
+                 <Button variant="outline" className="w-full sm:w-auto justify-center" onClick={() => setViewInvoice(null)}>
                     Close
                 </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button 
                     variant="secondary" 
+                    className="w-full sm:w-auto justify-center"
                     leftIcon={<Printer className="h-4 w-4" />}
                     onClick={() => handlePrint(viewInvoice)}
                 >
@@ -381,6 +382,7 @@ export default function Sales() {
                 </Button>
                 <Button 
                     variant="primary" 
+                    className="w-full sm:w-auto justify-center"
                     leftIcon={<Download className="h-4 w-4" />}
                     disabled
                 >
@@ -415,31 +417,33 @@ export default function Sales() {
             <div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Itemized Bill</p>
               <div className="border border-gray-100 rounded-2xl overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50/50 text-gray-500 font-bold text-[10px] uppercase">
-                    <tr>
-                      <th className="px-4 py-3 text-left">Medicine</th>
-                      <th className="px-4 py-3 text-right">Price</th>
-                      <th className="px-4 py-3 text-right">Qty</th>
-                      <th className="px-4 py-3 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {viewInvoice.items.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50/30 transition-colors">
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-gray-900">{item.medicineName}</p>
-                          <p className="text-[10px] text-gray-400">Batch: {item.batchNumber}</p>
-                        </td>
-                        <td className="px-4 py-3 text-right">{formatCurrency(item.sellingPrice)}</td>
-                        <td className="px-4 py-3 text-right font-medium">{item.quantity}</td>
-                        <td className="px-4 py-3 text-right font-bold text-gray-900">
-                            {formatCurrency(item.totalAmount || (item.quantity * item.sellingPrice))}
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50/50 text-gray-500 font-bold text-[10px] uppercase">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Medicine</th>
+                        <th className="px-4 py-3 text-right">Price</th>
+                        <th className="px-4 py-3 text-right">Qty</th>
+                        <th className="px-4 py-3 text-right">Total</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {viewInvoice.items.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="font-semibold text-gray-900 whitespace-nowrap">{item.medicineName}</p>
+                            <p className="text-[10px] text-gray-400">Batch: {item.batchNumber}</p>
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">{formatCurrency(item.sellingPrice)}</td>
+                          <td className="px-4 py-3 text-right font-medium">{item.quantity}</td>
+                          <td className="px-4 py-3 text-right font-bold text-gray-900 whitespace-nowrap">
+                              {formatCurrency(item.totalAmount || (item.quantity * item.sellingPrice))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 

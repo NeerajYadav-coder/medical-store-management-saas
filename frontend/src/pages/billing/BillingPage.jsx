@@ -365,7 +365,7 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex flex-col lg:flex-row h-screen bg-gray-50 overflow-y-auto lg:overflow-hidden font-sans">
       {/* Bill Success Modal */}
       {showSuccessModal && lastBill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -456,10 +456,10 @@ export default function BillingPage() {
       )}
 
       {/* Main Content - Left Side */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:overflow-hidden min-h-screen lg:min-h-0">
         {/* Header */}
-        <header className="h-20 bg-white/90 backdrop-blur-md border-b border-gray-200/50 px-8 flex items-center justify-between shrink-0 sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center gap-4">
+        <header className="py-4 lg:h-20 bg-white/90 backdrop-blur-md border-b border-gray-200/50 px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between shrink-0 sticky top-0 z-10 shadow-sm gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
             <div className="h-10 w-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
               <ShoppingCart className="h-5 w-5 text-white" />
             </div>
@@ -696,8 +696,8 @@ export default function BillingPage() {
       </div>
 
       {/* Right Panel - Customer & Payment */}
-      <div className="w-96 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-6 space-y-6">
+      <div className="w-full lg:w-96 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col lg:overflow-hidden shrink-0">
+        <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
           {/* Customer Selection */}
           <CustomerSelector
             selected={customer}
