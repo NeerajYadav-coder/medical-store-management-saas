@@ -252,7 +252,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           icon={User}
           label="Total Customers"
@@ -281,7 +281,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Search & Filter */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -293,7 +293,7 @@ export default function CustomersPage() {
           />
         </div>
         
-        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 overflow-x-auto w-full sm:w-auto scrollbar-hide">
           {FILTERS.map(f => (
             <button
               key={f.value}
@@ -310,7 +310,7 @@ export default function CustomersPage() {
           ))}
         </div>
 
-        <Button variant="outline">
+        <Button variant="outline" className="w-full sm:w-auto justify-center">
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
@@ -318,8 +318,9 @@ export default function CustomersPage() {
 
       {/* Customers Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Customer</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
@@ -358,10 +359,11 @@ export default function CustomersPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-6 mt-4 text-sm text-gray-500">
+      <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 text-sm text-gray-500">
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-full bg-green-500"></div>
           <span>Repeat Buyer (2+ purchases)</span>
