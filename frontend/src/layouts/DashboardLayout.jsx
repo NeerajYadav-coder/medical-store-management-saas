@@ -143,13 +143,25 @@ export default function DashboardLayout() {
           </button>
         </div>
 
+        {/* Search */}
+        <div className="px-4 py-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search medicines..."
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-800 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
         {/* Navigation */}
         <nav className="flex-1 px-4 pb-4 overflow-y-auto scrollbar-hide">
           <ul className="space-y-1">
             {filteredNavItems.map((item) => {
               const Icon = ICONS[item.icon]
-              const isActive = location.pathname === item.path || 
-                               (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
+              const isActive = location.pathname === item.path ||
+                (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
               const isFree = store?.plan !== 'PREMIUM'
               const isPremiumItem = item.path === ROUTES.REPORTS || item.path === ROUTES.AUDIT_LOGS
 
@@ -158,9 +170,9 @@ export default function DashboardLayout() {
                   <NavLink
                     to={item.path}
                     className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+                      'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
                       isActive
-                        ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30'
+                        ? 'bg-brand-600 text-white '
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     )}
                   >
@@ -232,8 +244,8 @@ export default function DashboardLayout() {
             {/* Breadcrumb or page title */}
             <div className="hidden sm:block">
               <h1 className="text-lg font-semibold text-gray-900">
-                {SIDEBAR_NAV_ITEMS.find(item => 
-                  location.pathname === item.path || 
+                {SIDEBAR_NAV_ITEMS.find(item =>
+                  location.pathname === item.path ||
                   (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
                 )?.label || 'Dashboard'}
               </h1>
@@ -359,7 +371,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-auto p-2 sm:p-4 lg:p-6">
           <Outlet />
         </main>
       </div>

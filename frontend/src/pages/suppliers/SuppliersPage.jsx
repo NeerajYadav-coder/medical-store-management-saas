@@ -209,7 +209,7 @@ export default function SuppliersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           icon={Building2}
           label="Total Suppliers"
@@ -238,7 +238,7 @@ export default function SuppliersPage() {
       </div>
 
       {/* Search & Filter */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -250,7 +250,7 @@ export default function SuppliersPage() {
           />
         </div>
         
-        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 overflow-x-auto w-full sm:w-auto scrollbar-hide">
           {FILTERS.map(f => (
             <button
               key={f.value}
@@ -267,6 +267,7 @@ export default function SuppliersPage() {
           ))}
         </div>
 
+        <Button variant="outline" className="w-full sm:w-auto justify-center">
         <Button variant="outline" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
           Export
@@ -293,7 +294,7 @@ export default function SuppliersPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {suppliers.map(supplier => (
             <SupplierCard
               key={supplier._id}

@@ -146,7 +146,7 @@ export default function SupplierForm({
                 <Building2 className="h-4 w-4" />
                 Basic Information
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Supplier Name *"
                   value={formData.name}
@@ -192,7 +192,7 @@ export default function SupplierForm({
                 <Phone className="h-4 w-4" />
                 Contact Details
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Phone *"
                   value={formData.phone}
@@ -223,7 +223,7 @@ export default function SupplierForm({
                 <MapPin className="h-4 w-4" />
                 Address
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Street"
                   value={formData.address.street}
@@ -258,7 +258,7 @@ export default function SupplierForm({
                 <FileText className="h-4 w-4" />
                 Business Details
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="GST Number"
                   value={formData.gstNumber}
@@ -286,7 +286,7 @@ export default function SupplierForm({
                 <CreditCard className="h-4 w-4" />
                 Credit & Payment
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Payment Terms (Days)"
                   type="number"
