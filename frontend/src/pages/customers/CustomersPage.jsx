@@ -11,6 +11,7 @@ import Button from '../../components/ui/Button';
 import customerApi from '../../api/customer.api';
 import toast from 'react-hot-toast';
 import { cn } from '../../lib/utils';
+import { exportToPDF } from '../../utils/exportPDF';
 
 // Loyalty badge component
 const LoyaltyBadge = ({ category, size = 'md' }) => {
@@ -170,8 +171,12 @@ export default function CustomersPage() {
         });
       }
       
-      setCustomers(response || []);
-      calculateStats(response || []);
+      const customerList = Array.isArray(response) 
+        ? response 
+        : (Array.isArray(response?.data) ? response.data : []);
+      
+      setCustomers(customerList);
+      calculateStats(customerList);
     } catch (error) {
       console.error('Error loading customers:', error);
       toast.error('Failed to load customers');
@@ -206,7 +211,10 @@ export default function CustomersPage() {
     try {
       setLoading(true);
       const response = await customerApi.search(searchQuery);
-      setCustomers(response || []);
+      const customerList = Array.isArray(response) 
+        ? response 
+        : (Array.isArray(response?.data) ? response.data : []);
+      setCustomers(customerList);
     } catch (error) {
       console.error('Error searching customers:', error);
     } finally {
@@ -227,6 +235,49 @@ export default function CustomersPage() {
       return `₹${(amount / 1000).toFixed(1)}K`;
     }
     return `₹${amount}`;
+  };
+
+  const EXPORT_COLUMNS = [
+    { label: 'Customer Name', key: 'name', align: 'left' },
+    { label: 'Phone Number', key: 'phone', align: 'left' },
+    { label: 'Loyalty Cat.', key: 'loyaltyCategory', align: 'center' },
+    { label: 'Purchases', key: 'totalPurchases', align: 'center', format: (val) => val ?? 0 },
+    { label: 'Total Spent', key: 'totalSpent', align: 'right', format: (val) => val ? `₹${val.toLocaleString('en-IN')}` : '₹0' },
+    { label: 'Avg Order Value', key: 'avgOrderValue', align: 'right', format: (val) => val ? `₹${val.toLocaleString('en-IN')}` : '₹0' },
+    { label: 'Last Visit', key: 'lastVisitDate', align: 'center', format: (val) => val ? new Date(val).toLocaleDateString('en-IN') : 'Never' },
+    { label: 'Repeat Buyer', key: 'isRepeatBuyer', align: 'center', format: (val) => val ? 'Yes' : 'No' }
+  ];
+
+  const handleExport = () => {
+    if (!customers.length) {
+      toast.error('No customer records to export');
+      return;
+    }
+    
+    try {
+      const totalSpentAll = customers.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
+      const vipCount = customers.filter(c => c.loyaltyCategory === 'VIP').length;
+      const repeatCount = customers.filter(c => c.isRepeatBuyer).length;
+
+      exportToPDF(
+        customers,
+        EXPORT_COLUMNS,
+        {
+          title: 'Customer Directory Report',
+          subtitle: `Active Customers Ledger · Filter: ${filter || 'ALL'}`,
+          summaryCards: [
+            { label: 'Total Customers', value: customers.length.toString() },
+            { label: 'VIP Category', value: vipCount.toString() },
+            { label: 'Repeat Buyers', value: repeatCount.toString() },
+            { label: 'Gross Revenue Spent', value: `₹${totalSpentAll.toLocaleString('en-IN')}` }
+          ]
+        }
+      );
+      toast.success(`Successfully generated PDF report.`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export customers PDF.');
+    }
   };
 
   const FILTERS = [
@@ -311,6 +362,7 @@ export default function CustomersPage() {
         </div>
 
         <Button variant="outline" className="w-full sm:w-auto justify-center">
+        <Button variant="outline" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>

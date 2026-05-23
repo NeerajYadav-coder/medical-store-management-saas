@@ -384,7 +384,7 @@ export default function Sales() {
                     variant="primary" 
                     className="w-full sm:w-auto justify-center"
                     leftIcon={<Download className="h-4 w-4" />}
-                    disabled
+                    onClick={() => handlePrint(viewInvoice)}
                 >
                 Download PDF
                 </Button>

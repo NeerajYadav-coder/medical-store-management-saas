@@ -65,7 +65,7 @@ Build a multi-tenant Medical Store SaaS that captures **intelligence from day on
 
 ### 6. Customer
 ```
-- name, phone, email
+- name, phone, emailU
 - address
 - SMART FIELDS:
   - isRepeatBuyer         ← Auto-calculated after 2nd purchase
