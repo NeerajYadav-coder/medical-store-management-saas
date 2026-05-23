@@ -63,8 +63,8 @@ export default function Login() {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center lg:text-left">
-        <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-        <p className="mt-2 text-gray-600">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
           Sign in to your account to continue
         </p>
       </div>
@@ -100,7 +100,7 @@ export default function Login() {
         {/* Password */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Password
             </label>
             <Link
@@ -123,9 +123,9 @@ export default function Login() {
           <input
             id="remember-me"
             type="checkbox"
-            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500"
           />
-          <label htmlFor="remember-me" className="ml-2 text-sm text-gray-600">
+          <label htmlFor="remember-me" className="ml-2 text-sm text-gray-600 dark:text-gray-400">
             Remember me for 30 days
           </label>
         </div>
@@ -145,10 +145,10 @@ export default function Login() {
       {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-gray-200 dark:border-gray-700" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-gray-50 px-4 text-gray-500">Or continue with</span>
+          <span className="bg-gray-50 dark:bg-gray-950 px-4 text-gray-500 dark:text-gray-400">Or continue with</span>
         </div>
       </div>
 
@@ -156,7 +156,7 @@ export default function Login() {
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
-          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:bg-gray-950 transition-colors"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -180,7 +180,7 @@ export default function Login() {
         </button>
         <button
           type="button"
-          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:bg-gray-950 transition-colors"
         >
           <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
@@ -190,7 +190,7 @@ export default function Login() {
       </div>
 
       {/* Register link */}
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
         Don't have an account?{' '}
         <Link
           to={ROUTES.REGISTER}
@@ -201,11 +201,11 @@ export default function Login() {
       </p>
 
       {/* Demo credentials */}
-      <div className="mt-6 p-4 rounded-lg bg-gray-100 border border-gray-200">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+      <div className="mt-6 p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
           Test Credentials (Owner)
         </p>
-        <div className="space-y-1 text-sm text-gray-600">
+        <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
           <p><span className="font-medium">Email:</span> neeraj01@ydvvi.com</p>
           <p><span className="font-medium">Password:</span> SecurePass2026!</p>
         </div>

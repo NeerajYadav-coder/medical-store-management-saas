@@ -27,7 +27,7 @@ export default function StatsCard({
 }) {
   if (isLoading) {
     return (
-      <div className={cn('bg-white rounded-xl border border-gray-200 p-6', className)}>
+      <div className={cn('bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6', className)}>
         <div className="flex items-start justify-between">
           <Skeleton className="h-10 w-10 rounded-lg" />
           <Skeleton className="h-6 w-16 rounded" />
@@ -43,7 +43,7 @@ export default function StatsCard({
   return (
     <div
       className={cn(
-        'bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200',
+        'bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200',
         className
       )}
     >
@@ -75,8 +75,8 @@ export default function StatsCard({
 
       {/* Value */}
       <div className="mt-4">
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        <p className="text-sm text-gray-500 mt-1">{title}</p>
+        <p className="text-2xl font-bold text-gray-900 dark:text-white dark:text-white">{value}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 mt-1">{title}</p>
       </div>
 
       {/* Action link or trend label */}
@@ -89,7 +89,7 @@ export default function StatsCard({
           <ArrowRight className="h-3 w-3" />
         </Link>
       ) : trend?.label ? (
-        <p className="mt-3 text-xs text-gray-400">{trend.label}</p>
+        <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">{trend.label}</p>
       ) : null}
     </div>
   )

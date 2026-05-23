@@ -50,14 +50,14 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900 font-sans text-gray-900 dark:text-white">
       
       {/* 🔴 1️⃣ HERO SECTION */}
       <section className="relative bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 overflow-hidden">
         {/* Background Decoration */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_30%,_rgba(255,255,255,0.1),_transparent)]" />
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl opacity-20" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white dark:bg-gray-900 rounded-full blur-3xl opacity-20" />
         </div>
 
         <div className="container mx-auto px-4 py-12 lg:py-20 relative z-10">
@@ -66,7 +66,7 @@ export default function LandingPage() {
             {/* Left Content */}
             <div className="flex-1 text-center lg:text-left text-white space-y-8">
               <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-brand-100 backdrop-blur-sm">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-gray-900/10 border border-white/20 text-sm font-medium text-brand-100 backdrop-blur-sm">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-success-500"></span>
@@ -88,7 +88,7 @@ export default function LandingPage() {
                   'Expiry & low-stock alerts',
                   'Fast billing with profit tracking'
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-lg border border-white/10 backdrop-blur-sm">
+                  <div key={i} className="flex items-center gap-2 bg-white dark:bg-gray-900/5 px-4 py-2 rounded-lg border border-white/10 backdrop-blur-sm">
                     <CheckCircle className="h-5 w-5 text-success-400 flex-shrink-0" />
                     <span className="text-sm font-medium">{item}</span>
                   </div>
@@ -114,10 +114,10 @@ export default function LandingPage() {
 
             {/* Right Content - Login Card */}
             <div className="w-full max-w-md flex-shrink-0">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-                  <p className="text-gray-500">Sign in to manage your store</p>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
+                  <p className="text-gray-500 dark:text-gray-400">Sign in to manage your store</p>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -130,7 +130,7 @@ export default function LandingPage() {
                   />
                   <div className="space-y-1">
                     <div className="flex justify-between">
-                      <label className="text-sm font-medium text-gray-700">Password</label>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
                       <Link to={ROUTES.FORGOT_PASSWORD} className="text-sm text-brand-600 hover:underline">Forgot?</Link>
                     </div>
                     <PasswordInput
@@ -153,15 +153,15 @@ export default function LandingPage() {
                 </form>
 
                 {/* Demo Credentials */}
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-xs">
-                  <div className="font-semibold text-gray-500 uppercase mb-1">Demo Credentials</div>
-                  <div className="flex justify-between text-gray-700">
+                <div className="bg-gray-50 dark:bg-gray-950 p-3 rounded-lg border border-gray-100 dark:border-gray-800 text-xs">
+                  <div className="font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Demo Credentials</div>
+                  <div className="flex justify-between text-gray-700 dark:text-gray-300">
                     <span>Email: demo@medstore.com</span>
                     <span>Pass: Demo@123</span>
                   </div>
                 </div>
 
-                <div className="text-center text-sm text-gray-500">
+                <div className="text-center text-sm text-gray-500 dark:text-gray-400">
                   New to MedStore? <Link to={ROUTES.REGISTER} className="text-brand-600 font-semibold hover:underline">Create account</Link>
                 </div>
               </div>
@@ -172,7 +172,7 @@ export default function LandingPage() {
       </section>
 
       {/* 🔵 2️⃣ TRUST SIGNALS */}
-      <section className="py-12 bg-gray-50 border-b border-gray-200">
+      <section className="py-12 bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
@@ -181,12 +181,12 @@ export default function LandingPage() {
               { icon: Activity, title: 'Owner Control', desc: 'Full visibility into profit, discounts, staff actions, and stock risks.' },
               { icon: Server, title: 'Cloud SaaS', desc: 'Access your store securely from anywhere on any device.' }
             ].map((card, i) => (
-              <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div key={i} className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-shadow">
                 <div className="h-10 w-10 bg-brand-50 rounded-lg flex items-center justify-center text-brand-600 mb-4">
                   <card.icon className="h-5 w-5" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{card.title}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{card.desc}</p>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{card.title}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{card.desc}</p>
               </div>
             ))}
           </div>
@@ -197,7 +197,7 @@ export default function LandingPage() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Running a medical store is hard.<br />
               <span className="text-brand-600">MedStore makes it simple.</span>
             </h2>
@@ -211,8 +211,8 @@ export default function LandingPage() {
                   <AlertTriangle className="h-4 w-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Stock managed medicine-wise</h4>
-                  <p className="text-sm text-gray-600">Resulting in missed expiries and wasted money.</p>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Stock managed medicine-wise</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Resulting in missed expiries and wasted money.</p>
                 </div>
               </div>
             </div>
@@ -223,8 +223,8 @@ export default function LandingPage() {
                   <CheckCircle className="h-4 w-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Batch-wise inventory</h4>
-                  <p className="text-sm text-gray-600">Automated expiry alerts and FIFO selling.</p>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Batch-wise inventory</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Automated expiry alerts and FIFO selling.</p>
                 </div>
               </div>
             </div>
@@ -236,8 +236,8 @@ export default function LandingPage() {
                   <AlertTriangle className="h-4 w-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Profit leaking unnoticed</h4>
-                  <p className="text-sm text-gray-600">Uncontrolled discounts and unknown margins.</p>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Profit leaking unnoticed</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Uncontrolled discounts and unknown margins.</p>
                 </div>
               </div>
             </div>
@@ -248,8 +248,8 @@ export default function LandingPage() {
                   <CheckCircle className="h-4 w-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Exact Profit Tracking</h4>
-                  <p className="text-sm text-gray-600">Per-bill profit analysis and discount controls.</p>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Exact Profit Tracking</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Per-bill profit analysis and discount controls.</p>
                 </div>
               </div>
             </div>
@@ -285,7 +285,7 @@ export default function LandingPage() {
       </section>
 
       {/* 🟣 5️⃣ KEY FEATURES */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-gray-50 dark:bg-gray-950">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Built for powerful owners</h2>
           
@@ -298,12 +298,12 @@ export default function LandingPage() {
               { icon: Users, title: 'Customer Management', desc: 'Track repeat customers, manage loyalty, and view purchase history.' },
               { icon: LayoutDashboard, title: 'Business Dashboard', desc: 'Live sales, profit, dead stock, and alerts — all at a single glance.' }
             ].map((feature, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl border border-gray-100 hover:border-brand-100 hover:shadow-xl hover:shadow-brand-900/5 transition-all group">
-                <div className="h-12 w-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-900 mb-6 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+              <div key={i} className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-100 hover:shadow-xl hover:shadow-brand-900/5 transition-all group">
+                <div className="h-12 w-12 bg-gray-50 dark:bg-gray-950 rounded-xl flex items-center justify-center text-gray-900 dark:text-white mb-6 group-hover:bg-brand-600 group-hover:text-white transition-colors">
                   <feature.icon className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{feature.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{feature.desc}</p>
               </div>
             ))}
           </div>
@@ -311,12 +311,12 @@ export default function LandingPage() {
       </section>
 
       {/* 🔵 6️⃣ SECURITY */}
-      <section className="py-20 border-t border-gray-200">
+      <section className="py-20 border-t border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4 text-center max-w-3xl">
           <div className="inline-flex items-center justify-center p-3 bg-brand-50 rounded-xl text-brand-700 mb-6">
             <Lock className="h-8 w-8" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Secure. Reliable. Accountable.</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Secure. Reliable. Accountable.</h2>
           <div className="grid sm:grid-cols-2 gap-4 text-left">
             {[
               'JWT-based secure authentication',
@@ -326,9 +326,9 @@ export default function LandingPage() {
               'Cloud-grade 99.9% uptime',
               'Daily automated backups'
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
                 <div className="h-2 w-2 bg-success-500 rounded-full" />
-                <span className="font-medium text-gray-700">{item}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">{item}</span>
               </div>
             ))}
           </div>
@@ -345,7 +345,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to={ROUTES.REGISTER}>
-              <Button size="xl" className="bg-white text-brand-900 hover:bg-brand-50 min-w-[200px]">
+              <Button size="xl" className="bg-white dark:bg-gray-900 text-brand-900 hover:bg-brand-50 min-w-[200px]">
                 Create your store account <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
@@ -357,13 +357,13 @@ export default function LandingPage() {
       </section>
 
       {/* ⚫ 8️⃣ FOOTER */}
-      <footer className="py-8 bg-white border-t border-gray-200">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+      <footer className="py-8 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
           <div>© 2024 MedStore SaaS. All rights reserved.</div>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-gray-900">Privacy Policy</a>
-            <a href="#" className="hover:text-gray-900">Terms of Service</a>
-            <a href="#" className="hover:text-gray-900">Contact Support</a>
+            <a href="#" className="hover:text-gray-900 dark:text-white">Privacy Policy</a>
+            <a href="#" className="hover:text-gray-900 dark:text-white">Terms of Service</a>
+            <a href="#" className="hover:text-gray-900 dark:text-white">Contact Support</a>
           </div>
         </div>
       </footer>

@@ -65,14 +65,14 @@ export default function SymptomSelector({
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Why buying? <span className="text-gray-400 font-normal">(optional)</span>
         </label>
         {selected.length > 0 && (
           <button
             type="button"
             onClick={() => onChange([])}
-            className="text-xs text-gray-500 hover:text-gray-700"
+            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
           >
             Clear
           </button>
@@ -91,7 +91,7 @@ export default function SymptomSelector({
               'border flex items-center gap-1.5',
               isSelected(symptom._id)
                 ? 'bg-brand-100 border-brand-300 text-brand-700'
-                : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100',
+                : 'bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800',
               !isSelected(symptom._id) && selected.length >= maxSelections && 'opacity-50 cursor-not-allowed'
             )}
           >
@@ -102,7 +102,7 @@ export default function SymptomSelector({
       </div>
       
       {selected.length > 0 && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Selected: {selected.map(s => s.symptomName).join(', ')}
         </p>
       )}

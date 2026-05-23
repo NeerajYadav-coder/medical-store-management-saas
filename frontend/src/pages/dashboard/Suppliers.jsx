@@ -87,8 +87,8 @@ export default function Suppliers() {
             <Building2 className="h-5 w-5 text-brand-600" />
           </div>
           <div>
-            <p className="font-medium text-gray-900">{supplier.name}</p>
-            <p className="text-sm text-gray-500">{supplier.contactPerson}</p>
+            <p className="font-medium text-gray-900 dark:text-white">{supplier.name}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{supplier.contactPerson}</p>
           </div>
         </div>
       ),
@@ -98,11 +98,11 @@ export default function Suppliers() {
       label: 'Contact',
       render: (_, supplier) => (
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Phone className="h-3.5 w-3.5" />
             {supplier.phone}
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <Mail className="h-3.5 w-3.5" />
             {supplier.email}
           </div>
@@ -114,14 +114,14 @@ export default function Suppliers() {
       label: 'Orders',
       align: 'center',
       render: (value) => (
-        <span className="font-medium text-gray-900">{value}</span>
+        <span className="font-medium text-gray-900 dark:text-white">{value}</span>
       ),
     },
     {
       key: 'totalValue',
       label: 'Total Business',
       render: (value) => (
-        <span className="font-semibold text-gray-900">{formatCurrency(value)}</span>
+        <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(value)}</span>
       ),
     },
     {
@@ -130,7 +130,7 @@ export default function Suppliers() {
       render: (value) => (
         <span className={cn(
           'px-2.5 py-1 text-xs font-medium rounded-full',
-          value === 'active' ? 'bg-success-100 text-success-700' : 'bg-gray-100 text-gray-600'
+          value === 'active' ? 'bg-success-100 text-success-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
         )}>
           {value === 'active' ? 'Active' : 'Inactive'}
         </span>
@@ -167,8 +167,8 @@ export default function Suppliers() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
-          <p className="text-gray-500 mt-1">Manage your supplier directory</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Suppliers</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your supplier directory</p>
         </div>
         <Button
           size="sm"
@@ -181,26 +181,26 @@ export default function Suppliers() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Total Suppliers</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{mockSuppliers.length}</p>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Total Suppliers</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{mockSuppliers.length}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Active Suppliers</p>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Active Suppliers</p>
           <p className="text-2xl font-bold text-success-600 mt-1">
             {mockSuppliers.filter(s => s.status === 'active').length}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Total Business</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Total Business</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
             {formatCurrency(mockSuppliers.reduce((sum, s) => sum + s.totalValue, 0))}
           </p>
         </div>
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <SearchInput placeholder="Search suppliers by name, contact, or email..." />
       </div>
 
@@ -228,44 +228,44 @@ export default function Suppliers() {
                 <Building2 className="h-8 w-8 text-brand-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">{viewSupplier.name}</h3>
-                <p className="text-gray-500">{viewSupplier.contactPerson}</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{viewSupplier.name}</h3>
+                <p className="text-gray-500 dark:text-gray-400">{viewSupplier.contactPerson}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-950">
                 <Phone className="h-5 w-5 text-gray-400" />
                 <div>
-                  <p className="text-xs text-gray-500">Phone</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Phone</p>
                   <p className="font-medium">{viewSupplier.phone}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-950">
                 <Mail className="h-5 w-5 text-gray-400" />
                 <div>
-                  <p className="text-xs text-gray-500">Email</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
                   <p className="font-medium">{viewSupplier.email}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 col-span-2">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-950 col-span-2">
                 <MapPin className="h-5 w-5 text-gray-400" />
                 <div>
-                  <p className="text-xs text-gray-500">Address</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Address</p>
                   <p className="font-medium">{viewSupplier.address}</p>
                 </div>
               </div>
-              <div className="p-3 rounded-lg bg-gray-50">
-                <p className="text-xs text-gray-500">GST Number</p>
+              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950">
+                <p className="text-xs text-gray-500 dark:text-gray-400">GST Number</p>
                 <p className="font-mono font-medium">{viewSupplier.gstNumber}</p>
               </div>
-              <div className="p-3 rounded-lg bg-gray-50">
-                <p className="text-xs text-gray-500">Total Orders</p>
+              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total Orders</p>
                 <p className="font-medium">{viewSupplier.totalOrders}</p>
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
               <Button variant="outline" className="flex-1" leftIcon={<Package className="h-4 w-4" />}>
                 View Orders
               </Button>

@@ -11,7 +11,7 @@ import customerApi from '../../api/customer.api';
 // Loyalty badge component
 const LoyaltyBadge = ({ category }) => {
   const badges = {
-    NEW: { icon: User, color: 'bg-gray-100 text-gray-600', label: 'New' },
+    NEW: { icon: User, color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400', label: 'New' },
     REGULAR: { icon: RefreshCw, color: 'bg-blue-100 text-blue-600', label: 'Regular' },
     VIP: { icon: Crown, color: 'bg-amber-100 text-amber-600', label: 'VIP' },
     BULK: { icon: Star, color: 'bg-purple-100 text-purple-600', label: 'Bulk' },
@@ -122,13 +122,13 @@ export default function CustomerSelector({
 
   return (
     <div className={cn('relative', className)} ref={dropdownRef}>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
         Customer <span className="text-gray-400 font-normal">(optional - for loyalty tracking)</span>
       </label>
 
       {/* Selected Customer Display */}
       {selected ? (
-        <div className="flex items-center justify-between p-2.5 rounded-lg border border-green-200 bg-green-50">
+        <div className="flex items-center justify-between p-2.5 rounded-lg border border-green-200 dark:border-green-800/30 bg-green-50 dark:bg-green-950/20">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
               {selected.isRepeatBuyer ? (
@@ -139,10 +139,10 @@ export default function CustomerSelector({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-gray-900">{selected.customerName}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{selected.customerName}</p>
                 <LoyaltyBadge category={selected.loyaltyCategory} />
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <Phone className="h-3 w-3" />
                   {selected.customerPhone}
@@ -163,7 +163,7 @@ export default function CustomerSelector({
             onClick={clearSelection}
             className="p-1 rounded-full hover:bg-green-100"
           >
-            <X className="h-4 w-4 text-gray-500" />
+            <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
       ) : (
@@ -177,10 +177,10 @@ export default function CustomerSelector({
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsOpen(true)}
             className={cn(
-              'w-full pl-9 pr-4 py-2.5 rounded-lg border',
+              'w-full pl-9 pr-4 py-2.5 rounded-lg border bg-white dark:bg-gray-900 text-gray-900 dark:text-white',
               'text-sm placeholder:text-gray-400',
               'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500',
-              'border-gray-200'
+              'border-gray-200 dark:border-gray-700'
             )}
           />
         </div>
@@ -188,20 +188,20 @@ export default function CustomerSelector({
 
       {/* Dropdown */}
       {isOpen && !selected && (
-        <div className="absolute z-50 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg max-h-72 overflow-auto">
+        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg max-h-72 overflow-auto">
           {loading ? (
-            <div className="p-4 text-center text-sm text-gray-500">
+            <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
               Searching...
             </div>
           ) : showAddForm ? (
             /* Add New Customer Form */
             <div className="p-3 space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-gray-900">Add New Customer</h4>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Add New Customer</h4>
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -211,14 +211,14 @@ export default function CustomerSelector({
                 placeholder="Customer name"
                 value={newCustomer.name}
                 onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500"
               />
               <input
                 type="tel"
                 placeholder="Phone number *"
                 value={newCustomer.phone}
                 onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500"
                 autoFocus
               />
               <button
@@ -239,26 +239,26 @@ export default function CustomerSelector({
                     key={customer._id}
                     type="button"
                     onClick={() => selectCustomer(customer)}
-                    className="w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3"
+                    className="w-full px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3"
                   >
                     <div className={cn(
                       'h-10 w-10 rounded-full flex items-center justify-center',
-                      customer.isRepeatBuyer ? 'bg-green-100' : 'bg-gray-100'
+                      customer.isRepeatBuyer ? 'bg-green-100' : 'bg-gray-100 dark:bg-gray-800'
                     )}>
                       {customer.isRepeatBuyer ? (
                         <RefreshCw className="h-5 w-5 text-green-600" />
                       ) : (
-                        <User className="h-5 w-5 text-gray-500" />
+                        <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {customer.name}
                         </p>
                         <LoyaltyBadge category={customer.loyaltyCategory} />
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <span>{customer.phone}</span>
                         {customer.totalPurchases > 0 && (
                           <>
@@ -271,11 +271,11 @@ export default function CustomerSelector({
                   </button>
                 ))
               ) : searchQuery.length >= 2 ? (
-                <div className="p-4 text-center text-sm text-gray-500">
+                <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
                   No customer found with "{searchQuery}"
                 </div>
               ) : (
-                <div className="p-4 text-center text-sm text-gray-500">
+                <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
                   Enter phone or name to search
                 </div>
               )}
@@ -292,7 +292,7 @@ export default function CustomerSelector({
                   });
                   setShowAddForm(true);
                 }}
-                className="w-full px-3 py-2.5 text-left hover:bg-brand-50 flex items-center gap-2 text-brand-600 border-t border-gray-100"
+                className="w-full px-3 py-2.5 text-left hover:bg-brand-50 dark:hover:bg-brand-950/20 flex items-center gap-2 text-brand-600 border-t border-gray-100 dark:border-gray-800"
               >
                 <Plus className="h-4 w-4" />
                 <span className="text-sm font-medium">

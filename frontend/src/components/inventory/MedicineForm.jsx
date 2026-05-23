@@ -178,22 +178,22 @@ export default function MedicineForm({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Package className="h-5 w-5 text-brand-600" />
               {medicine ? 'Edit Medicine details' : 'Add New Medicine'}
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {medicine ? `Modify parameters for ${medicine.name}` : 'Create a master catalog record for medicine inventory'}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 hover:bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -203,8 +203,8 @@ export default function MedicineForm({
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {/* Identity & Details */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2 pb-2 border-b border-gray-100">
-              <Package className="h-4 w-4 text-gray-500" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+              <Package className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               1. Identity & Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -281,8 +281,8 @@ export default function MedicineForm({
 
           {/* Pricing & Reorder */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2 pb-2 border-b border-gray-100">
-              <IndianRupee className="h-4 w-4 text-gray-500" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+              <IndianRupee className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               2. Reference Pricing & Reordering
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -331,8 +331,8 @@ export default function MedicineForm({
 
           {/* Regulatory & Safety */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2 pb-2 border-b border-gray-100">
-              <Shield className="h-4 w-4 text-gray-500" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+              <Shield className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               3. Regulatory & Storage Info
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -365,8 +365,8 @@ export default function MedicineForm({
 
           {/* Extra Info */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2 pb-2 border-b border-gray-100">
-              <Layers className="h-4 w-4 text-gray-500" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+              <Layers className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               4. Description & Side Effects
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -389,7 +389,7 @@ export default function MedicineForm({
         </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 rounded-b-2xl">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>

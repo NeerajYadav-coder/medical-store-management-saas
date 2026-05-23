@@ -235,12 +235,12 @@ export default function StoreSettings() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Store Settings</h1>
-        <p className="text-gray-500 mt-1">Manage your store profile and preferences</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Store Settings</h1>
+        <p className="text-gray-505 dark:text-gray-400 mt-1">Manage your store profile and preferences</p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => {
             const Icon = tab.icon
@@ -249,10 +249,10 @@ export default function StoreSettings() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors whitespace-nowrap',
                   activeTab === tab.id
                     ? 'border-brand-500 text-brand-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -267,10 +267,10 @@ export default function StoreSettings() {
       {activeTab === 'profile' && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Logo Upload */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Store Logo</h3>
-            <div className="flex items-center gap-6">
-              <div className="h-24 w-24 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center relative group">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Store Logo</h3>
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="h-24 w-24 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 overflow-hidden flex items-center justify-center relative group">
                 {logoBase64 ? (
                   <img
                     src={logoBase64}
@@ -281,7 +281,7 @@ export default function StoreSettings() {
                   <Building2 className="h-12 w-12 text-gray-400" />
                 )}
               </div>
-              <div>
+              <div className="text-center sm:text-left">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -311,7 +311,7 @@ export default function StoreSettings() {
                     </Button>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   PNG, JPG up to 2MB. Recommended: 200x200px
                 </p>
               </div>
@@ -319,8 +319,8 @@ export default function StoreSettings() {
           </div>
 
           {/* Basic Info */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Store Name"
@@ -353,8 +353,8 @@ export default function StoreSettings() {
           </div>
 
           {/* Address */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Address</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Address</h3>
             <Textarea
               label="Full Address"
               placeholder="Shop No, Street, Area, City, State, PIN"
@@ -364,8 +364,8 @@ export default function StoreSettings() {
           </div>
 
           {/* Legal Info */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Legal Information</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Legal Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Drug License Number"
@@ -399,8 +399,8 @@ export default function StoreSettings() {
       {/* Preferences Tab */}
       {activeTab === 'preferences' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Regional Settings</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Regional Settings</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 label="Currency"
@@ -430,22 +430,22 @@ export default function StoreSettings() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Notifications</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notifications</h3>
             <div className="space-y-4">
               {[
                 { id: 'lowStock', label: 'Low stock alerts', description: 'Get notified when stock falls below threshold' },
                 { id: 'expiry', label: 'Expiry alerts', description: 'Get notified about expiring medicines' },
                 { id: 'orders', label: 'Order updates', description: 'Get notified about purchase order status' },
               ].map((setting) => (
-                <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                   <div>
-                    <p className="font-medium text-gray-900">{setting.label}</p>
-                    <p className="text-sm text-gray-500">{setting.description}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{setting.label}</p>
+                    <p className="text-sm text-gray-505 dark:text-gray-400">{setting.description}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                   </label>
                 </div>
               ))}
@@ -458,11 +458,11 @@ export default function StoreSettings() {
       {activeTab === 'whatsapp' && (
         <div className="space-y-6">
           {/* Main Config */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">WhatsApp Integration</h3>
-                <p className="text-sm text-gray-500 mt-1">Configure your WhatsApp Gateway to send reports, receipts, and refills.</p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">WhatsApp Integration</h3>
+                <p className="text-sm text-gray-505 dark:text-gray-400 mt-1">Configure your WhatsApp Gateway to send reports, receipts, and refills.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -471,7 +471,7 @@ export default function StoreSettings() {
                   onChange={(e) => setWaConfig({ ...waConfig, isEnabled: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
               </label>
             </div>
 
@@ -498,14 +498,14 @@ export default function StoreSettings() {
           </div>
 
           {/* Trigger Alerts Toggles */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Automated WhatsApp Triggers</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Automated WhatsApp Triggers</h3>
             <div className="space-y-4">
               {/* Daily Report Toggle */}
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
                 <div>
-                  <p className="font-semibold text-gray-900">Daily Store Report (Owner)</p>
-                  <p className="text-sm text-gray-500">Sends daily revenue, profit, and stock alert summary to owner at 9:00 PM.</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Daily Store Report (Owner)</p>
+                  <p className="text-sm text-gray-505 dark:text-gray-400">Sends daily revenue, profit, and stock alert summary to owner at 9:00 PM.</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -515,15 +515,15 @@ export default function StoreSettings() {
                     className="sr-only peer"
                     disabled={!waConfig.isEnabled}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                 </label>
               </div>
 
               {/* Thank You Toggle */}
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
                 <div>
-                  <p className="font-semibold text-gray-900">Customer Purchase Receipt</p>
-                  <p className="text-sm text-gray-500">Sends digital receipt & thank-you message to customer immediately after purchase.</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Customer Purchase Receipt</p>
+                  <p className="text-sm text-gray-550 dark:text-gray-400">Sends digital receipt & thank-you message to customer immediately after purchase.</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -533,15 +533,15 @@ export default function StoreSettings() {
                     className="sr-only peer"
                     disabled={!waConfig.isEnabled}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                 </label>
               </div>
 
               {/* Refill Reminder Toggle */}
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
                 <div>
-                  <p className="font-semibold text-gray-900">Personalized Medicine Refill Reminders</p>
-                  <p className="text-sm text-gray-500">Estimates usage from dosage, reminding customers before their supply runs out.</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Personalized Medicine Refill Reminders</p>
+                  <p className="text-sm text-gray-505 dark:text-gray-400">Estimates usage from dosage, reminding customers before their supply runs out.</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -551,7 +551,7 @@ export default function StoreSettings() {
                     className="sr-only peer"
                     disabled={!waConfig.isEnabled}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                 </label>
               </div>
 
@@ -588,15 +588,15 @@ export default function StoreSettings() {
           {/* Test Operations & Campaigns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Run Tests Card */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col justify-between">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 flex flex-col justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Simulate / Trigger Alerts</h3>
-                <p className="text-sm text-gray-500 mb-6">Manually dispatch reports or check refills immediately (useful for testing & validation).</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Simulate / Trigger Alerts</h3>
+                <p className="text-sm text-gray-505 dark:text-gray-400 mb-6">Manually dispatch reports or check refills immediately (useful for testing & validation).</p>
               </div>
               <div className="space-y-4">
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-gray-700 border-gray-300 hover:bg-gray-50"
+                  className="w-full justify-start text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:bg-gray-955"
                   leftIcon={<Play className="h-4 w-4 text-brand-600" />}
                   onClick={handleTestDailyReport}
                   isLoading={isTestingDaily}
@@ -606,7 +606,7 @@ export default function StoreSettings() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-gray-700 border-gray-300 hover:bg-gray-50"
+                  className="w-full justify-start text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:bg-gray-955"
                   leftIcon={<Play className="h-4 w-4 text-brand-600" />}
                   onClick={handleTestRefill}
                   isLoading={isTestingRefill}
@@ -618,9 +618,9 @@ export default function StoreSettings() {
             </div>
 
             {/* Campaign Card */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">WhatsApp Marketing / Promo Campaign</h3>
-              <p className="text-sm text-gray-500 mb-4">Send a general offer, alert or greeting to specific customer lists.</p>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">WhatsApp Marketing / Promo Campaign</h3>
+              <p className="text-sm text-gray-505 dark:text-gray-400 mb-4">Send a general offer, alert or greeting to specific customer lists.</p>
               <div className="space-y-4">
                 <Select
                   label="Target Cohort"
@@ -656,16 +656,16 @@ export default function StoreSettings() {
           </div>
 
           {/* Delivery Audit Logs */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-gray-150 bg-gray-50/50 flex justify-between items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-gray-150 bg-gray-50 dark:bg-gray-950/50 flex justify-between items-center">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">WhatsApp Delivery History</h3>
-                <p className="text-sm text-gray-500 mt-1">Audit log of all sent, failed, or simulated WhatsApp messages.</p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">WhatsApp Delivery History</h3>
+                <p className="text-sm text-gray-550 dark:text-gray-400 mt-1">Audit log of all sent, failed, or simulated WhatsApp messages.</p>
               </div>
               <button
                 onClick={fetchLogs}
                 disabled={isLoadingLogs}
-                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-colors"
+                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors"
                 title="Refresh Logs"
               >
                 <RefreshCw className={cn("h-4 w-4", isLoadingLogs && "animate-spin")} />
@@ -674,19 +674,19 @@ export default function StoreSettings() {
 
             <div className="overflow-x-auto">
               {isLoadingLogs && logs.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                   <RefreshCw className="h-8 w-8 mx-auto animate-spin mb-3 text-gray-400" />
                   <p>Retrieving dispatch logs...</p>
                 </div>
               ) : logs.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                   <MessageSquare className="h-12 w-12 mx-auto text-gray-300 mb-3" />
                   <p>No WhatsApp communications found</p>
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase border-b border-gray-200">
+                    <tr className="bg-gray-50 dark:bg-gray-950/50 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-gray-700">
                       <th className="p-4">Recipient</th>
                       <th className="p-4">Type</th>
                       <th className="p-4">Message Body</th>
@@ -694,15 +694,15 @@ export default function StoreSettings() {
                       <th className="p-4">Dispatched At</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
+                  <tbody className="divide-y divide-gray-100 text-sm text-gray-700 dark:text-gray-300">
                     {logs.map((log) => (
-                      <tr key={log._id} className="hover:bg-gray-50/50 transition-colors">
+                      <tr key={log._id} className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors">
                         <td className="p-4">
-                          <p className="font-semibold text-gray-900">{log.recipientName}</p>
-                          <p className="text-xs text-gray-500">{log.recipientPhone}</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{log.recipientName}</p>
+                          <p className="text-xs text-gray-505 dark:text-gray-400">{log.recipientPhone}</p>
                         </td>
                         <td className="p-4">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
                             {log.messageType?.replace('_', ' ')}
                           </span>
                         </td>
@@ -724,7 +724,7 @@ export default function StoreSettings() {
                             </span>
                           )}
                         </td>
-                        <td className="p-4 text-xs text-gray-500">
+                        <td className="p-4 text-xs text-gray-505 dark:text-gray-400">
                           {new Date(log.sentAt || log.createdAt).toLocaleString('en-IN', {
                             day: 'numeric',
                             month: 'short',
@@ -745,10 +745,10 @@ export default function StoreSettings() {
       {/* Billing Tab */}
       {activeTab === 'billing' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-gray-150 bg-gray-50/50">
-              <h3 className="text-lg font-bold text-gray-900">Subscription Status</h3>
-              <p className="text-sm text-gray-500 mt-1">Manage store billing preferences and plans.</p>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-gray-150 bg-gray-50 dark:bg-gray-955/50">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Subscription Status</h3>
+              <p className="text-sm text-gray-505 dark:text-gray-400 mt-1">Manage store billing preferences and plans.</p>
             </div>
 
             <div className="p-6 space-y-6">
@@ -791,7 +791,7 @@ export default function StoreSettings() {
                     <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
                       <Crown className="h-5 w-5 text-amber-600" /> Included Premium Benefits
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700 dark:text-gray-300">
                       {[
                         'Unlimited medicines catalog',
                         'Unlimited staff accounts & roles',
@@ -838,11 +838,11 @@ export default function StoreSettings() {
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <div className="bg-gray-55 dark:bg-gray-955 rounded-xl p-5 border border-gray-100 dark:border-gray-800">
+                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-warning-500" /> Active Free Limitations
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-650 dark:text-gray-400">
                       {[
                         'Max 100 medicine listings cap',
                         'Max 2 staff members limitation',
@@ -861,9 +861,9 @@ export default function StoreSettings() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing History</h3>
-            <div className="text-center py-8 text-gray-500">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Billing History</h3>
+            <div className="text-center py-8 text-gray-505 dark:text-gray-400">
               <FileText className="h-12 w-12 mx-auto text-gray-300 mb-3" />
               <p>No billing history available</p>
             </div>

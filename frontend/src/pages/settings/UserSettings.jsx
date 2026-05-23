@@ -69,12 +69,12 @@ export default function UserSettings() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
-        <p className="text-gray-500 mt-1">Manage your account preferences</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Account Settings</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your account preferences</p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => {
             const Icon = tab.icon
@@ -83,10 +83,10 @@ export default function UserSettings() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors whitespace-nowrap',
                   activeTab === tab.id
                     ? 'border-brand-500 text-brand-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -101,8 +101,8 @@ export default function UserSettings() {
       {activeTab === 'profile' && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Avatar */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Photo</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profile Photo</h3>
             <div className="flex items-center gap-6">
               <div className="relative">
                 <div className="h-24 w-24 rounded-full bg-brand-600 flex items-center justify-center text-white text-3xl font-bold">
@@ -110,22 +110,22 @@ export default function UserSettings() {
                 </div>
                 <button
                   type="button"
-                  className="absolute bottom-0 right-0 h-8 w-8 bg-white rounded-full border border-gray-200 flex items-center justify-center shadow-sm hover:bg-gray-50"
+                  className="absolute bottom-0 right-0 h-8 w-8 bg-white dark:bg-gray-900 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm hover:bg-gray-50 dark:bg-gray-955"
                 >
-                  <Camera className="h-4 w-4 text-gray-600" />
+                  <Camera className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
               <div>
-                <p className="font-medium text-gray-900">{user?.name}</p>
-                <p className="text-sm text-gray-500">{user?.role}</p>
-                <p className="text-sm text-gray-500">{user?.email}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{user?.name}</p>
+                <p className="text-sm text-gray-505 dark:text-gray-400">{user?.role}</p>
+                <p className="text-sm text-gray-505 dark:text-gray-400">{user?.email}</p>
               </div>
             </div>
           </div>
 
           {/* Personal Info */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Personal Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Full Name"
@@ -171,12 +171,12 @@ export default function UserSettings() {
       {activeTab === 'security' && (
         <div className="space-y-6">
           {/* Password */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Password</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Password</h3>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600">Change your password</p>
-                <p className="text-sm text-gray-500">Last changed 30 days ago</p>
+                <p className="text-gray-600 dark:text-gray-400">Change your password</p>
+                <p className="text-sm text-gray-505 dark:text-gray-400">Last changed 30 days ago</p>
               </div>
               <Button
                 variant="outline"
@@ -189,12 +189,12 @@ export default function UserSettings() {
           </div>
 
           {/* Two-Factor */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Two-Factor Authentication</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Two-Factor Authentication</h3>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600">Add extra security to your account</p>
-                <p className="text-sm text-gray-500">Not enabled</p>
+                <p className="text-gray-600 dark:text-gray-400">Add extra security to your account</p>
+                <p className="text-sm text-gray-505 dark:text-gray-400">Not enabled</p>
               </div>
               <Button variant="outline" leftIcon={<Shield className="h-4 w-4" />}>
                 Enable 2FA
@@ -203,17 +203,17 @@ export default function UserSettings() {
           </div>
 
           {/* Sessions */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Sessions</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Active Sessions</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                     🖥️
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Current Device</p>
-                    <p className="text-sm text-gray-500">Windows • Chrome • Hyderabad</p>
+                    <p className="font-medium text-gray-900 dark:text-white">Current Device</p>
+                    <p className="text-sm text-gray-505 dark:text-gray-400">Windows • Chrome • Hyderabad</p>
                   </div>
                 </div>
                 <span className="px-2 py-1 bg-success-100 text-success-700 text-xs rounded-full">
@@ -235,8 +235,8 @@ export default function UserSettings() {
       {/* Notifications Tab */}
       {activeTab === 'notifications' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Email Notifications</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Email Notifications</h3>
             <div className="space-y-4">
               {[
                 { id: 'salesSummary', label: 'Daily sales summary', description: 'Receive daily sales report via email' },
@@ -244,35 +244,35 @@ export default function UserSettings() {
                 { id: 'orderUpdates', label: 'Order updates', description: 'Updates on purchase orders' },
                 { id: 'marketing', label: 'Product updates', description: 'News and feature announcements' },
               ].map((setting) => (
-                <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                   <div>
-                    <p className="font-medium text-gray-900">{setting.label}</p>
-                    <p className="text-sm text-gray-500">{setting.description}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{setting.label}</p>
+                    <p className="text-sm text-gray-505 dark:text-gray-400">{setting.description}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                   </label>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Push Notifications</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Push Notifications</h3>
             <div className="space-y-4">
               {[
                 { id: 'newSale', label: 'New sale', description: 'Get notified for each new sale' },
                 { id: 'lowStock', label: 'Low stock warning', description: 'When inventory falls below threshold' },
               ].map((setting) => (
-                <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                   <div>
-                    <p className="font-medium text-gray-900">{setting.label}</p>
-                    <p className="text-sm text-gray-500">{setting.description}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{setting.label}</p>
+                    <p className="text-sm text-gray-550 dark:text-gray-400">{setting.description}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                   </label>
                 </div>
               ))}

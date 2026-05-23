@@ -413,7 +413,7 @@ export default function Purchase() {
     {
       key: 'supplierBillNumber',
       label: 'Bill No',
-      render: (val) => <span className="font-bold text-gray-900">{val}</span>
+      render: (val) => <span className="font-bold text-gray-900 dark:text-white">{val}</span>
     },
     {
       key: 'supplierName',
@@ -465,16 +465,16 @@ export default function Purchase() {
       {/* Header with Stats Sidebar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Purchase (Inward)</h1>
-          <p className="text-gray-500">Record incoming stock and manage supplier invoices</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Purchase (Inward)</h1>
+          <p className="text-gray-500 dark:text-gray-400">Record incoming stock and manage supplier invoices</p>
         </div>
 
-        <div className="flex bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex bg-white dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <button
             onClick={() => setActiveTab('entry')}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-              activeTab === 'entry' ? "bg-brand-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+              activeTab === 'entry' ? "bg-brand-600 text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-gray-950"
             )}
           >
             <Plus className="h-4 w-4" />
@@ -484,7 +484,7 @@ export default function Purchase() {
             onClick={() => setActiveTab('history')}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-              activeTab === 'history' ? "bg-brand-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+              activeTab === 'history' ? "bg-brand-600 text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-gray-950"
             )}
           >
             <History className="h-4 w-4" />
@@ -500,9 +500,9 @@ export default function Purchase() {
           <div className="xl:col-span-2 space-y-6">
 
             {/* SEARCH & ENTRY GRID */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-brand-600" />
                   Bill Item Details
                 </h3>
@@ -511,26 +511,26 @@ export default function Purchase() {
               <div className="p-6 space-y-6">
                 {/* Medicine Search */}
                 <div className="relative">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Select Medicine</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Select Medicine</label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
                       ref={searchInputRef}
                       type="text"
                       placeholder="Search medicine by name or generic salt..."
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500 transition-all outline-none text-gray-900"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 transition-all outline-none"
                       value={medicineSearch}
                       onChange={(e) => setMedicineSearch(e.target.value)}
                     />
                   </div>
 
                   {!showAddMedicineModal && medicineResults.length === 0 && medicineSearch.length >= 2 && (
-                    <div className="absolute z-[60] left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 p-8 text-center animate-in fade-in zoom-in duration-200">
-                      <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+                    <div className="absolute z-[60] left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 p-8 text-center animate-in fade-in zoom-in duration-200">
+                      <div className="h-16 w-16 bg-gray-50 dark:bg-gray-950 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-gray-800">
                         <Package className="h-8 w-8 text-gray-300" />
                       </div>
-                      <p className="text-gray-900 font-bold text-lg">Medicine Not Found</p>
-                      <p className="text-sm text-gray-500 mb-6">"{medicineSearch}" is not in your master catalog.</p>
+                      <p className="text-gray-900 dark:text-white font-bold text-lg">Medicine Not Found</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">"{medicineSearch}" is not in your master catalog.</p>
                       <Button size="lg" onClick={() => {
                         const isFree = store?.plan !== 'PREMIUM'
                         if (isFree && totalMedicines >= 100) {
@@ -548,19 +548,19 @@ export default function Purchase() {
                   )}
 
                   {!showAddMedicineModal && medicineResults.length > 0 && (
-                    <div className="absolute z-[60] left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 max-h-[300px] overflow-y-auto overflow-x-hidden">
+                    <div className="absolute z-[60] left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 max-h-[300px] overflow-y-auto overflow-x-hidden">
                       {medicineResults.map(med => (
                         <button
                           key={med._id}
                           onClick={() => handleSelectMedicine(med)}
-                          className="w-full text-left px-5 py-3 hover:bg-brand-50 border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between"
+                          className="w-full text-left px-5 py-3 hover:bg-brand-50 dark:hover:bg-gray-800 border-b border-gray-50 dark:border-gray-800 last:border-0 transition-colors flex items-center justify-between"
                         >
                           <div className="min-w-0 flex-1">
-                            <p className="font-bold text-gray-900 truncate">{med.name} <span className="text-gray-400 font-medium text-xs ml-1">{med.dosage}</span></p>
-                            <p className="text-xs text-gray-500 truncate mt-0.5 uppercase tracking-wide">{med.manufacturer} • {med.form} ({med.unitsPerPack || 1} Units/{getPackagingLabels(med.form).item})</p>
+                            <p className="font-bold text-gray-900 dark:text-white truncate">{med.name} <span className="text-gray-400 font-medium text-xs ml-1">{med.dosage}</span></p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5 uppercase tracking-wide">{med.manufacturer} • {med.form} ({med.unitsPerPack || 1} Units/{getPackagingLabels(med.form).item})</p>
                           </div>
                           <div className="text-right">
-                            <span className="text-[10px] font-bold px-2 py-1 bg-gray-100 text-gray-600 rounded-full">Stock: {med.currentStock || 0}</span>
+                            <span className="text-[10px] font-bold px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full">Stock: {med.currentStock || 0}</span>
                           </div>
                         </button>
                       ))}
@@ -590,7 +590,7 @@ export default function Purchase() {
                       {/* Batch Number with auto-generate */}
                       <div className="col-span-1">
                         <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-sm font-semibold text-gray-700">Batch Number *</label>
+                          <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Batch Number *</label>
                           {isBatchAutoGenerated && (
                             <span className="flex items-center gap-1 text-[10px] font-bold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded-full border border-brand-200">
                               <Wand2 className="h-2.5 w-2.5" />
@@ -606,7 +606,7 @@ export default function Purchase() {
                               "w-full px-3 py-2.5 rounded-xl border text-sm font-mono outline-none transition-all",
                               isBatchAutoGenerated
                                 ? "border-brand-300 bg-brand-50/40 text-brand-900 focus:ring-2 focus:ring-brand-400"
-                                : "border-gray-200 bg-white focus:ring-2 focus:ring-brand-500",
+                                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-brand-500",
                               isGeneratingBatch && "opacity-60 cursor-wait"
                             )}
                             value={currentItem.batchNumber}
@@ -621,7 +621,7 @@ export default function Purchase() {
                             title="Regenerate batch number"
                             onClick={handleRegenerateBatch}
                             disabled={isGeneratingBatch}
-                            className="flex-shrink-0 p-2 rounded-lg border border-gray-200 bg-white hover:bg-brand-50 hover:border-brand-300 text-gray-400 hover:text-brand-600 transition-all disabled:opacity-40"
+                            className="flex-shrink-0 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-brand-50 hover:border-brand-300 text-gray-400 hover:text-brand-600 transition-all disabled:opacity-40"
                           >
                             <RefreshCw className={cn("h-3.5 w-3.5", isGeneratingBatch && "animate-spin")} />
                           </button>
@@ -677,21 +677,21 @@ export default function Purchase() {
                         type="number"
                         value={currentItem.gstRate}
                         readOnly
-                        className="bg-gray-50"
+                        className="bg-gray-50 dark:bg-gray-950"
                       />
                     </div>
 
                     {/* ITEM INSIGHTS */}
                     <div className="mt-5 pt-5 border-t border-brand-100 flex flex-wrap gap-4 items-center">
-                      <div className="bg-white px-4 py-2 rounded-lg border border-brand-200">
+                      <div className="bg-white dark:bg-gray-900 px-4 py-2 rounded-lg border border-brand-200">
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Final Cost (1 {getPackagingLabels(currentItem.form).item})</p>
-                        <p className="text-lg font-bold text-gray-900">{formatCurrency(currentItem.landingCost)}</p>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(currentItem.landingCost)}</p>
                       </div>
-                      <div className="bg-white px-4 py-2 rounded-lg border border-brand-200">
+                      <div className="bg-white dark:bg-gray-900 px-4 py-2 rounded-lg border border-brand-200">
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Total Stock Added</p>
                         <p className="text-lg font-bold text-brand-600">{currentItem.totalUnits} <span className="text-xs text-gray-400 font-medium">{getPackagingLabels(currentItem.form).item}s</span></p>
                       </div>
-                      <div className="bg-white px-4 py-2 rounded-lg border border-brand-200">
+                      <div className="bg-white dark:bg-gray-900 px-4 py-2 rounded-lg border border-brand-200">
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Profit %</p>
                         <p className={cn("text-lg font-bold", currentItem.margin > 15 ? "text-green-600" : "text-amber-600")}>
                           {currentItem.margin.toFixed(2)}%
@@ -706,9 +706,9 @@ export default function Purchase() {
                 )}
 
                 {/* ITEMS LIST */}
-                <div className="border border-gray-100 rounded-xl overflow-hidden">
+                <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 font-semibold uppercase text-[10px] tracking-wider">
+                    <thead className="bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 font-semibold uppercase text-[10px] tracking-wider">
                       <tr>
                         <th className="px-5 py-4">Medicine</th>
                         <th className="px-5 py-4">Batch/Exp</th>
@@ -731,28 +731,28 @@ export default function Purchase() {
                         </tr>
                       ) : (
                         items.map((item, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50/50 transition-colors group">
+                          <tr key={idx} className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors group">
                             <td className="px-5 py-4">
-                              <p className="font-bold text-gray-900">{item.medicineName}</p>
-                              <p className="text-[10px] text-gray-500 uppercase">{item.dosage} • {item.form}</p>
+                              <p className="font-bold text-gray-900 dark:text-white">{item.medicineName}</p>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">{item.dosage} • {item.form}</p>
                             </td>
                             <td className="px-5 py-4">
-                              <p className="font-mono text-gray-700 font-bold">{item.batchNumber}</p>
+                              <p className="font-mono text-gray-700 dark:text-gray-300 font-bold">{item.batchNumber}</p>
                               <p className="text-[10px] text-red-500 font-medium">EXP: {formatDate(item.expiryDate)}</p>
                             </td>
                             <td className="px-5 py-4 text-center">
-                              <p className="font-bold text-gray-900">{item.quantity} {getPackagingLabels(item.form).pack}</p>
+                              <p className="font-bold text-gray-900 dark:text-white">{item.quantity} {getPackagingLabels(item.form).pack}</p>
                               {item.freeQuantity > 0 && <span className="text-[10px] font-bold text-green-600">+{item.freeQuantity} FREE</span>}
                               <p className="text-[10px] text-gray-400">({item.totalUnits} Units)</p>
                             </td>
-                            <td className="px-5 py-4 text-right text-gray-600">
+                            <td className="px-5 py-4 text-right text-gray-600 dark:text-gray-400">
                               {formatCurrency(item.purchasePrice)}
                             </td>
                             <td className="px-5 py-4 text-right">
                               <span className="text-brand-700 font-medium">{formatCurrency(item.landingCost)}</span>
                               <p className="text-[10px] text-gray-400">per {getPackagingLabels(item.form).item}</p>
                             </td>
-                            <td className="px-5 py-4 text-right font-bold text-gray-900">
+                            <td className="px-5 py-4 text-right font-bold text-gray-900 dark:text-white">
                               {formatCurrency(item.totalAmount)}
                             </td>
                             <td className="px-5 py-4 text-right">
@@ -774,8 +774,8 @@ export default function Purchase() {
           <div className="space-y-6">
 
             {/* INVOICE INFO */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 overflow-hidden relative">
-              <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 overflow-hidden relative">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                 <FileText className="h-5 w-5 text-gray-400" />
                 Invoice Details
               </h3>
@@ -783,7 +783,7 @@ export default function Purchase() {
               <div className="space-y-5">
                 <div className="relative">
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-sm font-semibold text-gray-700">Supplier</label>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Supplier</label>
                     <Link
                       to={ROUTES.SUPPLIERS}
                       target="_blank"
@@ -827,15 +827,15 @@ export default function Purchase() {
                 </div>
 
                 <div className="pt-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Payment Terms</label>
-                  <div className="grid grid-cols-2 bg-gray-50 p-1 rounded-xl border border-gray-200">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Payment Terms</label>
+                  <div className="grid grid-cols-2 bg-gray-50 dark:bg-gray-950 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
                     <button
                       onClick={() => setFormData({ ...formData, paymentMode: 'CASH', amountPaid: totals.grandTotal })}
-                      className={cn("py-2 text-xs font-bold rounded-lg transition-all", formData.paymentMode === 'CASH' ? "bg-white text-brand-600 shadow-sm" : "text-gray-500")}
+                      className={cn("py-2 text-xs font-bold rounded-lg transition-all", formData.paymentMode === 'CASH' ? "bg-white dark:bg-gray-900 text-brand-600 shadow-sm" : "text-gray-500 dark:text-gray-400")}
                     >CASH</button>
                     <button
                       onClick={() => setFormData({ ...formData, paymentMode: 'CREDIT', amountPaid: 0 })}
-                      className={cn("py-2 text-xs font-bold rounded-lg transition-all", formData.paymentMode === 'CREDIT' ? "bg-white text-brand-600 shadow-sm" : "text-gray-500")}
+                      className={cn("py-2 text-xs font-bold rounded-lg transition-all", formData.paymentMode === 'CREDIT' ? "bg-white dark:bg-gray-900 text-brand-600 shadow-sm" : "text-gray-500 dark:text-gray-400")}
                     >CREDIT</button>
                   </div>
                 </div>
@@ -860,7 +860,7 @@ export default function Purchase() {
                 <textarea
                   rows={3}
                   placeholder="Notes or internal remarks..."
-                  className="w-full p-4 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all bg-gray-50"
+                  className="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 />
@@ -907,10 +907,10 @@ export default function Purchase() {
         </div>
       ) : (
         /* --- HISTORY VIEW --- */
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex flex-wrap gap-4 items-end">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-wrap gap-4 items-end">
             <div className="w-60">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Supplier</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Supplier</label>
               <Select
                 options={[{ label: 'All Suppliers', value: '' }, ...suppliers.map(s => ({ label: s.name, value: s._id }))]}
                 value={historyFilters.supplierId}
@@ -918,11 +918,11 @@ export default function Purchase() {
               />
             </div>
             <div className="w-40">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">From</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">From</label>
               <Input type="date" value={historyFilters.startDate} onChange={(e) => setHistoryFilters({ ...historyFilters, startDate: e.target.value })} />
             </div>
             <div className="w-40">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">To</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">To</label>
               <Input type="date" value={historyFilters.endDate} onChange={(e) => setHistoryFilters({ ...historyFilters, endDate: e.target.value })} />
             </div>
             <Button variant="outline" onClick={() => setHistoryFilters({ supplierId: '', startDate: '', endDate: '' })}>Reset</Button>
@@ -956,22 +956,22 @@ export default function Purchase() {
             <div className="grid grid-cols-2 gap-8">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Supplier Info</p>
-                <h4 className="text-lg font-bold text-gray-900">{viewPurchase.supplierName}</h4>
-                <p className="text-sm text-gray-500 mt-1">{viewPurchase.supplierId?.phone}</p>
-                <p className="text-sm text-gray-500">{viewPurchase.supplierId?.address?.street}, {viewPurchase.supplierId?.address?.city}</p>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white">{viewPurchase.supplierName}</h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{viewPurchase.supplierId?.phone}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{viewPurchase.supplierId?.address?.street}, {viewPurchase.supplierId?.address?.city}</p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Invoice Meta</p>
-                <p className="text-sm text-gray-600">Bill Date: <strong>{formatDate(viewPurchase.supplierBillDate)}</strong></p>
-                <p className="text-sm text-gray-600">Payment Status:
+                <p className="text-sm text-gray-600 dark:text-gray-400">Bill Date: <strong>{formatDate(viewPurchase.supplierBillDate)}</strong></p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Payment Status:
                   <span className="ml-2 font-bold text-brand-600">{viewPurchase.paymentStatus}</span>
                 </p>
               </div>
             </div>
 
-            <div className="border border-gray-100 rounded-xl overflow-hidden">
+            <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-[10px]">
+                <thead className="bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 font-bold uppercase text-[10px]">
                   <tr>
                     <th className="px-5 py-3 text-left">Medicine</th>
                     <th className="px-5 py-3 text-left">Batch</th>
@@ -1006,7 +1006,7 @@ export default function Purchase() {
                   <span className="text-gray-400">GST Total</span>
                   <span className="font-bold">{formatCurrency(viewPurchase.totalGst)}</span>
                 </div>
-                <div className="flex justify-between text-xl font-black text-brand-900 pt-2 border-t border-gray-100">
+                <div className="flex justify-between text-xl font-black text-brand-900 pt-2 border-t border-gray-100 dark:border-gray-800">
                   <span>Grand Total</span>
                   <span>{formatCurrency(viewPurchase.grandTotal)}</span>
                 </div>
@@ -1046,17 +1046,17 @@ export default function Purchase() {
             <Input label="Manufacturer" value={newMedicine.manufacturer} onChange={(e) => setNewMedicine({ ...newMedicine, manufacturer: e.target.value })} />
           </div>
           {/* Unit Configuration - Dynamic based on Form */}
-          <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-100">
+          <div className="bg-gray-50 dark:bg-gray-950 p-4 rounded-xl space-y-4 border border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-2 mb-2">
               <Package className="h-4 w-4 text-brand-600" />
-              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Unit Configuration</h4>
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Unit Configuration</h4>
             </div>
 
             {['TABLET', 'CAPSULE'].includes(newMedicine.form) ? (
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Base Unit</label>
-                  <p className="text-sm font-bold text-gray-700 mt-1">Tablet / Cap</p>
+                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-1">Tablet / Cap</p>
                 </div>
                 <Input label="Units/Strip" type="number" value={newMedicine.unitsPerPack} onChange={(e) => setNewMedicine({ ...newMedicine, unitsPerPack: e.target.value })} />
                 <Input label="Strips/Box" type="number" value={newMedicine.stripsPerBox} onChange={(e) => setNewMedicine({ ...newMedicine, stripsPerBox: e.target.value })} />
@@ -1069,7 +1069,7 @@ export default function Purchase() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Base Unit</label>
-                  <p className="text-sm font-bold text-gray-700 mt-1">Bottle</p>
+                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-1">Bottle</p>
                 </div>
                 <Input label="Bottle Size (e.g. 100ml)" value={newMedicine.dosage} onChange={(e) => setNewMedicine({ ...newMedicine, dosage: e.target.value })} />
                 <Input label="Units/Outer Pack" type="number" value={newMedicine.unitsPerPack} onChange={(e) => setNewMedicine({ ...newMedicine, unitsPerPack: e.target.value })} />
@@ -1078,7 +1078,7 @@ export default function Purchase() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Base Unit</label>
-                  <p className="text-sm font-bold text-gray-700 mt-1">Single Unit</p>
+                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-1">Single Unit</p>
                 </div>
                 <Input label="Units per Pack" type="number" value={newMedicine.unitsPerPack} onChange={(e) => setNewMedicine({ ...newMedicine, unitsPerPack: e.target.value })} />
               </div>
@@ -1091,7 +1091,7 @@ export default function Purchase() {
             <Input label="GST %" type="number" value={newMedicine.gstRate} onChange={(e) => setNewMedicine({ ...newMedicine, gstRate: e.target.value })} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 bg-brand-50/30 p-4 rounded-xl">
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800 bg-brand-50/30 p-4 rounded-xl">
             <Input label="Default MRP (Per Unit/Pill)" type="number" value={newMedicine.defaultMRP} onChange={(e) => setNewMedicine({ ...newMedicine, defaultMRP: e.target.value })} />
             <Input label="Target Sale Price (Per Unit/Pill)" type="number" value={newMedicine.defaultSellingPrice} onChange={(e) => setNewMedicine({ ...newMedicine, defaultSellingPrice: e.target.value })} />
           </div>

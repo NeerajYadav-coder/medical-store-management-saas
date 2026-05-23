@@ -111,7 +111,7 @@ export default function DashboardLayout() {
   )
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-800 dark:bg-gray-950 overflow-hidden">
       {/* Sidebar Overlay (Mobile) */}
       {isSidebarOpen && isMobile && (
         <div
@@ -155,25 +155,13 @@ export default function DashboardLayout() {
           </button>
         </div>
 
-        {/* Search */}
-        <div className="px-4 py-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search medicines..."
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-800 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
         {/* Navigation */}
         <nav className="flex-1 px-4 pb-4 overflow-y-auto scrollbar-hide">
           <ul className="space-y-1">
             {filteredNavItems.map((item) => {
               const Icon = ICONS[item.icon]
-              const isActive = location.pathname === item.path ||
-                (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
+              const isActive = location.pathname === item.path || 
+                               (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
               const isFree = store?.plan !== 'PREMIUM'
               const isPremiumItem = item.path === ROUTES.REPORTS || item.path === ROUTES.AUDIT_LOGS
 
@@ -182,9 +170,9 @@ export default function DashboardLayout() {
                   <NavLink
                     to={item.path}
                     className={cn(
-                      'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
+                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
                       isActive
-                        ? 'bg-brand-600 text-white '
+                        ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     )}
                   >
@@ -242,22 +230,21 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
+        <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
           {/* Left side */}
           <div className="flex items-center gap-4">
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 lg:hidden"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 lg:hidden"
             >
               <Menu className="h-6 w-6" />
             </button>
 
             {/* Breadcrumb or page title */}
             <div className="hidden sm:block">
-              <h1 className="text-lg font-semibold text-gray-900">
-                {SIDEBAR_NAV_ITEMS.find(item =>
-                  location.pathname === item.path ||
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {SIDEBAR_NAV_ITEMS.find(item => 
+                  location.pathname === item.path || 
                   (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
                 )?.label || 'Dashboard'}
               </h1>
@@ -286,7 +273,7 @@ export default function DashboardLayout() {
                     e.stopPropagation()
                     setIsNotificationsOpen(!isNotificationsOpen)
                   }}
-                  className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+                  className="relative p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400"
                 >
                   <Bell className="h-5 w-5" />
                   {latestAlerts.length > 0 && (
@@ -296,25 +283,25 @@ export default function DashboardLayout() {
 
                 {/* Notifications dropdown */}
                 {isNotificationsOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
                     </div>
                     <div className="max-h-72 overflow-y-auto">
                       {latestAlerts.length > 0 ? (
                         latestAlerts.slice(0, 5).map((alert) => (
-                          <div key={alert._id} className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                            <p className="text-sm text-gray-900">{alert.message}</p>
-                            <p className="text-xs text-gray-500 mt-1">{new Date(alert.createdAt).toLocaleDateString()}</p>
+                          <div key={alert._id} className="px-4 py-3 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700 cursor-pointer">
+                            <p className="text-sm text-gray-900 dark:text-white">{alert.message}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(alert.createdAt).toLocaleDateString()}</p>
                           </div>
                         ))
                       ) : (
-                        <div className="px-4 py-6 text-center text-sm text-gray-500">
+                        <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                           All good! No pending alerts.
                         </div>
                       )}
                     </div>
-                    <div className="px-4 py-2 border-t border-gray-100">
+                    <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800">
                       <button className="text-sm text-brand-600 hover:text-brand-700 font-medium">
                         View all notifications
                       </button>
@@ -331,50 +318,50 @@ export default function DashboardLayout() {
                   e.stopPropagation()
                   setIsUserMenuOpen(!isUserMenuOpen)
                 }}
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100"
+                className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-800"
               >
                 <div className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-sm font-medium">
                   {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+                <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               </button>
 
               {/* User dropdown */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="font-medium text-gray-900">{user?.name}</p>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                  <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                    <p className="font-medium text-gray-900 dark:text-white">{user?.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
                   </div>
                   {user?.role !== 'STAFF' && (
                     <div className="py-1">
                       <Link
-                        to={ROUTES.SETTINGS_USER}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        to={ROUTES.ROUTES?.SETTINGS_USER || ROUTES.SETTINGS_USER}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700"
                       >
                         <User className="h-4 w-4" />
                         Profile Settings
                       </Link>
                       <Link
                         to={ROUTES.SETTINGS_STORE}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700"
                       >
                         <Store className="h-4 w-4" />
                         Store Settings
                       </Link>
                       <button
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700 w-full text-left"
                       >
                         <HelpCircle className="h-4 w-4" />
                         Help & Support
                       </button>
                     </div>
                   )}
-                  <div className={cn("pt-1", user?.role !== 'STAFF' && "border-t border-gray-100")}>
+                  <div className={cn("pt-1", user?.role !== 'STAFF' && "border-t border-gray-100 dark:border-gray-800")}>
                     <button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 w-full text-left"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 w-full text-left"
                     >
                       {isLoggingOut ? (
                         <Spinner size="sm" />
@@ -391,7 +378,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-2 sm:p-4 lg:p-6">
+        <main className="flex-1 overflow-auto p-4 lg:p-6 bg-gray-100 dark:bg-gray-800 dark:bg-gray-950">
           <Outlet />
         </main>
       </div>

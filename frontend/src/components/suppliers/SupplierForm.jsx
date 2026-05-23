@@ -12,7 +12,7 @@ const MARGIN_CATEGORIES = [
   { value: 'HIGH', label: 'High Margin (20%+)', color: 'text-green-600' },
   { value: 'MEDIUM', label: 'Medium Margin (10-20%)', color: 'text-yellow-600' },
   { value: 'LOW', label: 'Low Margin (<10%)', color: 'text-red-600' },
-  { value: 'UNKNOWN', label: 'Not Set', color: 'text-gray-600' },
+  { value: 'UNKNOWN', label: 'Not Set', color: 'text-gray-600 dark:text-gray-400' },
 ];
 
 const SPECIALIZATIONS = [
@@ -122,18 +122,18 @@ export default function SupplierForm({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {supplier ? 'Edit Supplier' : 'Add New Supplier'}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+            className="p-2 hover:bg-gray-100 dark:bg-gray-800 rounded-lg"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
@@ -142,7 +142,7 @@ export default function SupplierForm({
           <div className="space-y-6">
             {/* Basic Info */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
                 Basic Information
               </h3>
@@ -168,13 +168,13 @@ export default function SupplierForm({
                   placeholder="Sales representative name"
                 />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Margin Category
                   </label>
                   <select
                     value={formData.marginCategory}
                     onChange={(e) => handleChange('marginCategory', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-brand-500"
                   >
                     {MARGIN_CATEGORIES.map(cat => (
                       <option key={cat.value} value={cat.value}>
@@ -188,7 +188,7 @@ export default function SupplierForm({
 
             {/* Contact Info */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <Phone className="h-4 w-4" />
                 Contact Details
               </h3>
@@ -219,7 +219,7 @@ export default function SupplierForm({
 
             {/* Address */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 Address
               </h3>
@@ -254,7 +254,7 @@ export default function SupplierForm({
 
             {/* Business Details */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Business Details
               </h3>
@@ -282,7 +282,7 @@ export default function SupplierForm({
 
             {/* Credit & Payment */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
                 Credit & Payment
               </h3>
@@ -306,7 +306,7 @@ export default function SupplierForm({
 
             {/* Specializations */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 Specializes In
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -319,7 +319,7 @@ export default function SupplierForm({
                       'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
                       formData.specializesIn.includes(spec)
                         ? 'bg-brand-100 border-brand-300 text-brand-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                        : 'bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800'
                     )}
                   >
                     {spec}
@@ -330,7 +330,7 @@ export default function SupplierForm({
 
             {/* Rating */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <Star className="h-4 w-4" />
                 Rating
               </h3>
@@ -343,7 +343,7 @@ export default function SupplierForm({
                     className="focus:outline-none"
                   >
                     <Star 
-                      className={cn(
+                       className={cn(
                         'h-6 w-6 transition-colors',
                         star <= formData.rating 
                           ? 'fill-amber-400 text-amber-400' 
@@ -357,14 +357,14 @@ export default function SupplierForm({
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Notes
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-brand-500 resize-none"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-brand-500 resize-none"
                 placeholder="Additional notes about this supplier..."
               />
             </div>
@@ -372,7 +372,7 @@ export default function SupplierForm({
         </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200">
+        <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>

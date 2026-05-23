@@ -92,11 +92,11 @@ export function Table({
   const isSomeSelected = selectedRows.length > 0 && selectedRows.length < data.length
 
   return (
-    <div className={cn('overflow-hidden rounded-lg border border-gray-200 bg-white', className)}>
+    <div className={cn('overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900', className)}>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           {/* Header */}
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-950">
             <tr>
               {/* Selection checkbox */}
               {selectable && (
@@ -108,7 +108,7 @@ export function Table({
                       if (el) el.indeterminate = isSomeSelected
                     }}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500"
                   />
                 </th>
               )}
@@ -119,9 +119,9 @@ export function Table({
                   key={column.key}
                   scope="col"
                   className={cn(
-                    'px-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500',
+                    'px-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400',
                     compact ? 'py-2' : 'py-3',
-                    column.sortable !== false && sortable && 'cursor-pointer hover:bg-gray-100',
+                    column.sortable !== false && sortable && 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800',
                     column.align === 'center' && 'text-center',
                     column.align === 'right' && 'text-right',
                     column.className
@@ -139,7 +139,7 @@ export function Table({
           </thead>
 
           {/* Body */}
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
             {isLoading ? (
               <tr>
                 <td
@@ -159,7 +159,7 @@ export function Table({
                     {emptyIcon && (
                       <div className="mb-3 text-gray-300">{emptyIcon}</div>
                     )}
-                    <p className="text-sm text-gray-500">{emptyMessage}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{emptyMessage}</p>
                   </div>
                 </td>
               </tr>
@@ -174,8 +174,8 @@ export function Table({
                     onClick={() => onRowClick?.(row)}
                     className={cn(
                       'transition-colors',
-                      hoverable && 'hover:bg-gray-50',
-                      striped && rowIndex % 2 === 1 && 'bg-gray-50/50',
+                      hoverable && 'hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-800',
+                      striped && rowIndex % 2 === 1 && 'bg-gray-50 dark:bg-gray-950/50 dark:bg-gray-800/30',
                       onRowClick && 'cursor-pointer',
                       isSelected && 'bg-brand-50'
                     )}
@@ -191,7 +191,7 @@ export function Table({
                             handleSelectRow(rowId, e.target.checked)
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500"
                         />
                       </td>
                     )}
@@ -201,7 +201,7 @@ export function Table({
                       <td
                         key={column.key}
                         className={cn(
-                          'px-4 text-sm text-gray-900 whitespace-nowrap',
+                          'px-4 text-sm text-gray-900 dark:text-white dark:text-gray-100 whitespace-nowrap',
                           compact ? 'py-2' : 'py-3',
                           column.align === 'center' && 'text-center',
                           column.align === 'right' && 'text-right',
@@ -278,10 +278,10 @@ export function TablePagination({
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 bg-gray-50 px-4 py-3">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 dark:bg-gray-800 px-4 py-3">
       {/* Item count */}
       {showItemCount && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Showing <span className="font-medium">{startItem}</span> to{' '}
           <span className="font-medium">{endItem}</span> of{' '}
           <span className="font-medium">{totalItems}</span> results
@@ -316,7 +316,7 @@ export function TablePagination({
                   'min-w-[32px] h-8 px-2 text-sm font-medium rounded-md transition-colors',
                   page === currentPage
                     ? 'bg-brand-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'
                 )}
               >
                 {page}
@@ -362,7 +362,7 @@ export function DataCards({
   if (data.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-gray-500">{emptyMessage}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{emptyMessage}</p>
       </div>
     )
   }

@@ -11,7 +11,7 @@ import Button from '@components/common/Button'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
         {/* 404 Illustration */}
         <div className="mb-8">
@@ -26,8 +26,8 @@ export default function NotFound() {
         </div>
 
         {/* Message */}
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Page Not Found</h1>
-        <p className="text-gray-500 mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Page Not Found</h1>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">
           Oops! The page you're looking for doesn't exist or has been moved.
         </p>
 

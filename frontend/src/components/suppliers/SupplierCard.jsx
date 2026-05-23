@@ -14,7 +14,7 @@ const MarginBadge = ({ category, percentage }) => {
     HIGH: { color: 'bg-green-100 text-green-700', icon: TrendingUp },
     MEDIUM: { color: 'bg-yellow-100 text-yellow-700', icon: null },
     LOW: { color: 'bg-red-100 text-red-700', icon: TrendingDown },
-    UNKNOWN: { color: 'bg-gray-100 text-gray-600', icon: null },
+    UNKNOWN: { color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400', icon: null },
   };
   
   const badge = badges[category] || badges.UNKNOWN;
@@ -70,7 +70,7 @@ export default function SupplierCard({
 
   return (
     <div className={cn(
-      'bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow',
+      'bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow',
       className
     )}>
       {/* Header */}
@@ -80,9 +80,9 @@ export default function SupplierCard({
             {supplier.vendorCode?.slice(0, 2) || supplier.name?.charAt(0)}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">{supplier.name}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{supplier.name}</h3>
             <div className="flex items-center gap-2 mt-0.5">
-              <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-600">
+              <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono text-gray-600 dark:text-gray-400">
                 {supplier.vendorCode || 'No Code'}
               </code>
               <MarginBadge 
@@ -96,15 +96,15 @@ export default function SupplierCard({
         <button
           type="button"
           onClick={() => onEdit?.(supplier)}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
         >
-          <Edit className="h-4 w-4 text-gray-500" />
+          <Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         </button>
       </div>
 
       {/* Contact Info */}
       <div className="space-y-2 mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <Phone className="h-4 w-4 text-gray-400" />
           <span>{supplier.phone}</span>
           {supplier.contactPerson && (
@@ -112,13 +112,13 @@ export default function SupplierCard({
           )}
         </div>
         {supplier.email && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Mail className="h-4 w-4 text-gray-400" />
             <span>{supplier.email}</span>
           </div>
         )}
         {supplier.address?.city && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <MapPin className="h-4 w-4 text-gray-400" />
             <span>{supplier.address.city}, {supplier.address.state}</span>
           </div>
@@ -127,49 +127,49 @@ export default function SupplierCard({
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-gray-50 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+        <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-1">
             <Truck className="h-3.5 w-3.5" />
             <span>Total Purchases</span>
           </div>
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
             {formatCurrency(supplier.totalPurchaseValue)}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             {supplier.totalInvoices || 0} invoices
           </p>
         </div>
-        <div className="bg-gray-50 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+        <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-1">
             <CreditCard className="h-3.5 w-3.5" />
             <span>Credit Status</span>
           </div>
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
             {formatCurrency(supplier.currentCredit || 0)}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             of {formatCurrency(supplier.creditLimit || 0)} limit
           </p>
         </div>
       </div>
 
       {/* Footer - Rating & Payment Terms */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Rating:</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Rating:</span>
           <StarRating 
             rating={supplier.rating || 3} 
             onChange={(rating) => onRatingChange?.(supplier._id, rating)}
           />
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           {supplier.paymentTerms || 30} days payment
         </div>
       </div>
 
       {/* Specializations */}
       {supplier.specializesIn?.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
           <div className="flex flex-wrap gap-1">
             {supplier.specializesIn.map((spec, index) => (
               <span 
