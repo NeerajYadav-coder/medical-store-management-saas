@@ -278,7 +278,7 @@ export function TablePagination({
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 bg-gray-50 px-4 py-3">
       {/* Item count */}
       {showItemCount && (
         <p className="text-sm text-gray-500">

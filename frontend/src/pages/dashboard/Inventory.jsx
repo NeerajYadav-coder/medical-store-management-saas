@@ -508,24 +508,23 @@ export default function Inventory() {
           </div>
 
           {/* Filter toggles */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <Select
               options={FORM_FILTERS}
               value={formFilter}
               onChange={(e) => updateFilter('form', e.target.value)}
-              className="w-40"
+              className="w-full sm:w-40"
             />
             <Select
               options={STOCK_FILTERS}
               value={stockFilter}
               onChange={(e) => updateFilter('filter', e.target.value)}
-              className="w-40"
+              className="w-full sm:w-40"
             />
             <Button
               variant="ghost"
-              size="icon"
               onClick={refetch}
-              className={cn(isFetching && 'animate-spin')}
+              className={cn("w-full sm:w-auto flex justify-center", isFetching && 'animate-spin')}
             >
               <RefreshCcw className="h-4 w-4" />
             </Button>
@@ -694,7 +693,7 @@ function BatchDetailView({ medicine }) {
       {batchList.map((batch) => {
         const expiry = formatExpiryDate(batch.expiryDate)
         return (
-          <div key={batch._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+          <div key={batch._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 p-4 bg-gray-50 rounded-xl border border-gray-100">
             <div>
               <p className="font-bold text-gray-900 font-mono">{batch.batchNumber}</p>
               <p className={cn(
@@ -705,13 +704,19 @@ function BatchDetailView({ medicine }) {
                 Expiry: {expiry.text}
               </p>
             </div>
-            <div className="text-right">
-              <p className="font-bold text-brand-700 text-lg">{batch.quantityRemaining}</p>
-              <p className="text-[10px] text-gray-400">units remaining</p>
+            <div className="flex justify-between sm:block sm:text-right w-full sm:w-auto">
+              <p className="text-[10px] text-gray-400 sm:hidden">Units Remaining</p>
+              <div>
+                <p className="font-bold text-brand-700 text-lg sm:text-base">{batch.quantityRemaining}</p>
+                <p className="text-[10px] text-gray-400 hidden sm:block">units remaining</p>
+              </div>
             </div>
-            <div className="text-right ml-6">
-              <p className="font-medium text-gray-700">{formatCurrency(batch.sellingPrice)}</p>
-              <p className="text-[10px] text-gray-400">selling price</p>
+            <div className="flex justify-between sm:block sm:text-right sm:ml-6 w-full sm:w-auto">
+              <p className="text-[10px] text-gray-400 sm:hidden">Selling Price</p>
+              <div>
+                <p className="font-medium text-gray-700 text-lg sm:text-base">{formatCurrency(batch.sellingPrice)}</p>
+                <p className="text-[10px] text-gray-400 hidden sm:block">selling price</p>
+              </div>
             </div>
           </div>
         )

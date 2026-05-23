@@ -75,7 +75,7 @@ export default function UserSettings() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="flex gap-8">
+        <nav className="flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => {
             const Icon = tab.icon
             return (
