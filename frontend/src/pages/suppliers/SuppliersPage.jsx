@@ -2,7 +2,7 @@
  * SuppliersPage - Supplier management with vendor codes and margin tracking
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Plus, Search, TrendingUp, Filter, Download, 
   Truck, Building2, Star 
@@ -54,10 +54,15 @@ export default function SuppliersPage() {
       setSuppliers(response.data || []);
       calculateStats(response.data || []);
     } catch (error) {
+      if (error?.isCancelled) return;
       console.error('Error loading suppliers:', error);
       toast.error('Failed to load suppliers');
     } finally {
-      setLoading(false);
+      if (error?.isCancelled) {
+        // do nothing
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -82,13 +87,24 @@ export default function SuppliersPage() {
       const response = await supplierApi.search(searchQuery);
       setSuppliers(response.data || []);
     } catch (error) {
+      if (error?.isCancelled) return;
       console.error('Error searching suppliers:', error);
     } finally {
-      setLoading(false);
+      if (error?.isCancelled) {
+        // do nothing
+      } else {
+        setLoading(false);
+      }
     }
   };
 
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     const debounce = setTimeout(() => {
       if (searchQuery) {
         handleSearch();

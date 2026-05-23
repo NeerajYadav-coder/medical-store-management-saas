@@ -138,6 +138,10 @@ const saleItemSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    refillReminderSent: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

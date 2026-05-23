@@ -87,8 +87,8 @@ export default function DashboardHome() {
     todayTransactions: stats?.daily?.bills || 0,
     lowStockCount: stats?.alerts?.lowStock || 0,
     expiringCount: stats?.alerts?.expiry || 0,
-    pendingPurchases: 0, // Placeholder if backend doesn't support yet
-    activeStaff: 0, // Placeholder
+    pendingPurchases: stats?.pendingPurchases || 0,
+    activeStaff: stats?.activeStaff || 0,
     
     // Trends
     salesGrowth: stats?.monthly?.sales > 0 ? (((stats?.daily?.sales || 0) - ((stats?.monthly?.sales || 0) / 30)) / ((stats?.monthly?.sales || 1) / 30)) * 100 : 0, 

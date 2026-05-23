@@ -42,6 +42,8 @@ import { useStore } from '@context/StoreContext'
 import { ROUTES, SIDEBAR_NAV_ITEMS } from '@config/routes.config'
 import Button from '@components/common/Button'
 import { Spinner } from '@components/common/Loader'
+import { useQuery } from '@tanstack/react-query'
+import { reportsApi } from '@api/reports.api'
 
 // Icon mapping
 const ICONS = {
@@ -66,6 +68,16 @@ export default function DashboardLayout() {
   const { isDarkMode, toggleTheme } = useTheme()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+
+  // Fetch stats from backend for alerts and notifications count
+  const { data: stats } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: reportsApi.getDashboardStats,
+    staleTime: 60 * 1000, // 1 minute
+  })
+
+  const expiringCount = stats?.alerts?.expiry || 0
+  const latestAlerts = stats?.alerts?.latest || []
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
@@ -181,9 +193,9 @@ export default function DashboardLayout() {
                     {isFree && isPremiumItem && (
                       <Lock className="ml-auto h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors" />
                     )}
-                    {item.badge && (
+                    {item.badge && stats?.alerts?.total > 0 && (
                       <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-danger-500 text-white">
-                        3
+                        {stats.alerts.total}
                       </span>
                     )}
                   </NavLink>
@@ -194,14 +206,14 @@ export default function DashboardLayout() {
         </nav>
 
         {/* Alerts Card */}
-        {user?.role !== 'STAFF' && (
+        {user?.role !== 'STAFF' && expiringCount > 0 && (
           <div className="mx-4 mb-4 p-4 rounded-xl bg-gradient-to-br from-warning-500/20 to-warning-600/10 border border-warning-500/30">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-warning-500/20">
                 <AlertTriangle className="h-5 w-5 text-warning-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-white">5 items expiring soon</p>
+                <p className="text-sm font-medium text-white">{expiringCount} item{expiringCount !== 1 ? 's' : ''} expiring soon</p>
                 <p className="text-xs text-slate-400 mt-1">Check inventory alerts</p>
               </div>
             </div>
@@ -277,7 +289,9 @@ export default function DashboardLayout() {
                   className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500"
                 >
                   <Bell className="h-5 w-5" />
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-danger-500" />
+                  {latestAlerts.length > 0 && (
+                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-danger-500" />
+                  )}
                 </button>
 
                 {/* Notifications dropdown */}
@@ -287,12 +301,18 @@ export default function DashboardLayout() {
                       <h3 className="font-semibold text-gray-900">Notifications</h3>
                     </div>
                     <div className="max-h-72 overflow-y-auto">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                          <p className="text-sm text-gray-900">Low stock alert for Paracetamol</p>
-                          <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
+                      {latestAlerts.length > 0 ? (
+                        latestAlerts.slice(0, 5).map((alert) => (
+                          <div key={alert._id} className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
+                            <p className="text-sm text-gray-900">{alert.message}</p>
+                            <p className="text-xs text-gray-500 mt-1">{new Date(alert.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-6 text-center text-sm text-gray-500">
+                          All good! No pending alerts.
                         </div>
-                      ))}
+                      )}
                     </div>
                     <div className="px-4 py-2 border-t border-gray-100">
                       <button className="text-sm text-brand-600 hover:text-brand-700 font-medium">

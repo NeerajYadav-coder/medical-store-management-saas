@@ -63,6 +63,41 @@ const medicalStoreSchema = new mongoose.Schema(
       default: "FREE",
     },
 
+    whatsappConfig: {
+      isEnabled: {
+        type: Boolean,
+        default: false,
+      },
+      apiKey: {
+        type: String,
+        default: "",
+      },
+      phoneNumber: {
+        type: String,
+        default: "",
+      },
+      dailyReportEnabled: {
+        type: Boolean,
+        default: false,
+      },
+      thankYouEnabled: {
+        type: Boolean,
+        default: false,
+      },
+      refillReminderEnabled: {
+        type: Boolean,
+        default: false,
+      },
+      promotionsEnabled: {
+        type: Boolean,
+        default: false,
+      },
+      refillBufferDays: {
+        type: Number,
+        default: 2,
+      },
+    },
+
     // Who created this store (OWNER user)
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

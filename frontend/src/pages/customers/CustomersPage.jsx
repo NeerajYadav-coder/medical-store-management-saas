@@ -2,7 +2,7 @@
  * CustomersPage - Customer management with repeat buyer and loyalty tracking
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Plus, Search, Filter, Download, User, Crown, 
   RefreshCw, Phone, TrendingUp, ShoppingBag, Calendar
@@ -178,10 +178,16 @@ export default function CustomersPage() {
       setCustomers(customerList);
       calculateStats(customerList);
     } catch (error) {
+      if (error?.isCancelled) return;
       console.error('Error loading customers:', error);
       toast.error('Failed to load customers');
     } finally {
-      setLoading(false);
+      // Only set loading to false if request wasn't cancelled (since a subsequent request is active)
+      if (error?.isCancelled) {
+        // do nothing
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -195,7 +201,13 @@ export default function CustomersPage() {
     setStats(stats);
   };
 
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     const debounce = setTimeout(() => {
       if (searchQuery.length >= 2) {
         searchCustomers();
@@ -216,6 +228,7 @@ export default function CustomersPage() {
         : (Array.isArray(response?.data) ? response.data : []);
       setCustomers(customerList);
     } catch (error) {
+      if (error?.isCancelled) return;
       console.error('Error searching customers:', error);
     } finally {
       setLoading(false);

@@ -141,14 +141,14 @@ export const SIDEBAR_NAV_ITEMS = [
   },
   {
     path: ROUTES.BILLING,
-    label: 'Billing (POS)',
+    label: 'Billing',
     icon: 'ShoppingCart',
     permission: PERMISSIONS.CREATE_SALE,
     badge: false,
   },
   {
     path: ROUTES.SALES,
-    label: 'Sales History',
+    label: 'Sales',
     icon: 'BarChart3',
     permission: PERMISSIONS.VIEW_SALES,
   },
@@ -161,7 +161,7 @@ export const SIDEBAR_NAV_ITEMS = [
   },
   {
     path: ROUTES.PURCHASE,
-    label: 'Purchase (Inward)',
+    label: 'Purchases',
     icon: 'Truck',
     permission: PERMISSIONS.VIEW_PURCHASES,
   },
@@ -179,7 +179,7 @@ export const SIDEBAR_NAV_ITEMS = [
   },
   {
     path: ROUTES.STAFF,
-    label: 'Staff Management',
+    label: 'Staff',
     icon: 'UserCog',
     permission: PERMISSIONS.MANAGE_STAFF,
   },
@@ -191,7 +191,7 @@ export const SIDEBAR_NAV_ITEMS = [
   },
   {
     path: ROUTES.AUDIT_LOGS,
-    label: 'Audit Logs',
+    label: 'Logs',
     icon: 'FileText',
     permission: PERMISSIONS.VIEW_AUDIT_LOGS,
   },
