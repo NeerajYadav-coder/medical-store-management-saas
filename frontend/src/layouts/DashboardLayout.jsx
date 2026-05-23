@@ -141,7 +141,7 @@ export default function DashboardLayout() {
             <input
               type="text"
               placeholder="Search medicines..."
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-800 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -151,8 +151,8 @@ export default function DashboardLayout() {
           <ul className="space-y-1">
             {filteredNavItems.map((item) => {
               const Icon = ICONS[item.icon]
-              const isActive = location.pathname === item.path || 
-                               (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
+              const isActive = location.pathname === item.path ||
+                (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
               const isFree = store?.plan !== 'PREMIUM'
               const isPremiumItem = item.path === ROUTES.REPORTS || item.path === ROUTES.AUDIT_LOGS
 
@@ -161,9 +161,9 @@ export default function DashboardLayout() {
                   <NavLink
                     to={item.path}
                     className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+                      'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
                       isActive
-                        ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30'
+                        ? 'bg-brand-600 text-white '
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     )}
                   >
@@ -233,8 +233,8 @@ export default function DashboardLayout() {
             {/* Breadcrumb or page title */}
             <div className="hidden sm:block">
               <h1 className="text-lg font-semibold text-gray-900">
-                {SIDEBAR_NAV_ITEMS.find(item => 
-                  location.pathname === item.path || 
+                {SIDEBAR_NAV_ITEMS.find(item =>
+                  location.pathname === item.path ||
                   (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
                 )?.label || 'Dashboard'}
               </h1>
