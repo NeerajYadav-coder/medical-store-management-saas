@@ -12,15 +12,15 @@ import MedicineBatch from '../models/MedicineBatch.js';
 import Medicine from '../models/Medicine.js';
 import Supplier from '../models/Supplier.js';
 import { protect } from '../middleware/auth.middleware.js';
-import { ownerOnly } from '../middleware/role.middleware.js';
+import { ownerOrStaff } from '../middleware/role.middleware.js';
 import { auditAction } from '../middleware/audit.middleware.js';
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(protect);
-// Strict: Purchases are Owner-only business
-router.use(ownerOnly);
+// Purchases are Owner and Staff business
+router.use(ownerOrStaff);
 
 // Get all purchases
 router.get('/', async (req, res, next) => {

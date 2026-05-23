@@ -30,10 +30,14 @@ import { Select } from '@components/common/Input'
 
 import { useQuery } from '@tanstack/react-query'
 import { reportsApi } from '@api/reports.api'
-import { Skeleton } from '@components/common/Loader'
+import { inventoryApi } from '@api/inventory.api'
+import saleApi from '@api/sale.api'
+import purchaseApi from '@api/purchase.api'
 import { useStore } from '@context/StoreContext'
 import PremiumLockOverlay from '@components/common/PremiumLockOverlay'
 import PremiumModal from '@components/common/PremiumModal'
+import { exportToPDF } from '@utils/exportPDF'
+import toast from 'react-hot-toast'
 
 /**
  * Reports Page
@@ -70,6 +74,278 @@ export default function Reports() {
   const maxSales = Math.max(...chartData.map(d => d.sales), 1);
 
   const topProducts = stats?.topMedicines || [];
+
+  const handlePrintReport = () => {
+    if (!stats) {
+      toast.error('Report data is still loading');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const title = `Business_Report_${dateRange.toUpperCase()}_${new Date().toISOString().split('T')[0]}`;
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body { font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 40px; color: #111827; }
+            .header { text-align: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 30px; }
+            .store-name { font-size: 24px; font-weight: 800; margin: 0; color: #4f46e5; }
+            .report-title { font-size: 18px; font-weight: 600; margin: 5px 0 0 0; color: #374151; }
+            .meta { font-size: 12px; color: #6b7280; margin-top: 10px; }
+            
+            .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+            .stat-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 15px; background: #f9fafb; }
+            .stat-label { font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; letter-spacing: 0.5px; }
+            .stat-val { font-size: 20px; font-weight: 800; margin-top: 5px; color: #111827; }
+            
+            .section-title { font-size: 16px; font-weight: 700; margin: 0 0 15px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th { text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; border-bottom: 1px solid #e5e7eb; padding: 10px; }
+            td { font-size: 13px; padding: 12px 10px; border-bottom: 1px solid #f3f4f6; }
+            .text-right { text-align: right; }
+            .font-semibold { font-weight: 600; }
+            
+            @media print {
+              body { padding: 20px; }
+              @page { margin: 1.5cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 class="store-name">PHARMACY PERFORMANCE REPORT</h1>
+            <p class="report-title">Business Analytics Summary — ${dateRange.toUpperCase()}</p>
+            <p class="meta">Generated on: ${new Date().toLocaleString()}</p>
+          </div>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <p class="stat-label">Total Revenue</p>
+              <p class="stat-val">₹${monthlySales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Total Transactions</p>
+              <p class="stat-val">${monthlyBills}</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Avg. Order Value</p>
+              <p class="stat-val">₹${avgOrderValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Total Profit</p>
+              <p class="stat-val" style="color: ${monthlyProfit >= 0 ? '#10b981' : '#ef4444'}">
+                ₹${monthlyProfit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+          
+          <div>
+            <h3 class="section-title">Top Selling Products</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px">#</th>
+                  <th>Product Details</th>
+                  <th class="text-right">Quantity Sold</th>
+                  <th class="text-right">Revenue Generated</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${topProducts.map((product, idx) => `
+                  <tr>
+                    <td>${idx + 1}</td>
+                    <td class="font-semibold">${product.name} ${product.dosage || ''}</td>
+                    <td class="text-right">${product.totalQuantity}</td>
+                    <td class="text-right font-semibold">₹${product.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                `).join('')}
+                ${!topProducts.length ? `<tr><td colspan="4" style="text-align:center;color:#6b7280;">No sales data available yet</td></tr>` : ''}
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #9ca3af;">
+            End of Report · Generated Securely by Medical Store Platform
+          </div>
+          
+          <script>
+            window.print();
+            window.close();
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handleDownloadSalesReport = async () => {
+    const toastId = toast.loading('Preparing Sales PDF Report...');
+    try {
+      const response = await saleApi.getAll({ limit: 1000 });
+      const sales = response?.data || [];
+      if (!sales.length) {
+        toast.error('No sales records to export', { id: toastId });
+        return;
+      }
+      
+      exportToPDF(
+        sales,
+        [
+          { label: 'Bill Number', key: 'billNumber', align: 'center' },
+          { label: 'Customer Name', key: 'customerName', align: 'left', format: (val) => val || 'Walk-in' },
+          { label: 'Billed Date', key: 'billDate', align: 'center', format: (val) => val ? new Date(val).toLocaleDateString('en-IN') : '—' },
+          { label: 'Mode', key: 'paymentMode', align: 'center' },
+          { label: 'Subtotal', key: 'subtotal', align: 'right', format: (val) => `₹${val.toLocaleString('en-IN')}` },
+          { label: 'Discount', key: 'discountAmount', align: 'right', format: (val) => `₹${val.toLocaleString('en-IN')}` },
+          { label: 'GST Tax', key: 'totalGst', align: 'right', format: (val) => `₹${val.toLocaleString('en-IN')}` },
+          { label: 'Grand Total', key: 'grandTotal', align: 'right', format: (val) => `₹${val.toLocaleString('en-IN')}` }
+        ],
+        {
+          title: 'Sales Register Report',
+          subtitle: `Completed Sales Transactions Ledgers`,
+          summaryCards: [
+            { label: 'Total Invoices', value: sales.length.toString() },
+            { label: 'Total Revenue Collected', value: `₹${sales.reduce((sum, s) => sum + (s.grandTotal || 0), 0).toLocaleString('en-IN')}` },
+            { label: 'Total Discounts Allowed', value: `₹${sales.reduce((sum, s) => sum + (s.discountAmount || 0), 0).toLocaleString('en-IN')}` },
+            { label: 'Total Tax Collected', value: `₹${sales.reduce((sum, s) => sum + (s.totalGst || 0), 0).toLocaleString('en-IN')}` }
+          ]
+        }
+      );
+      toast.success(`Successfully generated Sales PDF report.`, { id: toastId });
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to export Sales Report', { id: toastId });
+    }
+  };
+
+  const handleDownloadInventoryReport = async () => {
+    const toastId = toast.loading('Preparing Inventory PDF Report...');
+    try {
+      const response = await inventoryApi.getMedicines({ limit: 1000 });
+      const medicines = response?.data || [];
+      if (!medicines.length) {
+        toast.error('No medicines to export', { id: toastId });
+        return;
+      }
+      
+      exportToPDF(
+        medicines,
+        [
+          { label: 'Medicine Name', key: 'name', align: 'left' },
+          { label: 'Generic Name', key: 'genericName', align: 'left', format: (val) => val || '—' },
+          { label: 'Dosage', key: 'dosage', align: 'center' },
+          { label: 'Form', key: 'form', align: 'center' },
+          { label: 'Current Stock', key: 'currentStock', align: 'right', format: (val) => val ?? 0 },
+          { label: 'Default MRP', key: 'defaultMRP', align: 'right', format: (val) => `₹${val || 0}` },
+          { label: 'GST (%)', key: 'gstRate', align: 'center', format: (val) => `${val || 0}%` },
+          { label: 'Nearest Expiry', key: 'nearestExpiry', align: 'center', format: (val) => val ? new Date(val).toLocaleDateString('en-IN') : '—' }
+        ],
+        {
+          title: 'Stock Ledger Report',
+          subtitle: `Active Medicines Catalog Inventory`,
+          summaryCards: [
+            { label: 'Total Products', value: medicines.length.toString() },
+            { label: 'Out of Stock', value: medicines.filter(m => (m.currentStock || 0) === 0).length.toString() },
+            { label: 'Low Stock Items', value: medicines.filter(m => (m.currentStock || 0) <= (m.reorderLevel || 10)).length.toString() }
+          ]
+        }
+      );
+      toast.success(`Successfully generated Inventory PDF report.`, { id: toastId });
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to export Inventory Report', { id: toastId });
+    }
+  };
+
+  const handleDownloadPurchaseReport = async () => {
+    const toastId = toast.loading('Preparing Purchase PDF Report...');
+    try {
+      const response = await purchaseApi.getAll({ limit: 1000 });
+      const purchases = response?.data || [];
+      if (!purchases.length) {
+        toast.error('No purchase records to export', { id: toastId });
+        return;
+      }
+      
+      exportToPDF(
+        purchases,
+        [
+          { label: 'Invoice No.', key: 'invoiceNumber', align: 'center' },
+          { label: 'Supplier Name', key: 'supplierId.name', align: 'left', format: (val) => val || '—' },
+          { label: 'Invoice Date', key: 'invoiceDate', align: 'center', format: (val) => val ? new Date(val).toLocaleDateString('en-IN') : '—' },
+          { label: 'Status', key: 'paymentStatus', align: 'center' },
+          { label: 'Subtotal', key: 'subtotal', align: 'right', format: (val) => `₹${(val || 0).toLocaleString('en-IN')}` },
+          { label: 'GST Tax', key: 'gstAmount', align: 'right', format: (val) => `₹${(val || 0).toLocaleString('en-IN')}` },
+          { label: 'Grand Total', key: 'totalAmount', align: 'right', format: (val) => `₹${(val || 0).toLocaleString('en-IN')}` }
+        ],
+        {
+          title: 'Purchase Ledger Report',
+          subtitle: `Settled Inward Stock Procurements`,
+          summaryCards: [
+            { label: 'Total Invoices', value: purchases.length.toString() },
+            { label: 'Total Procurement Cost', value: `₹${purchases.reduce((sum, p) => sum + (p.totalAmount || 0), 0).toLocaleString('en-IN')}` },
+            { label: 'Outstanding Payments', value: purchases.filter(p => p.paymentStatus !== 'PAID').length.toString() }
+          ]
+        }
+      );
+      toast.success(`Successfully generated Purchase PDF report.`, { id: toastId });
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to export Purchase Report', { id: toastId });
+    }
+  };
+
+  const handleDownloadGSTReport = async () => {
+    const toastId = toast.loading('Preparing GST Tax PDF Report...');
+    try {
+      const response = await saleApi.getAll({ limit: 1000 });
+      const sales = response?.data || [];
+      if (!sales.length) {
+        toast.error('No sales records found for GST analysis', { id: toastId });
+        return;
+      }
+      
+      const gstRows = sales.map(sale => {
+        const totalGst = sale.totalGst || 0;
+        const cgst = totalGst / 2;
+        const sgst = totalGst / 2;
+        return {
+          ...sale,
+          cgst,
+          sgst
+        };
+      });
+
+      exportToPDF(
+        gstRows,
+        [
+          { label: 'Bill Number', key: 'billNumber', align: 'center' },
+          { label: 'Date', key: 'billDate', align: 'center', format: (val) => val ? new Date(val).toLocaleDateString('en-IN') : '—' },
+          { label: 'Taxable Subtotal', key: 'subtotal', align: 'right', format: (val) => `₹${(val || 0).toLocaleString('en-IN')}` },
+          { label: 'CGST (Central)', key: 'cgst', align: 'right', format: (val) => `₹${val.toFixed(2)}` },
+          { label: 'SGST (State)', key: 'sgst', align: 'right', format: (val) => `₹${val.toFixed(2)}` },
+          { label: 'Total Tax Collected', key: 'totalGst', align: 'right', format: (val) => `₹${(val || 0).toLocaleString('en-IN')}` },
+          { label: 'Grand Total', key: 'grandTotal', align: 'right', format: (val) => `₹${(val || 0).toLocaleString('en-IN')}` }
+        ],
+        {
+          title: 'GST Tax Compliance Report',
+          subtitle: `CGST & SGST Split Ledger Summary`,
+          summaryCards: [
+            { label: 'Taxable Invoices', value: gstRows.length.toString() },
+            { label: 'Taxable Value Gross', value: `₹${gstRows.reduce((sum, r) => sum + (r.subtotal || 0), 0).toLocaleString('en-IN')}` },
+            { label: 'Total SGST Tax Collected', value: `₹${gstRows.reduce((sum, r) => sum + (r.sgst || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` },
+            { label: 'Total CGST Tax Collected', value: `₹${gstRows.reduce((sum, r) => sum + (r.cgst || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` }
+          ]
+        }
+      );
+      toast.success(`Successfully generated GST PDF report.`, { id: toastId });
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to export GST Report', { id: toastId });
+    }
+  };
 
   const summaryStats = [
     {
@@ -134,10 +410,10 @@ export default function Reports() {
               onChange={(e) => setDateRange(e.target.value)}
               className="w-36"
             />
-            <Button variant="outline" size="sm" leftIcon={<Download className="h-4 w-4" />}>
+            <Button variant="outline" size="sm" onClick={handlePrintReport} leftIcon={<Download className="h-4 w-4" />}>
               Export PDF
             </Button>
-            <Button size="sm" leftIcon={<FileText className="h-4 w-4" />}>
+            <Button size="sm" onClick={handlePrintReport} leftIcon={<FileText className="h-4 w-4" />}>
               Generate Report
             </Button>
           </div>
@@ -295,15 +571,16 @@ export default function Reports() {
           {/* Quick Reports */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { title: 'Sales Report', icon: ShoppingCart, color: 'bg-brand-500' },
-              { title: 'Inventory Report', icon: Package, color: 'bg-success-500' },
-              { title: 'Purchase Report', icon: TrendingUp, color: 'bg-purple-500' },
-              { title: 'GST Report', icon: FileText, color: 'bg-warning-500' },
+              { title: 'Sales Report', icon: ShoppingCart, color: 'bg-brand-500', action: handleDownloadSalesReport },
+              { title: 'Inventory Report', icon: Package, color: 'bg-success-500', action: handleDownloadInventoryReport },
+              { title: 'Purchase Report', icon: TrendingUp, color: 'bg-purple-500', action: handleDownloadPurchaseReport },
+              { title: 'GST Report', icon: FileText, color: 'bg-warning-500', action: handleDownloadGSTReport },
             ].map((report) => {
               const Icon = report.icon
               return (
                 <button
                   key={report.title}
+                  onClick={report.action}
                   className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all group"
                 >
                   <div className={cn('h-12 w-12 rounded-xl flex items-center justify-center text-white', report.color)}>

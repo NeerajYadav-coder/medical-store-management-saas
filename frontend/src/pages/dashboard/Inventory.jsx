@@ -40,6 +40,9 @@ import { useDebouncedSearch } from '@hooks/useDebounce'
 import { useAuth } from '@context/AuthContext'
 import { useStore } from '@context/StoreContext'
 import PremiumModal from '@components/common/PremiumModal'
+import { exportToPDF } from '@utils/exportPDF'
+import toast from 'react-hot-toast'
+import MedicineForm from '@components/inventory/MedicineForm'
 
 // Medicine form types matching backend enum
 const FORM_FILTERS = [
@@ -66,6 +69,20 @@ const STOCK_FILTERS = [
   { value: 'expired', label: 'Expired' },
 ]
 
+// PDF columns configuration
+const EXPORT_COLUMNS = [
+  { label: 'Medicine Name', key: 'name', align: 'left' },
+  { label: 'Generic Name', key: 'genericName', align: 'left' },
+  { label: 'Form', key: 'form', align: 'center', format: (val) => val || '—' },
+  { label: 'Dosage', key: 'dosage', align: 'center' },
+  { label: 'Current Stock', key: 'currentStock', align: 'right', format: (val) => val ?? 0 },
+  { label: 'Reorder Level', key: 'reorderLevel', align: 'right', format: (val) => val ?? 10 },
+  { label: 'Default MRP', key: 'defaultMRP', align: 'right', format: (val) => val ? `₹${val}` : '₹0' },
+  { label: 'Manufacturer', key: 'manufacturer', align: 'left' },
+  { label: 'Nearest Expiry', key: 'nearestExpiry', align: 'center', format: (val) => val ? new Date(val).toLocaleDateString('en-IN') : '—' },
+  { label: 'Active Batches', key: 'batchCount', align: 'center', format: (val) => val ?? 0 }
+]
+
 /**
  * Inventory Page — Live data from backend
  */
@@ -83,6 +100,56 @@ export default function Inventory() {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, item: null })
   const [batchModal, setBatchModal] = useState({ isOpen: false, medicine: null })
+  const [showFormModal, setShowFormModal] = useState(false)
+  const [editingMedicine, setEditingMedicine] = useState(null)
+  const [formLoading, setFormLoading] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  // Handle delete
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true)
+    try {
+      if (deleteModal.isBulk) {
+        const promises = selectedMedicines.map(id => inventoryApi.deleteMedicine(id))
+        await Promise.all(promises)
+        toast.success(`${selectedMedicines.length} medicines deleted successfully`)
+        setSelectedMedicines([])
+      } else {
+        if (!deleteModal.item?._id) return
+        await inventoryApi.deleteMedicine(deleteModal.item._id)
+        toast.success(`${deleteModal.item.name} deleted successfully`)
+      }
+      queryClient.invalidateQueries(['medicines'])
+      setDeleteModal({ isOpen: false, item: null, isBulk: false })
+    } catch (error) {
+      console.error('Delete failed:', error)
+      toast.error(error.response?.data?.message || 'Failed to delete medicine(s)')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  // Handle create/update
+  const handleSaveMedicine = async (formData) => {
+    setFormLoading(true)
+    try {
+      if (editingMedicine) {
+        await inventoryApi.updateMedicine(editingMedicine._id, formData)
+        toast.success('Medicine updated successfully')
+      } else {
+        await inventoryApi.createMedicine(formData)
+        toast.success('Medicine created successfully')
+      }
+      setShowFormModal(false)
+      setEditingMedicine(null)
+      queryClient.invalidateQueries(['medicines'])
+    } catch (error) {
+      console.error('Save failed:', error)
+      toast.error(error.response?.data?.message || 'Failed to save medicine')
+    } finally {
+      setFormLoading(false)
+    }
+  }
 
   // Search with debounce
   const { value: searchValue, debouncedValue: search, onChange: onSearchChange, clear: clearSearch } = useDebouncedSearch()
@@ -250,6 +317,10 @@ export default function Inventory() {
           {canManageInventory && (
           <>
             <button
+              onClick={() => {
+                setEditingMedicine(medicine)
+                setShowFormModal(true)
+              }}
               className="p-2 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors"
               title="Edit"
             >
@@ -281,6 +352,74 @@ export default function Inventory() {
     setPage(1)
   }
 
+  // Export all matching current filters
+  const handleExportAll = async () => {
+    const toastId = toast.loading('Preparing PDF report...')
+    try {
+      const response = await inventoryApi.getMedicines({
+        page: 1,
+        limit: 10000,
+        search,
+        form: formFilter,
+        lowStock: stockFilter === 'low',
+        outOfStock: stockFilter === 'out',
+        expiring: stockFilter === 'expiring',
+        expired: stockFilter === 'expired',
+        sortBy,
+        sortOrder,
+      })
+
+      const allMedicines = response?.data || []
+      if (!allMedicines.length) {
+        toast.error('No medicines match your current filters to export.', { id: toastId })
+        return
+      }
+
+      exportToPDF(
+        allMedicines,
+        EXPORT_COLUMNS,
+        {
+          title: 'Inventory Audit Report',
+          subtitle: `Active Inventory Items · Filter: ${stockFilter || 'All Stock'}`,
+          summaryCards: [
+            { label: 'Total Medicines', value: stats.total.toString() },
+            { label: 'Low Stock Items', value: stats.lowStock.toString() },
+            { label: 'Out of Stock', value: stats.outOfStock.toString() },
+            { label: 'Expiring Soon', value: stats.expiringSoon.toString() }
+          ]
+        }
+      )
+      toast.success(`Successfully generated PDF report.`, { id: toastId })
+    } catch (error) {
+      console.error('Export failed:', error)
+      toast.error('Failed to export inventory PDF. Please try again.', { id: toastId })
+    }
+  }
+
+  // Export selected items
+  const handleExportSelected = () => {
+    if (!selectedMedicines.length) return
+    const selectedData = medicines.filter(m => selectedMedicines.includes(m._id))
+    if (!selectedData.length) {
+      toast.error('Details of selected medicines not found on this page.')
+      return
+    }
+
+    exportToPDF(
+      selectedData,
+      EXPORT_COLUMNS,
+      {
+        title: 'Selected Inventory Audit Report',
+        subtitle: `Selected ${selectedData.length} Medicines List`,
+        summaryCards: [
+          { label: 'Selected Medicines', value: selectedData.length.toString() },
+          { label: 'Low Stock Checked', value: selectedData.filter(m => (m.currentStock ?? 0) <= (m.reorderLevel ?? 10)).length.toString() }
+        ]
+      }
+    )
+    toast.success(`Successfully generated PDF report for selected medicines.`)
+  }
+
   // Live stats from real data
   const stats = useMemo(() => {
     const total = pagination.total || medicines.length
@@ -307,7 +446,7 @@ export default function Inventory() {
           <p className="text-gray-500 mt-1">Live stock from batches · {pagination.total ?? 0} medicines</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" leftIcon={<Download className="h-4 w-4" />}>
+          <Button variant="outline" size="sm" onClick={handleExportAll} leftIcon={<Download className="h-4 w-4" />}>
             Export
           </Button>
           {canManageInventory && (
@@ -315,20 +454,21 @@ export default function Inventory() {
             <Button variant="outline" size="sm" leftIcon={<Upload className="h-4 w-4" />}>
               Import
             </Button>
-            <Link 
-              to={ROUTES.INVENTORY_ADD}
-              onClick={(e) => {
+            <Button
+              size="sm"
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={() => {
                 const isFree = store?.plan !== 'PREMIUM'
                 if (isFree && stats.total >= 100) {
-                  e.preventDefault()
                   setIsUpgradeModalOpen(true)
+                } else {
+                  setEditingMedicine(null)
+                  setShowFormModal(true)
                 }
               }}
             >
-              <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
-                Add Medicine
-              </Button>
-            </Link>
+              Add Medicine
+            </Button>
           </>
           )}
         </div>
@@ -461,11 +601,14 @@ export default function Inventory() {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-4 z-40">
           <span className="text-sm">{selectedMedicines.length} selected</span>
           <div className="w-px h-4 bg-gray-600" />
-          <button className="text-sm hover:text-brand-300 transition-colors">
+          <button onClick={handleExportSelected} className="text-sm hover:text-brand-300 transition-colors">
             Export Selected
           </button>
           {canManageInventory && (
-          <button className="text-sm hover:text-danger-300 transition-colors">
+          <button
+            onClick={() => setDeleteModal({ isOpen: true, item: null, isBulk: true })}
+            className="text-sm hover:text-danger-300 transition-colors"
+          >
             Delete Selected
           </button>
           )}
@@ -493,18 +636,29 @@ export default function Inventory() {
       {/* Delete Modal */}
       <DeleteModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, item: null })}
-        onConfirm={() => {
-          // Handle delete
-          setDeleteModal({ isOpen: false, item: null })
-        }}
-        itemName={deleteModal.item?.name}
+        onClose={() => setDeleteModal({ isOpen: false, item: null, isBulk: false })}
+        onConfirm={handleDeleteConfirm}
+        itemName={deleteModal.isBulk ? `${selectedMedicines.length} selected medicines` : deleteModal.item?.name}
+        isLoading={isDeleting}
       />
 
       <PremiumModal 
         isOpen={isUpgradeModalOpen} 
         onClose={() => setIsUpgradeModalOpen(false)} 
       />
+
+      {/* Medicine Form Modal */}
+      {showFormModal && (
+        <MedicineForm
+          medicine={editingMedicine}
+          onSubmit={handleSaveMedicine}
+          onClose={() => {
+            setShowFormModal(false)
+            setEditingMedicine(null)
+          }}
+          isLoading={formLoading}
+        />
+      )}
     </div>
   )
 }
