@@ -202,7 +202,7 @@ export default function BillingPage() {
       const itemSubtotal = item.quantity * item.sellingPrice;
       const itemDisc = (itemSubtotal * (item.discountPercent || 0)) / 100;
       const taxable = itemSubtotal - itemDisc;
-      const gst = (taxable * (item.gstRate || 12)) / 100;
+      const gst = 0; // Removed GST as requested
 
       subtotal += itemSubtotal;
       itemDiscountAmount += itemDisc;
@@ -221,11 +221,9 @@ export default function BillingPage() {
     const totalDiscount = itemDiscountAmount + billDiscount;
     const taxableAmount = subtotal - totalDiscount;
 
-    // Recalculate GST on final taxable amount if bill discount exists
-    // For simplicity, we'll assume bill discount reduces taxable amount proportionally across all items
-    // So we just scale the totalGst
+    // Removed GST calculation
     const gstScalingFactor = taxableAmount / (subtotal - itemDiscountAmount || 1);
-    const finalGst = totalGst * Math.max(0, gstScalingFactor);
+    const finalGst = 0;
 
     const grandTotal = Math.round(taxableAmount + finalGst);
     const roundOff = grandTotal - (taxableAmount + finalGst);
@@ -365,7 +363,7 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen bg-gray-50 overflow-y-auto lg:overflow-hidden font-sans">
+    <div className="flex flex-col lg:flex-row bg-gray-50 font-sans -m-2 sm:-m-4 lg:-m-6 min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] lg:overflow-hidden">
       {/* Bill Success Modal */}
       {showSuccessModal && lastBill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -456,39 +454,54 @@ export default function BillingPage() {
       )}
 
       {/* Main Content - Left Side */}
-      <div className="flex-1 flex flex-col min-w-0 lg:overflow-hidden min-h-screen lg:min-h-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:overflow-hidden">
         {/* Header */}
-        <header className="py-4 lg:h-20 bg-white/90 backdrop-blur-md border-b border-gray-200/50 px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between shrink-0 sticky top-0 z-10 shadow-sm gap-4">
-          <div className="flex items-center gap-4 w-full sm:w-auto">
-            <div className="h-10 w-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+        <header className="py-4 lg:h-20 bg-white border-b border-gray-200 px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between shrink-0 z-30 shadow-sm gap-4 relative overflow-hidden">
+
+          <div className="flex items-center gap-4 w-full sm:w-auto mt-1 lg:mt-0">
+            <div className="h-10 w-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
               <ShoppingCart className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Point of Sale</h1>
+              <h1 className="text-xl font-medium text-gray-900 tracking-tight">Point of Sale</h1>
               <p className="text-xs font-medium text-gray-500 flex items-center gap-1.5 mt-0.5">
                 <span>Bill No:</span>
-                <span className="font-mono bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-[10px] tracking-wider">{billNumber}</span>
+                <span className="font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] tracking-wider border border-slate-200">{billNumber}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6 bg-gray-50 px-5 py-2.5 rounded-2xl border border-gray-100 shadow-inner">
+          <div className="flex items-center gap-6 bg-slate-50 px-5 py-2.5 rounded-2xl border border-slate-200 shadow-inner ring-1 ring-white">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-brand-500" />
-              <span className="text-sm font-bold text-gray-700">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="text-sm font-medium text-slate-700">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-            <div className="h-5 w-px bg-gray-200" />
+            <div className="h-5 w-px bg-slate-200" />
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 bg-brand-100 rounded-full flex items-center justify-center border border-brand-200">
+              <div className="h-6 w-6 bg-brand-100 rounded-full flex items-center justify-center border border-brand-200 shadow-sm">
                 <User className="h-3 w-3 text-brand-600" />
               </div>
-              <span className="text-sm font-bold text-gray-700 capitalize">{user?.name}</span>
+              <span className="text-sm font-medium text-slate-700 capitalize">{user?.name}</span>
             </div>
           </div>
         </header>
 
+        {/* Customer & Doctor Selection */}
+        <div className="p-4 sm:p-6 shrink-0 bg-white border-b border-gray-100 relative z-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <CustomerSelector
+              selected={customer}
+              onChange={setCustomer}
+            />
+            <DoctorSelector
+              selected={doctor}
+              onChange={setDoctor}
+            />
+          </div>
+        </div>
+
         {/* Product Search */}
-        <div className="p-6 shrink-0 bg-white border-b border-gray-100 shadow-sm relative z-20">
+        <div className="p-4 sm:p-6 shrink-0 bg-slate-50 border-b border-gray-100 shadow-sm relative z-10">
           <div className="relative max-w-3xl mx-auto">
             <div className="absolute left-5 top-1/2 -translate-y-1/2 h-8 w-8 bg-brand-50 rounded-lg flex items-center justify-center">
               <Search className="h-4 w-4 text-brand-600" />
@@ -501,10 +514,10 @@ export default function BillingPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchQuery.length >= 2 && setShowResults(true)}
               className={cn(
-                'w-full pl-16 pr-6 py-5 rounded-2xl border-2 transition-all bg-gray-50 hover:bg-white',
-                'text-lg font-medium placeholder:text-gray-400 placeholder:font-normal',
-                'focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 focus:bg-white',
-                showResults ? 'border-brand-500 rounded-b-none shadow-xl' : 'border-gray-200 shadow-sm'
+                'w-full pl-16 pr-6 py-5 rounded-2xl border-2 transition-all bg-white shadow-sm hover:shadow-md focus:bg-white',
+                'text-lg font-medium placeholder:text-slate-400 placeholder:font-normal',
+                'focus:outline-none focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500',
+                (showResults && searchQuery.length >= 2) ? 'border-brand-500 rounded-b-none shadow-2xl relative z-50' : 'border-slate-200'
               )}
             />
 
@@ -536,7 +549,7 @@ export default function BillingPage() {
                       )}
                     >
                       <div>
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-medium text-gray-900">
                           {medicine.name} {medicine.dosage}
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
@@ -556,7 +569,7 @@ export default function BillingPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-gray-900">
+                        <p className="text-lg font-medium text-gray-900">
                           {formatCurrency(medicine.sellingPrice)}
                         </p>
                         {medicine.availableQty > 0 ? (
@@ -567,7 +580,7 @@ export default function BillingPage() {
                             Stock: {medicine.availableQty}
                           </p>
                         ) : (
-                          <p className="text-xs font-bold text-red-500 mt-0.5">OUT OF STOCK</p>
+                          <p className="text-xs font-medium text-red-500 mt-0.5">OUT OF STOCK</p>
                         )}
                       </div>
                     </button>
@@ -579,23 +592,25 @@ export default function BillingPage() {
         </div>
 
         {/* Cart Panel */}
-        {/* Cart Panel */}
-        <div className="flex-1 overflow-auto p-6 bg-gray-50/50">
+        <div className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-50/50">
           {cartItems.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-400 animate-in fade-in duration-500">
-              <div className="h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                <ShoppingCart className="h-10 w-10 text-gray-300" />
+              <div className="relative h-24 w-24 mb-6 group">
+                <div className="absolute inset-0 bg-brand-200 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-700" />
+                <div className="relative h-full w-full bg-white rounded-full flex items-center justify-center shadow-xl border border-gray-100 transition-transform duration-500 group-hover:scale-105">
+                  <ShoppingCart className="h-10 w-10 text-brand-400" />
+                </div>
               </div>
-              <p className="text-xl font-bold text-gray-600">Cart is empty</p>
+              <p className="text-xl font-medium text-gray-600">Cart is empty</p>
               <p className="text-sm mt-2">Search and add medicines to start billing</p>
             </div>
           ) : (
             <div className="space-y-4 max-w-4xl mx-auto">
               <div className="flex items-center justify-between mb-2 px-2">
-                <h3 className="font-bold text-gray-700">Current Order ({cartItems.length} items)</h3>
+                <h3 className="font-medium text-gray-700">Current Order ({cartItems.length} items)</h3>
                 <button
                   onClick={() => setCartItems([])}
-                  className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                  className="text-xs font-medium text-red-500 hover:text-red-700 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Clear Cart
@@ -605,14 +620,14 @@ export default function BillingPage() {
               {cartItems.map((item, index) => (
                 <div
                   key={`${item.medicineId}-${item.batchId}`}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow group relative overflow-hidden"
+                  className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-xl hover:-translate-y-0.5 hover:border-brand-200 transition-all duration-300 group relative overflow-hidden"
                 >
                   {/* Decorative Side Bar */}
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-l-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                      <h4 className="text-lg font-medium text-gray-900 flex items-center gap-2">
                         {item.medicineName} {item.medicineDosage}
                       </h4>
                       <p className="text-xs font-medium text-gray-500 mt-1 flex items-center gap-2">
@@ -629,9 +644,9 @@ export default function BillingPage() {
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50/80 rounded-xl p-3 sm:p-4 border border-gray-100/50 gap-4">
                     {/* Quantity Control */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 justify-between sm:justify-start w-full sm:w-auto">
                       <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                         <button
                           type="button"
@@ -644,7 +659,7 @@ export default function BillingPage() {
                           type="number"
                           value={item.quantity}
                           onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
-                          className="w-14 text-center py-2 focus:outline-none text-base font-bold text-brand-700"
+                          className="w-14 text-center py-2 focus:outline-none text-base font-medium text-brand-700"
                           min="1"
                           max={item.availableQty}
                         />
@@ -662,9 +677,9 @@ export default function BillingPage() {
                     </div>
 
                     {/* Item Discount & Total */}
-                    <div className="flex items-center gap-6">
-                      <div className="flex flex-col items-end">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Discount %</label>
+                    <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-gray-200/60 pt-3 sm:pt-0">
+                      <div className="flex flex-col items-start sm:items-end">
+                        <label className="text-[10px] font-medium text-gray-400 uppercase tracking-widest mb-1">Discount %</label>
                         <input
                           type="number"
                           value={item.discountPercent}
@@ -676,8 +691,8 @@ export default function BillingPage() {
                       </div>
 
                       <div className="text-right min-w-[100px]">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Item Total</p>
-                        <p className="text-xl font-black text-gray-900">
+                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest mb-1">Item Total</p>
+                        <p className="text-xl font-semibold text-gray-900">
                           {formatCurrency(item.quantity * item.sellingPrice * (1 - item.discountPercent / 100))}
                         </p>
                         {item.discountPercent > 0 && (
@@ -696,24 +711,8 @@ export default function BillingPage() {
       </div>
 
       {/* Right Panel - Customer & Payment */}
-      <div className="w-full lg:w-96 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col lg:overflow-hidden shrink-0">
+      <div className="w-full lg:w-96 bg-slate-50 border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col lg:overflow-hidden shrink-0">
         <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
-          {/* Customer Selection */}
-          <CustomerSelector
-            selected={customer}
-            onChange={setCustomer}
-          />
-
-          <hr className="border-gray-100" />
-
-          {/* Doctor Selection */}
-          <DoctorSelector
-            selected={doctor}
-            onChange={setDoctor}
-          />
-
-          <hr className="border-gray-100" />
-
           {/* Symptom Selection */}
           <SymptomSelector
             selected={symptoms}
@@ -724,7 +723,7 @@ export default function BillingPage() {
 
           {/* Billing Details */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
+            <h3 className="text-sm font-medium text-gray-900 uppercase tracking-wider">
               Payment Summary
             </h3>
 
@@ -768,19 +767,7 @@ export default function BillingPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Taxable Amount</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(totals.taxableAmount)}
-                </span>
-              </div>
-
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Total GST (12%)</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(totals.totalGst)}
-                </span>
-              </div>
+              {/* Removed Taxable Amount and GST rows */}
 
               <div className="flex justify-between text-xs text-gray-400 italic">
                 <span>Round off</span>
@@ -793,7 +780,7 @@ export default function BillingPage() {
 
           {/* Payment Method */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">Payment Method</h3>
+            <h3 className="text-sm font-medium text-gray-900">Payment Method</h3>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { id: 'cash', label: 'Cash', icon: Banknote },
@@ -819,25 +806,28 @@ export default function BillingPage() {
         </div>
 
         {/* Total & Checkout */}
-        <div className="p-6 bg-brand-900 text-white border-t border-brand-800 space-y-5">
-          <div className="flex items-center justify-between opacity-90">
-            <span className="font-semibold uppercase tracking-wider text-xs">Grand Total</span>
-            <span className="text-4xl font-black text-brand-50">
+        <div className="p-6 bg-slate-900 text-white border-t border-slate-800 space-y-5 relative overflow-hidden">
+          {/* Background glow */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-600 rounded-full blur-3xl opacity-20 pointer-events-none" />
+
+          <div className="relative z-10 flex items-center justify-between opacity-90">
+            <span className="font-medium uppercase tracking-wider text-xs">Grand Total</span>
+            <span className="text-4xl font-semibold text-brand-50 drop-shadow-md">
               {formatCurrency(totals.grandTotal)}
             </span>
           </div>
 
           {/* Profit indicator (owner only) */}
           {user?.role === 'OWNER' && totals.netProfit > 0 && (
-            <div className="flex justify-between text-xs font-medium px-3 py-2 bg-brand-800/50 rounded-lg border border-brand-700/50">
-              <span className="opacity-80">Estimated Profit</span>
-              <span className="text-green-400">+{formatCurrency(totals.netProfit)}</span>
+            <div className="relative z-10 flex justify-between text-xs font-medium px-3 py-2 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700/50">
+              <span className="opacity-80 text-slate-300">Estimated Profit</span>
+              <span className="text-green-400 font-medium">+{formatCurrency(totals.netProfit)}</span>
             </div>
           )}
 
           <Button
             size="lg"
-            className="w-full h-14 text-lg font-black bg-brand-500 hover:bg-brand-400 text-white shadow-lg border-none"
+            className="relative z-10 w-full h-14 text-base font-medium bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white border-none transition-all duration-300 hover:scale-[1.02]"
             onClick={processSale}
             isLoading={processing}
             disabled={cartItems.length === 0}
