@@ -15,11 +15,11 @@ import { cn } from '@/utils/cn'
 const buttonVariants = {
   variant: {
     primary: 'bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 shadow-sm',
-    secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-brand-500',
+    secondary: 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:bg-gray-950 focus:ring-brand-500',
     destructive: 'bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500',
     success: 'bg-success-600 text-white hover:bg-success-700 focus:ring-success-500',
     warning: 'bg-warning-500 text-white hover:bg-warning-600 focus:ring-warning-500',
-    ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
+    ghost: 'bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 focus:ring-gray-500',
     link: 'bg-transparent text-brand-600 hover:text-brand-700 underline-offset-4 hover:underline',
     outline: 'border-2 border-brand-600 text-brand-600 hover:bg-brand-50 focus:ring-brand-500',
   },

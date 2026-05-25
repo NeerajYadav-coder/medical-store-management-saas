@@ -29,7 +29,7 @@ export default function PremiumModal({ isOpen, onClose }) {
 
       {/* Modal Card */}
       <div className="relative w-full max-w-lg mx-auto my-6 px-4 z-50 animate-in fade-in zoom-in duration-300">
-        <div className="relative flex flex-col w-full bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="relative flex flex-col w-full bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
           
           {/* Header Gradient */}
           <div className="relative bg-gradient-to-br from-slate-900 via-indigo-950 to-brand-900 text-white px-6 py-8 text-center overflow-hidden">
@@ -39,12 +39,12 @@ export default function PremiumModal({ isOpen, onClose }) {
             
             <button 
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-white dark:bg-gray-900/10 text-white/80 hover:text-white transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-4 border border-white/20">
+            <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white dark:bg-gray-900/10 backdrop-blur-md mb-4 border border-white/20">
               <Sparkles className="h-8 w-8 text-yellow-400 animate-pulse" />
             </div>
             
@@ -55,7 +55,7 @@ export default function PremiumModal({ isOpen, onClose }) {
           </div>
 
           {/* Body content */}
-          <div className="p-6 space-y-5 bg-gray-50/50">
+          <div className="p-6 space-y-5 bg-gray-50 dark:bg-gray-950/50">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest text-center">
               PREMIUM BENEFITS
             </p>
@@ -91,14 +91,14 @@ export default function PremiumModal({ isOpen, onClose }) {
                 return (
                   <div 
                     key={i} 
-                    className="flex items-start gap-4 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm transition-all hover:shadow-md hover:border-gray-200"
+                    className="flex items-start gap-4 p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md hover:border-gray-200 dark:border-gray-700"
                   >
                     <div className={`p-2.5 rounded-xl border ${benefit.color} flex-shrink-0`}>
                       <IconComponent className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900 text-sm">{benefit.title}</h4>
-                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{benefit.desc}</p>
+                      <h4 className="font-bold text-gray-900 dark:text-white text-sm">{benefit.title}</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">{benefit.desc}</p>
                     </div>
                   </div>
                 )
@@ -107,12 +107,12 @@ export default function PremiumModal({ isOpen, onClose }) {
           </div>
 
           {/* Footer with pricing */}
-          <div className="p-6 border-t border-gray-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
               <span className="text-xs text-gray-400 font-bold uppercase tracking-wide">Investment</span>
               <div className="flex items-baseline justify-center sm:justify-start gap-1">
                 <span className="text-3xl font-black text-slate-900">₹2,999</span>
-                <span className="text-xs text-gray-500 font-medium">/ year</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">/ year</span>
               </div>
             </div>
             

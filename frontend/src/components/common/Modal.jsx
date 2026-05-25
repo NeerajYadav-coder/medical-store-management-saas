@@ -101,7 +101,7 @@ export function Modal({
           ref={modalRef}
           tabIndex={-1}
           className={cn(
-            'relative w-full transform rounded-xl bg-white shadow-2xl transition-all',
+            'relative w-full transform rounded-xl bg-white dark:bg-gray-900 shadow-2xl transition-all',
             'animate-in fade-in-0 zoom-in-95 duration-200',
             modalSizes[size],
             className
@@ -109,18 +109,18 @@ export function Modal({
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="flex items-start justify-between border-b border-gray-100 px-6 py-4">
+            <div className="flex items-start justify-between border-b border-gray-100 dark:border-gray-800 px-6 py-4">
               <div>
                 {title && (
                   <h3
                     id="modal-title"
-                    className="text-lg font-semibold text-gray-900"
+                    className="text-lg font-semibold text-gray-900 dark:text-white"
                   >
                     {title}
                   </h3>
                 )}
                 {description && (
-                  <p className="mt-1 text-sm text-gray-500">{description}</p>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>
                 )}
               </div>
               {showCloseButton && (
@@ -128,7 +128,7 @@ export function Modal({
                   type="button"
                   onClick={onClose}
                   className={cn(
-                    'rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600',
+                    'rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400',
                     'focus:outline-none focus:ring-2 focus:ring-brand-500'
                   )}
                 >
@@ -144,7 +144,7 @@ export function Modal({
 
           {/* Footer */}
           {footer && (
-            <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4 bg-gray-50 rounded-b-xl">
+            <div className="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 px-6 py-4 bg-gray-50 dark:bg-gray-950 rounded-b-xl">
               {footer}
             </div>
           )}
@@ -195,7 +195,7 @@ export function ConfirmModal({
         </>
       }
     >
-      <p className="text-gray-600">{message}</p>
+      <p className="text-gray-600 dark:text-gray-400">{message}</p>
     </Modal>
   )
 }
@@ -275,8 +275,8 @@ export function AlertModal({
     >
       <div className="text-center">
         {icons[type]}
-        <h3 className="mt-4 text-lg font-semibold text-gray-900">{title}</h3>
-        <p className="mt-2 text-sm text-gray-500">{message}</p>
+        <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{message}</p>
         <div className="mt-6">
           <Button onClick={onClose} className="w-full">
             {buttonText}

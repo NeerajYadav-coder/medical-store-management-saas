@@ -182,8 +182,8 @@ export default function Staff() {
             {user.name.charAt(0)}
           </div>
           <div>
-            <p className="font-medium text-gray-900">{user.name}</p>
-            <p className="text-sm text-gray-500">{user.email}</p>
+            <p className="font-medium text-gray-900 dark:text-white">{user.name}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
           </div>
         </div>
       ),
@@ -211,7 +211,7 @@ export default function Staff() {
           )} />
           <span className={cn(
             'text-sm',
-            value ? 'text-success-600' : 'text-gray-500'
+            value ? 'text-success-600' : 'text-gray-500 dark:text-gray-400'
           )}>
             {value ? 'Active' : 'Inactive'}
           </span>
@@ -222,14 +222,14 @@ export default function Staff() {
       key: 'lastLoginAt',
       label: 'Last Active',
       render: (value) => (
-        <span className="text-sm text-gray-500">{value ? formatRelativeTime(value) : 'Never'}</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{value ? formatRelativeTime(value) : 'Never'}</span>
       ),
     },
     {
       key: 'createdAt',
       label: 'Joined',
       render: (value) => (
-        <span className="text-sm text-gray-500">{formatDate(value)}</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{formatDate(value)}</span>
       ),
     },
     {
@@ -265,8 +265,8 @@ export default function Staff() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
-          <p className="text-gray-500 mt-1">Manage your team members and permissions</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Staff Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your team members and permissions</p>
         </div>
         <Button
           size="sm"
@@ -286,36 +286,36 @@ export default function Staff() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-brand-100 flex items-center justify-center">
               <Users className="h-5 w-5 text-brand-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Staff</p>
-              <p className="text-xl font-bold text-gray-900">{totalStaff}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Staff</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStaff}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-success-100 flex items-center justify-center">
               <CheckCircle className="h-5 w-5 text-success-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Active</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Active</p>
               <p className="text-xl font-bold text-success-600">{activeStaff}</p>
             </div>
           </div>
         </div>
         {/* 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
               <Shield className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Managers</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Managers</p>
               <p className="text-xl font-bold text-purple-600">{managers}</p>
             </div>
           </div>

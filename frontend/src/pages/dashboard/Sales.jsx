@@ -74,7 +74,7 @@ export default function Sales() {
       key: 'billNumber',
       label: 'Bill No',
       render: (value) => (
-        <span className="font-mono text-sm font-bold text-gray-900">{value}</span>
+        <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">{value}</span>
       ),
     },
     {
@@ -82,9 +82,9 @@ export default function Sales() {
       label: 'Customer',
       render: (value, row) => (
         <div>
-          <p className="font-medium text-gray-900">{value || 'Walk-in'}</p>
+          <p className="font-medium text-gray-900 dark:text-white">{value || 'Walk-in'}</p>
           {row.customerPhone && (
-            <p className="text-xs text-gray-500">{row.customerPhone}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{row.customerPhone}</p>
           )}
         </div>
       ),
@@ -93,13 +93,13 @@ export default function Sales() {
       key: 'items',
       label: 'Items',
       align: 'center',
-      render: (items) => <span className="text-gray-600">{items?.length || 0}</span>,
+      render: (items) => <span className="text-gray-600 dark:text-gray-400">{items?.length || 0}</span>,
     },
     {
       key: 'grandTotal',
       label: 'Total',
       render: (value) => (
-        <span className="font-bold text-gray-900">{formatCurrency(value)}</span>
+        <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(value)}</span>
       ),
     },
     {
@@ -122,7 +122,7 @@ export default function Sales() {
       label: 'Date & Time',
       render: (value) => (
         <div className="text-xs">
-          <p className="text-gray-900">{formatDate(value)}</p>
+          <p className="text-gray-900 dark:text-white">{formatDate(value)}</p>
           <p className="text-gray-400">{formatTime(value)}</p>
         </div>
       ),
@@ -243,8 +243,8 @@ export default function Sales() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Sales History</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Track and manage all your pharmacy transactions</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Sales History</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Track and manage all your pharmacy transactions</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -269,27 +269,27 @@ export default function Sales() {
       {/* Stats Summary */}
       {showFinancials && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Sales</p>
             <div className="flex items-baseline gap-2 mt-2">
-              <h2 className="text-2xl font-bold text-gray-900">{summary.totalBills || 0}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{summary.totalBills || 0}</h2>
               <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded">Invoices</span>
             </div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Gross Revenue</p>
             <div className="flex items-baseline gap-2 mt-2">
-              <h2 className="text-2xl font-bold text-gray-900">{formatCurrency(summary.totalRevenue || 0)}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.totalRevenue || 0)}</h2>
               <div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
             </div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Net Profit</p>
             <div className="flex items-baseline gap-2 mt-2">
               <h2 className="text-2xl font-bold text-emerald-600">{formatCurrency(summary.netProfit || 0)}</h2>
             </div>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm bg-gradient-to-br from-brand-500 to-brand-600 text-white border-0">
+          <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm bg-gradient-to-br from-brand-500 to-brand-600 text-white border-0">
             <p className="text-xs font-semibold text-brand-100 uppercase tracking-wider">Action Needed</p>
             <p className="text-sm font-medium mt-2">You have 0 pending credit bills today.</p>
           </div>
@@ -297,9 +297,9 @@ export default function Sales() {
       )}
 
       {/* Main Content Area */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-200/50 overflow-hidden">
         {/* Search & Filters Bar */}
-        <div className="p-4 border-b border-gray-50 bg-gray-50/30 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="p-4 border-b border-gray-50 bg-gray-50 dark:bg-gray-950/30 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="w-full md:w-96">
             <SearchInput 
               placeholder="Search bill no, customer name..." 
@@ -317,7 +317,7 @@ export default function Sales() {
                   'px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap uppercase tracking-wider',
                   dateRange === range
                     ? 'bg-gray-900 text-white shadow-md'
-                    : 'bg-white text-gray-500 border border-gray-200 hover:border-gray-300'
+                    : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:border-gray-600'
                 )}
               >
                 {range}
@@ -348,7 +348,7 @@ export default function Sales() {
                         onClick={() => setHistoryPage(p)}
                         className={cn(
                             "w-8 h-8 rounded-lg text-xs font-bold transition-all",
-                            historyPage === p ? "bg-brand-600 text-white shadow-lg" : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                            historyPage === p ? "bg-brand-600 text-white shadow-lg" : "bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800"
                         )}
                     >
                         {p}
@@ -394,20 +394,20 @@ export default function Sales() {
       >
         {viewInvoice && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between gap-4 p-4 bg-gray-50 rounded-2xl">
+            <div className="flex flex-col sm:flex-row justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-950 rounded-2xl">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer Information</p>
-                <p className="text-lg font-bold text-gray-900 mt-1">{viewInvoice.customerName || 'Walk-in Customer'}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">{viewInvoice.customerName || 'Walk-in Customer'}</p>
                 {viewInvoice.customerPhone && (
-                  <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mt-1">
                     <ArrowRight className="h-3 w-3" /> {viewInvoice.customerPhone}
                   </p>
                 )}
               </div>
               <div className="sm:text-right">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Transaction Meta</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{formatDate(viewInvoice.billDate)}</p>
-                <p className="text-xs text-gray-500">{formatTime(viewInvoice.billDate)}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">{formatDate(viewInvoice.billDate)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{formatTime(viewInvoice.billDate)}</p>
                 <span className="inline-block mt-2 px-3 py-1 bg-brand-50 text-brand-700 text-[10px] font-bold rounded-lg border border-brand-100">
                     Billed By: {viewInvoice.billedBy?.name || 'System'}
                 </span>
@@ -416,10 +416,10 @@ export default function Sales() {
 
             <div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Itemized Bill</p>
-              <div className="border border-gray-100 rounded-2xl overflow-hidden">
+              <div className="border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50/50 text-gray-500 font-bold text-[10px] uppercase">
+                    <thead className="bg-gray-50 dark:bg-gray-950/50 text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase">
                       <tr>
                         <th className="px-4 py-3 text-left">Medicine</th>
                         <th className="px-4 py-3 text-right">Price</th>
@@ -429,14 +429,14 @@ export default function Sales() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {viewInvoice.items.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50/30 transition-colors">
+                        <tr key={idx} className="hover:bg-gray-50 dark:bg-gray-950/30 transition-colors">
                           <td className="px-4 py-3">
-                            <p className="font-semibold text-gray-900 whitespace-nowrap">{item.medicineName}</p>
+                            <p className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">{item.medicineName}</p>
                             <p className="text-[10px] text-gray-400">Batch: {item.batchNumber}</p>
                           </td>
                           <td className="px-4 py-3 text-right whitespace-nowrap">{formatCurrency(item.sellingPrice)}</td>
                           <td className="px-4 py-3 text-right font-medium">{item.quantity}</td>
-                          <td className="px-4 py-3 text-right font-bold text-gray-900 whitespace-nowrap">
+                          <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white whitespace-nowrap">
                               {formatCurrency(item.totalAmount || (item.quantity * item.sellingPrice))}
                           </td>
                         </tr>
@@ -448,33 +448,33 @@ export default function Sales() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="p-4 bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-100 dark:border-gray-800">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Payment Info</p>
                     <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Method</span>
-                        <span className="px-2 py-1 bg-white border border-gray-200 rounded text-xs font-bold uppercase">{viewInvoice.paymentMode}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Method</span>
+                        <span className="px-2 py-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded text-xs font-bold uppercase">{viewInvoice.paymentMode}</span>
                     </div>
                     <div className="flex justify-between items-center mt-2">
-                        <span className="text-sm text-gray-600">Status</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
                         <span className="text-emerald-600 font-bold text-xs">● SUCCESSFUL</span>
                     </div>
                 </div>
 
                 <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 font-medium">Subtotal</span>
+                        <span className="text-gray-500 dark:text-gray-400 font-medium">Subtotal</span>
                         <span className="font-semibold">{formatCurrency(viewInvoice.subtotal)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 font-medium">Discount</span>
+                        <span className="text-gray-500 dark:text-gray-400 font-medium">Discount</span>
                         <span className="text-emerald-600 font-semibold">-{formatCurrency(viewInvoice.discountAmount)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 font-medium">Taxation (GST)</span>
+                        <span className="text-gray-500 dark:text-gray-400 font-medium">Taxation (GST)</span>
                         <span className="font-semibold">{formatCurrency(viewInvoice.totalGst)}</span>
                     </div>
-                    <div className="pt-2 border-t border-gray-100 flex justify-between">
-                        <span className="text-lg font-black text-gray-900">GRAND TOTAL</span>
+                    <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex justify-between">
+                        <span className="text-lg font-black text-gray-900 dark:text-white">GRAND TOTAL</span>
                         <span className="text-lg font-black text-brand-600">{formatCurrency(viewInvoice.grandTotal)}</span>
                     </div>
                 </div>

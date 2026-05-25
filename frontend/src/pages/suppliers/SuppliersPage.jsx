@@ -17,12 +17,12 @@ import { exportToPDF } from '../../utils/exportPDF';
 
 // Stats card component
 const StatCard = ({ icon: Icon, label, value, subValue, color }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-4">
+  <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
     <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center mb-3', color)}>
       <Icon className="h-5 w-5 text-white" />
     </div>
-    <p className="text-2xl font-bold text-gray-900">{value}</p>
-    <p className="text-sm text-gray-500">{label}</p>
+    <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+    <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
     {subValue && <p className="text-xs text-gray-400 mt-1">{subValue}</p>}
   </div>
 );
@@ -199,8 +199,8 @@ export default function SuppliersPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
-          <p className="text-gray-500">Manage vendors with margin tracking</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Suppliers</h1>
+          <p className="text-gray-500 dark:text-gray-400">Manage vendors with margin tracking</p>
         </div>
         <Button onClick={() => setShowForm(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -246,11 +246,11 @@ export default function SuppliersPage() {
             placeholder="Search by name, vendor code, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
           />
         </div>
         
-        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 overflow-x-auto w-full sm:w-auto scrollbar-hide">
+        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto w-full sm:w-auto scrollbar-hide">
           {FILTERS.map(f => (
             <button
               key={f.value}
@@ -258,8 +258,8 @@ export default function SuppliersPage() {
               className={cn(
                 'px-4 py-2 rounded-md text-sm font-medium transition-colors',
                 filter === f.value
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white'
               )}
             >
               {f.label}
@@ -267,8 +267,7 @@ export default function SuppliersPage() {
           ))}
         </div>
 
-        <Button variant="outline" className="w-full sm:w-auto justify-center">
-        <Button variant="outline" onClick={handleExport}>
+        <Button variant="outline" className="w-full sm:w-auto justify-center" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
@@ -278,14 +277,14 @@ export default function SuppliersPage() {
       {loading ? (
         <div className="grid grid-cols-2 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-gray-100 rounded-xl h-64 animate-pulse" />
+            <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64 animate-pulse" />
           ))}
         </div>
       ) : suppliers.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
           <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No suppliers found</h3>
-          <p className="text-gray-500 mb-4">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No suppliers found</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
             {searchQuery ? `No suppliers match "${searchQuery}"` : 'Add your first supplier to get started'}
           </p>
           <Button onClick={() => setShowForm(true)}>

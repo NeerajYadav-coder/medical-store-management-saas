@@ -16,7 +16,7 @@ import { exportToPDF } from '../../utils/exportPDF';
 // Loyalty badge component
 const LoyaltyBadge = ({ category, size = 'md' }) => {
   const badges = {
-    NEW: { icon: User, color: 'bg-gray-100 text-gray-600', label: 'New' },
+    NEW: { icon: User, color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400', label: 'New' },
     REGULAR: { icon: RefreshCw, color: 'bg-blue-100 text-blue-600', label: 'Regular' },
     VIP: { icon: Crown, color: 'bg-amber-100 text-amber-600', label: 'VIP' },
     BULK: { icon: ShoppingBag, color: 'bg-purple-100 text-purple-600', label: 'Bulk' },
@@ -36,12 +36,12 @@ const LoyaltyBadge = ({ category, size = 'md' }) => {
 
 // Stats card component
 const StatCard = ({ icon: Icon, label, value, subValue, color }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-4">
+  <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
     <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center mb-3', color)}>
       <Icon className="h-5 w-5 text-white" />
     </div>
-    <p className="text-2xl font-bold text-gray-900">{value}</p>
-    <p className="text-sm text-gray-500">{label}</p>
+    <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+    <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
     {subValue && <p className="text-xs text-gray-400 mt-1">{subValue}</p>}
   </div>
 );
@@ -72,7 +72,7 @@ const CustomerRow = ({ customer, onClick }) => {
   return (
     <tr 
       className={cn(
-        'hover:bg-gray-50 cursor-pointer transition-colors',
+        'hover:bg-gray-50 dark:bg-gray-950 cursor-pointer transition-colors',
         isDormant && 'bg-red-50/50'
       )}
       onClick={() => onClick(customer)}
@@ -83,7 +83,7 @@ const CustomerRow = ({ customer, onClick }) => {
             'h-10 w-10 rounded-full flex items-center justify-center font-medium',
             customer.isRepeatBuyer 
               ? 'bg-green-100 text-green-600' 
-              : 'bg-gray-100 text-gray-600'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
           )}>
             {customer.isRepeatBuyer ? (
               <RefreshCw className="h-5 w-5" />
@@ -92,8 +92,8 @@ const CustomerRow = ({ customer, onClick }) => {
             )}
           </div>
           <div>
-            <p className="font-medium text-gray-900">{customer.name || 'Unknown'}</p>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <p className="font-medium text-gray-900 dark:text-white">{customer.name || 'Unknown'}</p>
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <Phone className="h-3 w-3" />
               {customer.phone || 'No phone'}
             </div>
@@ -106,21 +106,21 @@ const CustomerRow = ({ customer, onClick }) => {
       <td className="px-4 py-3 text-center">
         <span className={cn(
           'font-semibold',
-          customer.totalPurchases > 5 ? 'text-green-600' : 'text-gray-900'
+          customer.totalPurchases > 5 ? 'text-green-600' : 'text-gray-900 dark:text-white'
         )}>
           {customer.totalPurchases || 0}
         </span>
       </td>
-      <td className="px-4 py-3 text-right font-medium text-gray-900">
+      <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
         {formatCurrency(customer.totalSpent)}
       </td>
-      <td className="px-4 py-3 text-right text-sm text-gray-500">
+      <td className="px-4 py-3 text-right text-sm text-gray-500 dark:text-gray-400">
         {formatCurrency(customer.avgOrderValue || 0)}
       </td>
       <td className="px-4 py-3">
         <div className={cn(
           'text-sm',
-          isDormant ? 'text-red-600' : 'text-gray-500'
+          isDormant ? 'text-red-600' : 'text-gray-500 dark:text-gray-400'
         )}>
           {formatDate(customer.lastVisitDate)}
           {isDormant && (
@@ -293,8 +293,8 @@ export default function CustomersPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-          <p className="text-gray-500">Track repeat buyers and loyalty</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customers</h1>
+          <p className="text-gray-500 dark:text-gray-400">Track repeat buyers and loyalty</p>
         </div>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
@@ -340,11 +340,11 @@ export default function CustomersPage() {
             placeholder="Search by name or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
           />
         </div>
         
-        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 overflow-x-auto w-full sm:w-auto scrollbar-hide">
+        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto w-full sm:w-auto scrollbar-hide">
           {FILTERS.map(f => (
             <button
               key={f.value}
@@ -352,8 +352,8 @@ export default function CustomersPage() {
               className={cn(
                 'px-3 py-2 rounded-md text-sm font-medium transition-colors',
                 filter === f.value
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white'
               )}
             >
               {f.label}
@@ -361,26 +361,25 @@ export default function CustomersPage() {
           ))}
         </div>
 
-        <Button variant="outline" className="w-full sm:w-auto justify-center">
-        <Button variant="outline" onClick={handleExport}>
+        <Button variant="outline" className="w-full sm:w-auto justify-center" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
       </div>
 
       {/* Customers Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-950">
             <tr>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Customer</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
-              <th className="px-4 py-3 text-center text-sm font-medium text-gray-500">Purchases</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Total Spent</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Avg Order</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Last Visit</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Type</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Customer</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
+              <th className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">Purchases</th>
+              <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">Total Spent</th>
+              <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">Avg Order</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Last Visit</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Type</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -394,8 +393,8 @@ export default function CustomersPage() {
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center">
                   <User className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
-                  <p className="text-gray-500">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No customers found</h3>
+                  <p className="text-gray-500 dark:text-gray-400">
                     {searchQuery ? `No customers match "${searchQuery}"` : 'Customers will appear here after making sales'}
                   </p>
                 </td>
@@ -415,7 +414,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 text-sm text-gray-500">
+      <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 text-sm text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-full bg-green-500"></div>
           <span>Repeat Buyer (2+ purchases)</span>

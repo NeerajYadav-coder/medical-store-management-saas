@@ -225,8 +225,8 @@ export default function Inventory() {
             <Package className="h-5 w-5 text-brand-600" />
           </div>
           <div>
-            <p className="font-semibold text-gray-900">{medicine.name}</p>
-            <p className="text-xs text-gray-500">{medicine.genericName || medicine.manufacturer || '—'}</p>
+            <p className="font-semibold text-gray-900 dark:text-white">{medicine.name}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{medicine.genericName || medicine.manufacturer || '—'}</p>
           </div>
         </div>
       ),
@@ -236,7 +236,7 @@ export default function Inventory() {
       label: 'Form',
       render: (value, medicine) => (
         <div>
-          <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+          <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
             {getFormLabel(value)}
           </span>
           <p className="text-[10px] text-gray-400 mt-1">{medicine.dosage}</p>
@@ -251,7 +251,7 @@ export default function Inventory() {
         const stock = value ?? 0
         return (
           <div>
-            <span className="font-semibold text-gray-900">{stock} units</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{stock} units</span>
             <span className={cn('ml-2 px-2 py-0.5 text-xs rounded-full', status.color)}>
               {status.label}
             </span>
@@ -280,7 +280,7 @@ export default function Inventory() {
               expiry.status === 'expired' && 'text-danger-600 font-medium',
               expiry.status === 'critical' && 'text-warning-600 font-medium',
               expiry.status === 'warning' && 'text-orange-600',
-              expiry.status === 'ok' && 'text-gray-600',
+              expiry.status === 'ok' && 'text-gray-600 dark:text-gray-400',
             )}>
               {expiry.text}
             </span>
@@ -442,8 +442,8 @@ export default function Inventory() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
-          <p className="text-gray-500 mt-1">Live stock from batches · {pagination.total ?? 0} medicines</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Inventory</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Live stock from batches · {pagination.total ?? 0} medicines</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={handleExportAll} leftIcon={<Download className="h-4 w-4" />}>
@@ -476,9 +476,9 @@ export default function Inventory() {
 
       {/* Stats Summary — from live API data */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Total Medicines</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Total Medicines</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
         </div>
         <div className="bg-warning-50 rounded-lg border border-warning-200 p-4">
           <p className="text-sm text-warning-600">Low Stock</p>
@@ -495,7 +495,7 @@ export default function Inventory() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
           <div className="flex-1">
@@ -533,8 +533,8 @@ export default function Inventory() {
 
         {/* Active filters */}
         {(formFilter || stockFilter || search) && (
-          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-            <span className="text-sm text-gray-500">Active filters:</span>
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Active filters:</span>
             {search && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-100 text-brand-700 rounded-full text-sm">
                 Search: {search}
@@ -693,13 +693,13 @@ function BatchDetailView({ medicine }) {
       {batchList.map((batch) => {
         const expiry = formatExpiryDate(batch.expiryDate)
         return (
-          <div key={batch._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 p-4 bg-gray-50 rounded-xl border border-gray-100">
+          <div key={batch._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 p-4 bg-gray-50 dark:bg-gray-950 rounded-xl border border-gray-100 dark:border-gray-800">
             <div>
-              <p className="font-bold text-gray-900 font-mono">{batch.batchNumber}</p>
+              <p className="font-bold text-gray-900 dark:text-white font-mono">{batch.batchNumber}</p>
               <p className={cn(
                 'text-xs mt-0.5',
                 expiry.status === 'expired' ? 'text-danger-600' :
-                expiry.status === 'critical' ? 'text-warning-600' : 'text-gray-500'
+                expiry.status === 'critical' ? 'text-warning-600' : 'text-gray-500 dark:text-gray-400'
               )}>
                 Expiry: {expiry.text}
               </p>
@@ -714,7 +714,7 @@ function BatchDetailView({ medicine }) {
             <div className="flex justify-between sm:block sm:text-right sm:ml-6 w-full sm:w-auto">
               <p className="text-[10px] text-gray-400 sm:hidden">Selling Price</p>
               <div>
-                <p className="font-medium text-gray-700 text-lg sm:text-base">{formatCurrency(batch.sellingPrice)}</p>
+                <p className="font-medium text-gray-700 dark:text-gray-300 text-lg sm:text-base">{formatCurrency(batch.sellingPrice)}</p>
                 <p className="text-[10px] text-gray-400 hidden sm:block">selling price</p>
               </div>
             </div>

@@ -109,10 +109,10 @@ export default function DashboardHome() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {getGreeting()}, {user?.name?.split(' ')[0]}! 👋
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             Here's what's happening at {storeName} today.
           </p>
         </div>
@@ -202,11 +202,11 @@ export default function DashboardHome() {
         <div className="lg:col-span-2 space-y-6">
           {/* Sales Chart Placeholder */}
           {showFinancials && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Sales Overview</h3>
-                <p className="text-sm text-gray-500">Revenue trend for the last 7 days</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sales Overview</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Revenue trend for the last 7 days</p>
               </div>
               <div className="flex items-center gap-2">
                 {['7d', '30d', '90d'].map((range) => (
@@ -216,7 +216,7 @@ export default function DashboardHome() {
                       'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
                       dateRange === range
                         ? 'bg-brand-600 text-white'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800'
                     )}
                     onClick={() => setDateRange(range)}
                   >
@@ -248,7 +248,7 @@ export default function DashboardHome() {
                   )
                 })
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 border-2 border-dashed border-gray-100 rounded-lg">
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 dark:bg-gray-950 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-lg">
                   <BarChart3 className="h-8 w-8 mb-2 opacity-50" />
                   <p className="text-sm">No sales data for this period</p>
                 </div>
@@ -256,29 +256,29 @@ export default function DashboardHome() {
             </div>
 
             {/* Quick stats below chart */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900">{formatCompactCurrency(thisWeekSales)}</p>
-                <p className="text-sm text-gray-500">This Week</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCompactCurrency(thisWeekSales)}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">This Week</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900">{formatCompactCurrency(stats?.monthly?.sales || 0)}</p>
-                <p className="text-sm text-gray-500">This Month</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCompactCurrency(stats?.monthly?.sales || 0)}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">This Month</p>
               </div>
               <div className="text-center">
                 <p className={cn("text-2xl font-bold", weeklyGrowth >= 0 ? "text-success-600" : "text-danger-600")}>
                   {weeklyGrowth > 0 ? '+' : ''}{weeklyGrowth.toFixed(1)}%
                 </p>
-                <p className="text-sm text-gray-500">Growth (vs last wk)</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Growth (vs last wk)</p>
               </div>
             </div>
           </div>
           )}
 
           {/* Recent Sales */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Recent Sales</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Sales</h3>
               <Link
                 to={ROUTES.SALES}
                 className="text-sm font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1"
@@ -292,24 +292,24 @@ export default function DashboardHome() {
                 dashboardData.recentSales.map((sale) => (
                   <div
                     key={sale._id}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-950 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center">
                         <ShoppingCart className="h-5 w-5 text-brand-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{sale.customerName || sale.customerId?.name || 'Walk-in Customer'}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-medium text-gray-900 dark:text-white">{sale.customerName || sale.customerId?.name || 'Walk-in Customer'}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {sale.totalItems} item{sale.totalItems !== 1 ? 's' : ''} • {formatRelativeTime(sale.createdAt)}
                         </p>
                       </div>
                     </div>
-                    <p className="font-semibold text-gray-900">{formatCurrency(sale.grandTotal)}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(sale.grandTotal)}</p>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-gray-500">
+                <div className="text-center py-6 text-gray-500 dark:text-gray-400">
                   No recent sales found
                 </div>
               )}
@@ -320,9 +320,9 @@ export default function DashboardHome() {
         {/* Right Column - Alerts & Quick Actions */}
         <div className="space-y-6">
           {/* Alerts */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Alerts</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alerts</h3>
               <span className="px-2 py-1 text-xs font-medium rounded-full bg-danger-100 text-danger-600">
                 {dashboardData.alerts.length} Active
               </span>
@@ -334,7 +334,7 @@ export default function DashboardHome() {
                   <div
                     key={alert._id}
                     className={cn(
-                      'p-3 rounded-lg border-l-4 cursor-pointer transition-colors hover:bg-gray-50',
+                      'p-3 rounded-lg border-l-4 cursor-pointer transition-colors hover:bg-gray-50 dark:bg-gray-950',
                       alert.priority === 'CRITICAL' || alert.priority === 'HIGH'
                         ? 'bg-danger-50 border-danger-500'
                         : 'bg-warning-50 border-warning-500'
@@ -347,12 +347,12 @@ export default function DashboardHome() {
                           alert.priority === 'CRITICAL' || alert.priority === 'HIGH' ? 'text-danger-600' : 'text-warning-600'
                         )}
                       />
-                      <p className="text-sm text-gray-700">{alert.message}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{alert.message}</p>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-gray-500">
+                <div className="text-center py-6 text-gray-500 dark:text-gray-400">
                   All good! No pending alerts.
                 </div>
               )}

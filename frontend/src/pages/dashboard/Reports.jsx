@@ -394,8 +394,8 @@ export default function Reports() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-500 mt-1">Track your business performance</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Analytics</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Track your business performance</p>
         </div>
         {!isFree && (
           <div className="flex items-center gap-3">
@@ -436,7 +436,7 @@ export default function Reports() {
               summaryStats.map((stat) => {
                 const Icon = stat.icon
                 return (
-                  <div key={stat.title} className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div key={stat.title} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
                     <div className="flex items-start justify-between">
                       <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', colorMap[stat.color].split(' ')[0])}>
                         <Icon className={cn('h-5 w-5', colorMap[stat.color].split(' ')[1])} />
@@ -449,8 +449,8 @@ export default function Reports() {
                       </div>
                     </div>
                     <div className="mt-4">
-                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                      <p className="text-sm text-gray-500 mt-1">{stat.title}</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{stat.title}</p>
                     </div>
                   </div>
                 )
@@ -461,20 +461,20 @@ export default function Reports() {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Revenue Trend */}
-            <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+            <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Revenue Trend</h3>
-                  <p className="text-sm text-gray-500">Monthly revenue overview</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Revenue Trend</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Monthly revenue overview</p>
                 </div>
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full bg-brand-500"></span>
-                    <span className="text-gray-600">Revenue</span>
+                    <span className="text-gray-600 dark:text-gray-400">Revenue</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full bg-gray-300"></span>
-                    <span className="text-gray-600">Orders</span>
+                    <span className="text-gray-600 dark:text-gray-400">Orders</span>
                   </div>
                 </div>
               </div>
@@ -495,14 +495,14 @@ export default function Reports() {
                           className="w-full max-w-[40px] bg-brand-500 hover:bg-brand-600 rounded-t-sm transition-all duration-300"
                           style={{ height: `${heightPercent}%` }}
                         />
-                        <span className="text-[10px] text-gray-500 hidden sm:block">
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 hidden sm:block">
                           {new Date(day._id).getDate()}
                         </span>
                       </div>
                     )
                   })
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 border-2 border-dashed border-gray-100 rounded-lg">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 dark:bg-gray-950 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-lg">
                     <BarChart3 className="h-8 w-8 mb-2 opacity-50" />
                     <p className="text-sm">No trend data available</p>
                   </div>
@@ -512,11 +512,11 @@ export default function Reports() {
           </div>
 
           {/* Top Products Table */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Top Selling Products</h3>
-                <p className="text-sm text-gray-500">Based on selected period</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Top Selling Products</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Based on selected period</p>
               </div>
               <Button variant="ghost" size="sm" rightIcon={<ArrowUpRight className="h-4 w-4" />}>
                 View All
@@ -526,29 +526,29 @@ export default function Reports() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">#</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Product</th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Quantity Sold</th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Revenue</th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Share</th>
+                  <tr className="border-b border-gray-100 dark:border-gray-800">
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">#</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Product</th>
+                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Quantity Sold</th>
+                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
+                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Share</th>
                   </tr>
                 </thead>
                 <tbody>
                   {topProducts.length > 0 ? (
                     topProducts.map((product, index) => (
-                      <tr key={product._id || index} className="border-b border-gray-55 hover:bg-gray-50">
-                        <td className="py-3 px-4 text-sm text-gray-500">{index + 1}</td>
+                      <tr key={product._id || index} className="border-b border-gray-55 hover:bg-gray-50 dark:bg-gray-950">
+                        <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-lg bg-brand-100 flex items-center justify-center">
                               <Package className="h-4 w-4 text-brand-600" />
                             </div>
-                            <span className="font-medium text-gray-900">{product.name} {product.dosage}</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{product.name} {product.dosage}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-right text-sm text-gray-600">{product.totalQuantity}</td>
-                        <td className="py-3 px-4 text-right font-semibold text-gray-900">{formatCurrency(product.totalRevenue)}</td>
+                        <td className="py-3 px-4 text-right text-sm text-gray-600 dark:text-gray-400">{product.totalQuantity}</td>
+                        <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">{formatCurrency(product.totalRevenue)}</td>
                         <td className="py-3 px-4 text-right">
                           <span className="px-2 py-1 bg-brand-50 text-brand-700 text-xs rounded-full">
                             {((product.totalRevenue / topProducts.reduce((sum, p) => sum + p.totalRevenue, 0)) * 100).toFixed(1)}%
@@ -558,7 +558,7 @@ export default function Reports() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="py-8 text-center text-gray-500">
+                      <td colSpan="5" className="py-8 text-center text-gray-500 dark:text-gray-400">
                         No sales data available yet
                       </td>
                     </tr>
@@ -581,14 +581,14 @@ export default function Reports() {
                 <button
                   key={report.title}
                   onClick={report.action}
-                  className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all group"
+                  className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-all group"
                 >
                   <div className={cn('h-12 w-12 rounded-xl flex items-center justify-center text-white', report.color)}>
                     <Icon className="h-6 w-6" />
                   </div>
                   <div className="text-left">
-                    <p className="font-medium text-gray-900">{report.title}</p>
-                    <p className="text-sm text-gray-500">Download PDF</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{report.title}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Download PDF</p>
                   </div>
                   <Download className="h-5 w-5 text-gray-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>

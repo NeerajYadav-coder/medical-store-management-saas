@@ -117,12 +117,12 @@ export default function StoreSettings() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Store Settings</h1>
-        <p className="text-gray-500 mt-1">Manage your store profile and preferences</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Store Settings</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your store profile and preferences</p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => {
             const Icon = tab.icon
@@ -134,7 +134,7 @@ export default function StoreSettings() {
                   'flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors',
                   activeTab === tab.id
                     ? 'border-brand-500 text-brand-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -149,10 +149,10 @@ export default function StoreSettings() {
       {activeTab === 'profile' && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Logo Upload */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Store Logo</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Store Logo</h3>
             <div className="flex items-center gap-6">
-              <div className="h-24 w-24 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center relative group">
+              <div className="h-24 w-24 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 overflow-hidden flex items-center justify-center relative group">
                 {logoBase64 ? (
                   <img
                     src={logoBase64}
@@ -193,7 +193,7 @@ export default function StoreSettings() {
                     </Button>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   PNG, JPG up to 2MB. Recommended: 200x200px
                 </p>
               </div>
@@ -201,8 +201,8 @@ export default function StoreSettings() {
           </div>
 
           {/* Basic Info */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Store Name"
@@ -235,8 +235,8 @@ export default function StoreSettings() {
           </div>
 
           {/* Address */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Address</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Address</h3>
             <Textarea
               label="Full Address"
               placeholder="Shop No, Street, Area, City, State, PIN"
@@ -246,8 +246,8 @@ export default function StoreSettings() {
           </div>
 
           {/* Legal Info */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Legal Information</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Legal Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Drug License Number"
@@ -281,8 +281,8 @@ export default function StoreSettings() {
       {/* Preferences Tab */}
       {activeTab === 'preferences' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Regional Settings</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Regional Settings</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 label="Currency"
@@ -312,22 +312,22 @@ export default function StoreSettings() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Notifications</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notifications</h3>
             <div className="space-y-4">
               {[
                 { id: 'lowStock', label: 'Low stock alerts', description: 'Get notified when stock falls below threshold' },
                 { id: 'expiry', label: 'Expiry alerts', description: 'Get notified about expiring medicines' },
                 { id: 'orders', label: 'Order updates', description: 'Get notified about purchase order status' },
               ].map((setting) => (
-                <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                   <div>
-                    <p className="font-medium text-gray-900">{setting.label}</p>
-                    <p className="text-sm text-gray-500">{setting.description}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{setting.label}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{setting.description}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                   </label>
                 </div>
               ))}
@@ -339,10 +339,10 @@ export default function StoreSettings() {
       {/* Billing Tab */}
       {activeTab === 'billing' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-gray-150 bg-gray-50/50">
-              <h3 className="text-lg font-bold text-gray-900">Subscription Status</h3>
-              <p className="text-sm text-gray-500 mt-1">Manage store billing preferences and plans.</p>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-gray-150 bg-gray-50 dark:bg-gray-950/50">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Subscription Status</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage store billing preferences and plans.</p>
             </div>
 
             <div className="p-6 space-y-6">
@@ -354,7 +354,7 @@ export default function StoreSettings() {
                       <Crown className="h-64 w-64" />
                     </div>
                     <div className="space-y-2 relative z-10">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-gray-900/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider">
                         <Crown className="h-3.5 w-3.5" />
                         Premium Active
                       </div>
@@ -374,7 +374,7 @@ export default function StoreSettings() {
                             toast.error('Failed to downgrade store plan.')
                           }
                         }}
-                        className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md"
+                        className="bg-white dark:bg-gray-900/10 hover:bg-white dark:bg-gray-900/20 text-white border border-white/20 backdrop-blur-md"
                       >
                         Downgrade to Free
                       </Button>
@@ -385,7 +385,7 @@ export default function StoreSettings() {
                     <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
                       <Crown className="h-5 w-5 text-amber-600" /> Included Premium Benefits
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700 dark:text-gray-300">
                       {[
                         'Unlimited medicines catalog',
                         'Unlimited staff accounts & roles',
@@ -407,7 +407,7 @@ export default function StoreSettings() {
                 <div className="space-y-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-2xl bg-gray-900 text-white shadow-md relative overflow-hidden">
                     <div className="space-y-2 relative z-10">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-gray-900/10 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300">
                         Free Tier
                       </div>
                       <p className="text-3xl font-extrabold tracking-tight">₹0<span className="text-sm font-normal text-gray-400">/forever</span></p>
@@ -432,11 +432,11 @@ export default function StoreSettings() {
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <div className="bg-gray-50 dark:bg-gray-950 rounded-xl p-5 border border-gray-100 dark:border-gray-800">
+                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-warning-500" /> Active Free Limitations
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400">
                       {[
                         'Max 100 medicine listings cap',
                         'Max 2 staff members limitation',
@@ -455,9 +455,9 @@ export default function StoreSettings() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing History</h3>
-            <div className="text-center py-8 text-gray-500">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Billing History</h3>
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <FileText className="h-12 w-12 mx-auto text-gray-300 mb-3" />
               <p>No billing history available</p>
             </div>

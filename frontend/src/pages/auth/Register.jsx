@@ -379,8 +379,8 @@ export default function Register() {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center lg:text-left">
-        <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
-        <p className="mt-2 text-gray-600">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create your account</h2>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
           Get started with MedStore in 3 easy steps
         </p>
       </div>
@@ -403,7 +403,7 @@ export default function Register() {
                       ? 'bg-success-500 text-white'
                       : isCurrent
                       ? 'bg-brand-600 text-white'
-                      : 'bg-gray-200 text-gray-500'
+                      : 'bg-gray-200 text-gray-500 dark:text-gray-400'
                   )}
                 >
                   {isCompleted ? (
@@ -415,7 +415,7 @@ export default function Register() {
                 <div className="mt-2 text-center hidden sm:block">
                   <p className={cn(
                     'text-xs font-medium',
-                    isCurrent ? 'text-brand-600' : 'text-gray-500'
+                    isCurrent ? 'text-brand-600' : 'text-gray-500 dark:text-gray-400'
                   )}>
                     {step.title}
                   </p>
@@ -556,9 +556,9 @@ export default function Register() {
             </div>
 
             {/* Password requirements */}
-            <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
-              <p className="text-xs font-medium text-gray-500 mb-2">Password requirements:</p>
-              <ul className="text-xs text-gray-500 space-y-1">
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Password requirements:</p>
+              <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                 <li className="flex items-center gap-2">
                   <Check className={cn('h-3 w-3', watch('password')?.length >= 8 ? 'text-success-500' : 'text-gray-300')} />
                   At least 8 characters
@@ -584,7 +584,7 @@ export default function Register() {
         {currentStep === 2 && (
           <div className="space-y-6">
             {/* Phone OTP */}
-            <div className="p-5 rounded-xl border border-gray-200 bg-white space-y-4">
+            <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn(
@@ -598,8 +598,8 @@ export default function Register() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Phone Verification</p>
-                    <p className="text-sm text-gray-500">+91 {formData.ownerPhone}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">Phone Verification</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">+91 {formData.ownerPhone}</p>
                   </div>
                 </div>
                 {phoneVerified && (
@@ -639,7 +639,7 @@ export default function Register() {
                           type="button"
                           onClick={sendPhoneOtp}
                           disabled={resendTimer.phone > 0 || sendingOtp.phone}
-                          className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 disabled:opacity-50"
                         >
                           {resendTimer.phone > 0 ? `Resend in ${resendTimer.phone}s` : 'Resend OTP'}
                         </button>
@@ -661,7 +661,7 @@ export default function Register() {
             </div>
 
             {/* Email OTP */}
-            <div className="p-5 rounded-xl border border-gray-200 bg-white space-y-4">
+            <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn(
@@ -675,8 +675,8 @@ export default function Register() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Email Verification</p>
-                    <p className="text-sm text-gray-500">{formData.ownerEmail}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">Email Verification</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{formData.ownerEmail}</p>
                   </div>
                 </div>
                 {emailVerified && (
@@ -716,7 +716,7 @@ export default function Register() {
                           type="button"
                           onClick={sendEmailOtp}
                           disabled={resendTimer.email > 0 || sendingOtp.email}
-                          className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 disabled:opacity-50"
                         >
                           {resendTimer.email > 0 ? `Resend in ${resendTimer.email}s` : 'Resend OTP'}
                         </button>
@@ -775,7 +775,7 @@ export default function Register() {
       </form>
 
       {/* Login link */}
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
         Already have an account?{' '}
         <Link
           to={ROUTES.LOGIN}
