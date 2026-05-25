@@ -115,6 +115,7 @@ export const updateMyStore = async (req, res) => {
       "gstNumber",
       "website",
       "logo",
+      "whatsappConfig",
     ];
 
     allowedUpdates.forEach((field) => {

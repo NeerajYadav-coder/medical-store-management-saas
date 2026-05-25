@@ -21,12 +21,12 @@ export default function PremiumLockOverlay({ title, description, onUpgradeClick 
           </p>
 
           {/* Pricing Highlight */}
-          <div className="my-6 p-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-brand-50 border border-indigo-100/50 flex items-center justify-between">
+          <div className="my-6 p-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-brand-50 dark:from-indigo-950/40 dark:to-brand-950/40 border border-indigo-100/50 dark:border-indigo-900/30 flex items-center justify-between">
             <div className="text-left">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Premium Subscription</p>
-              <p className="text-lg font-black text-indigo-950">₹2,999<span className="text-xs text-gray-400 font-medium"> / year</span></p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">Premium Subscription</p>
+              <p className="text-lg font-black text-indigo-950 dark:text-indigo-200">₹2,999<span className="text-xs text-gray-400 dark:text-gray-500 font-medium"> / year</span></p>
             </div>
-            <span className="text-xs font-bold px-2.5 py-1 bg-yellow-100 text-yellow-800 rounded-full flex items-center gap-1">
+            <span className="text-xs font-bold px-2.5 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-full flex items-center gap-1">
               <Sparkles className="h-3 w-3" /> BEST VALUE
             </span>
           </div>
@@ -40,7 +40,7 @@ export default function PremiumLockOverlay({ title, description, onUpgradeClick 
             Upgrade to Premium
           </Button>
 
-          <p className="text-[10px] text-gray-400 mt-3">
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-3">
             Instant activation • Cancel or toggle subscription anytime in settings
           </p>
         </div>
@@ -49,15 +49,15 @@ export default function PremiumLockOverlay({ title, description, onUpgradeClick 
       {/* Behind the blur - Mock visual background for aesthetics */}
       <div className="w-full opacity-10 select-none pointer-events-none grid grid-cols-3 gap-6">
         <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-4">
-          <div className="h-4 w-1/3 bg-gray-300 rounded" />
-          <div className="h-32 bg-gray-200 rounded-xl" />
+          <div className="h-4 w-1/3 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-32 bg-gray-200 dark:bg-gray-800 rounded-xl" />
         </div>
         <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-4 col-span-2">
-          <div className="h-4 w-1/4 bg-gray-300 rounded" />
+          <div className="h-4 w-1/4 bg-gray-300 dark:bg-gray-700 rounded" />
           <div className="space-y-2">
-            <div className="h-3 bg-gray-200 rounded w-full" />
-            <div className="h-3 bg-gray-200 rounded w-5/6" />
-            <div className="h-3 bg-gray-200 rounded w-4/6" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-full" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-5/6" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-4/6" />
           </div>
           <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl" />
         </div>

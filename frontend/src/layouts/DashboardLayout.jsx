@@ -42,6 +42,8 @@ import { useStore } from '@context/StoreContext'
 import { ROUTES, SIDEBAR_NAV_ITEMS } from '@config/routes.config'
 import Button from '@components/common/Button'
 import { Spinner } from '@components/common/Loader'
+import { useQuery } from '@tanstack/react-query'
+import { reportsApi } from '@api/reports.api'
 
 // Icon mapping
 const ICONS = {
@@ -66,6 +68,16 @@ export default function DashboardLayout() {
   const { isDarkMode, toggleTheme } = useTheme()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+
+  // Fetch stats from backend for alerts and notifications count
+  const { data: stats } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: reportsApi.getDashboardStats,
+    staleTime: 60 * 1000, // 1 minute
+  })
+
+  const expiringCount = stats?.alerts?.expiry || 0
+  const latestAlerts = stats?.alerts?.latest || []
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
@@ -99,7 +111,7 @@ export default function DashboardLayout() {
   )
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-800 overflow-hidden">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-800 dark:bg-gray-950 overflow-hidden">
       {/* Sidebar Overlay (Mobile) */}
       {isSidebarOpen && isMobile && (
         <div
@@ -143,25 +155,13 @@ export default function DashboardLayout() {
           </button>
         </div>
 
-        {/* Search */}
-        <div className="px-4 py-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search medicines..."
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-800 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
         {/* Navigation */}
         <nav className="flex-1 px-4 pb-4 overflow-y-auto scrollbar-hide">
           <ul className="space-y-1">
             {filteredNavItems.map((item) => {
               const Icon = ICONS[item.icon]
-              const isActive = location.pathname === item.path ||
-                (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
+              const isActive = location.pathname === item.path || 
+                               (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
               const isFree = store?.plan !== 'PREMIUM'
               const isPremiumItem = item.path === ROUTES.REPORTS || item.path === ROUTES.AUDIT_LOGS
 
@@ -170,9 +170,9 @@ export default function DashboardLayout() {
                   <NavLink
                     to={item.path}
                     className={cn(
-                      'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
+                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
                       isActive
-                        ? 'bg-brand-600 text-white '
+                        ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     )}
                   >
@@ -181,9 +181,9 @@ export default function DashboardLayout() {
                     {isFree && isPremiumItem && (
                       <Lock className="ml-auto h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors" />
                     )}
-                    {item.badge && (
+                    {item.badge && stats?.alerts?.total > 0 && (
                       <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-danger-500 text-white">
-                        3
+                        {stats.alerts.total}
                       </span>
                     )}
                   </NavLink>
@@ -194,14 +194,14 @@ export default function DashboardLayout() {
         </nav>
 
         {/* Alerts Card */}
-        {user?.role !== 'STAFF' && (
+        {user?.role !== 'STAFF' && expiringCount > 0 && (
           <div className="mx-4 mb-4 p-4 rounded-xl bg-gradient-to-br from-warning-500/20 to-warning-600/10 border border-warning-500/30">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-warning-500/20">
                 <AlertTriangle className="h-5 w-5 text-warning-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-white">5 items expiring soon</p>
+                <p className="text-sm font-medium text-white">{expiringCount} item{expiringCount !== 1 ? 's' : ''} expiring soon</p>
                 <p className="text-xs text-slate-400 mt-1">Check inventory alerts</p>
               </div>
             </div>
@@ -230,13 +230,12 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
           {/* Left side */}
           <div className="flex items-center gap-4">
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 lg:hidden"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 lg:hidden"
             >
               <Menu className="h-6 w-6" />
             </button>
@@ -244,8 +243,8 @@ export default function DashboardLayout() {
             {/* Breadcrumb or page title */}
             <div className="hidden sm:block">
               <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {SIDEBAR_NAV_ITEMS.find(item =>
-                  location.pathname === item.path ||
+                {SIDEBAR_NAV_ITEMS.find(item => 
+                  location.pathname === item.path || 
                   (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
                 )?.label || 'Dashboard'}
               </h1>
@@ -274,25 +273,33 @@ export default function DashboardLayout() {
                     e.stopPropagation()
                     setIsNotificationsOpen(!isNotificationsOpen)
                   }}
-                  className="relative p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                  className="relative p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400"
                 >
                   <Bell className="h-5 w-5" />
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-danger-500" />
+                  {latestAlerts.length > 0 && (
+                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-danger-500" />
+                  )}
                 </button>
 
                 {/* Notifications dropdown */}
                 {isNotificationsOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
                     <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
                       <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
                     </div>
                     <div className="max-h-72 overflow-y-auto">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="px-4 py-3 hover:bg-gray-50 dark:bg-gray-950 cursor-pointer">
-                          <p className="text-sm text-gray-900 dark:text-white">Low stock alert for Paracetamol</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">2 hours ago</p>
+                      {latestAlerts.length > 0 ? (
+                        latestAlerts.slice(0, 5).map((alert) => (
+                          <div key={alert._id} className="px-4 py-3 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700 cursor-pointer">
+                            <p className="text-sm text-gray-900 dark:text-white">{alert.message}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(alert.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                          All good! No pending alerts.
                         </div>
-                      ))}
+                      )}
                     </div>
                     <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800">
                       <button className="text-sm text-brand-600 hover:text-brand-700 font-medium">
@@ -311,7 +318,7 @@ export default function DashboardLayout() {
                   e.stopPropagation()
                   setIsUserMenuOpen(!isUserMenuOpen)
                 }}
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800"
+                className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-800"
               >
                 <div className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-sm font-medium">
                   {user?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -321,7 +328,7 @@ export default function DashboardLayout() {
 
               {/* User dropdown */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
                   <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
                     <p className="font-medium text-gray-900 dark:text-white">{user?.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
@@ -329,21 +336,21 @@ export default function DashboardLayout() {
                   {user?.role !== 'STAFF' && (
                     <div className="py-1">
                       <Link
-                        to={ROUTES.SETTINGS_USER}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950"
+                        to={ROUTES.ROUTES?.SETTINGS_USER || ROUTES.SETTINGS_USER}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700"
                       >
                         <User className="h-4 w-4" />
                         Profile Settings
                       </Link>
                       <Link
                         to={ROUTES.SETTINGS_STORE}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700"
                       >
                         <Store className="h-4 w-4" />
                         Store Settings
                       </Link>
                       <button
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 w-full text-left"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700 w-full text-left"
                       >
                         <HelpCircle className="h-4 w-4" />
                         Help & Support
@@ -354,7 +361,7 @@ export default function DashboardLayout() {
                     <button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 w-full text-left"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 w-full text-left"
                     >
                       {isLoggingOut ? (
                         <Spinner size="sm" />
@@ -371,7 +378,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-2 sm:p-4 lg:p-6">
+        <main className="flex-1 overflow-auto p-4 lg:p-6 bg-gray-100 dark:bg-gray-800 dark:bg-gray-950">
           <Outlet />
         </main>
       </div>

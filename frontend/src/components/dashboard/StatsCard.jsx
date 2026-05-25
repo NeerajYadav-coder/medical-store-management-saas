@@ -75,8 +75,8 @@ export default function StatsCard({
 
       {/* Value */}
       <div className="mt-4">
-        <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{title}</p>
+        <p className="text-2xl font-bold text-gray-900 dark:text-white dark:text-white">{value}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 mt-1">{title}</p>
       </div>
 
       {/* Action link or trend label */}
@@ -89,7 +89,7 @@ export default function StatsCard({
           <ArrowRight className="h-3 w-3" />
         </Link>
       ) : trend?.label ? (
-        <p className="mt-3 text-xs text-gray-400">{trend.label}</p>
+        <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">{trend.label}</p>
       ) : null}
     </div>
   )

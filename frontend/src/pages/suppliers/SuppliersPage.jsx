@@ -2,7 +2,7 @@
  * SuppliersPage - Supplier management with vendor codes and margin tracking
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Plus, Search, TrendingUp, Filter, Download, 
   Truck, Building2, Star 
@@ -22,8 +22,8 @@ const StatCard = ({ icon: Icon, label, value, subValue, color }) => (
       <Icon className="h-5 w-5 text-white" />
     </div>
     <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-    <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
-    {subValue && <p className="text-xs text-gray-400 mt-1">{subValue}</p>}
+    <p className="text-sm text-gray-505 dark:text-gray-400">{label}</p>
+    {subValue && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{subValue}</p>}
   </div>
 );
 
@@ -54,6 +54,7 @@ export default function SuppliersPage() {
       setSuppliers(response.data || []);
       calculateStats(response.data || []);
     } catch (error) {
+      if (error?.isCancelled) return;
       console.error('Error loading suppliers:', error);
       toast.error('Failed to load suppliers');
     } finally {
@@ -82,13 +83,20 @@ export default function SuppliersPage() {
       const response = await supplierApi.search(searchQuery);
       setSuppliers(response.data || []);
     } catch (error) {
+      if (error?.isCancelled) return;
       console.error('Error searching suppliers:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     const debounce = setTimeout(() => {
       if (searchQuery) {
         handleSearch();
@@ -195,21 +203,21 @@ export default function SuppliersPage() {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Suppliers</h1>
           <p className="text-gray-500 dark:text-gray-400">Manage vendors with margin tracking</p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto justify-center">
           <Plus className="h-4 w-4 mr-2" />
           Add Supplier
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={Building2}
           label="Total Suppliers"
@@ -238,8 +246,8 @@ export default function SuppliersPage() {
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
-        <div className="flex-1 relative">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+        <div className="flex-1 relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
@@ -250,16 +258,16 @@ export default function SuppliersPage() {
           />
         </div>
         
-        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto w-full sm:w-auto scrollbar-hide">
+        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto w-full lg:w-auto scrollbar-hide">
           {FILTERS.map(f => (
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}
               className={cn(
-                'px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                'px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap',
                 filter === f.value
                   ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               )}
             >
               {f.label}
@@ -267,7 +275,7 @@ export default function SuppliersPage() {
           ))}
         </div>
 
-        <Button variant="outline" className="w-full sm:w-auto justify-center" onClick={handleExport}>
+        <Button variant="outline" onClick={handleExport} className="w-full lg:w-auto justify-center">
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
@@ -275,19 +283,19 @@ export default function SuppliersPage() {
 
       {/* Suppliers Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64 animate-pulse" />
           ))}
         </div>
       ) : suppliers.length === 0 ? (
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
-          <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <Building2 className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No suppliers found</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-4">
             {searchQuery ? `No suppliers match "${searchQuery}"` : 'Add your first supplier to get started'}
           </p>
-          <Button onClick={() => setShowForm(true)}>
+          <Button onClick={() => setShowForm(true)} className="mx-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Supplier
           </Button>

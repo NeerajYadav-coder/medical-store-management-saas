@@ -103,7 +103,7 @@ export default function DoctorSelector({
 
       {/* Selected Doctor Display */}
       {selected ? (
-        <div className="flex items-center justify-between p-2.5 rounded-lg border border-brand-200 bg-brand-50">
+        <div className="flex items-center justify-between p-2.5 rounded-lg border border-brand-200 dark:border-brand-800/30 bg-brand-50 dark:bg-brand-950/20">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-brand-100 flex items-center justify-center">
               <Stethoscope className="h-4 w-4 text-brand-600" />
@@ -166,7 +166,7 @@ export default function DoctorSelector({
                 placeholder="Doctor name *"
                 value={newDoctor.name}
                 onChange={(e) => setNewDoctor({ ...newDoctor, name: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500"
                 autoFocus
               />
               <input
@@ -174,14 +174,14 @@ export default function DoctorSelector({
                 placeholder="Specialization"
                 value={newDoctor.specialization}
                 onChange={(e) => setNewDoctor({ ...newDoctor, specialization: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500"
               />
               <input
                 type="tel"
                 placeholder="Phone (optional)"
                 value={newDoctor.phone}
                 onChange={(e) => setNewDoctor({ ...newDoctor, phone: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500"
               />
               <button
                 type="button"
@@ -201,7 +201,7 @@ export default function DoctorSelector({
                     key={doctor._id}
                     type="button"
                     onClick={() => selectDoctor(doctor)}
-                    className="w-full px-3 py-2 text-left hover:bg-gray-50 dark:bg-gray-950 flex items-center gap-3"
+                    className="w-full px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3"
                   >
                     <div className="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                       <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -229,7 +229,7 @@ export default function DoctorSelector({
                   setNewDoctor({ ...newDoctor, name: searchQuery });
                   setShowAddForm(true);
                 }}
-                className="w-full px-3 py-2.5 text-left hover:bg-brand-50 flex items-center gap-2 text-brand-600 border-t border-gray-100 dark:border-gray-800"
+                className="w-full px-3 py-2.5 text-left hover:bg-brand-50 dark:hover:bg-brand-950/20 flex items-center gap-2 text-brand-600 border-t border-gray-100 dark:border-gray-800"
               >
                 <Plus className="h-4 w-4" />
                 <span className="text-sm font-medium">

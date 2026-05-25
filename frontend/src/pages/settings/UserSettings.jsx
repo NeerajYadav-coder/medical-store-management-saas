@@ -83,7 +83,7 @@ export default function UserSettings() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors whitespace-nowrap',
                   activeTab === tab.id
                     ? 'border-brand-500 text-brand-600'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
@@ -110,15 +110,15 @@ export default function UserSettings() {
                 </div>
                 <button
                   type="button"
-                  className="absolute bottom-0 right-0 h-8 w-8 bg-white dark:bg-gray-900 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm hover:bg-gray-50 dark:bg-gray-950"
+                  className="absolute bottom-0 right-0 h-8 w-8 bg-white dark:bg-gray-900 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm hover:bg-gray-50 dark:bg-gray-955"
                 >
                   <Camera className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">{user?.name}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{user?.role}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
+                <p className="text-sm text-gray-505 dark:text-gray-400">{user?.role}</p>
+                <p className="text-sm text-gray-505 dark:text-gray-400">{user?.email}</p>
               </div>
             </div>
           </div>
@@ -176,7 +176,7 @@ export default function UserSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Change your password</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Last changed 30 days ago</p>
+                <p className="text-sm text-gray-505 dark:text-gray-400">Last changed 30 days ago</p>
               </div>
               <Button
                 variant="outline"
@@ -194,7 +194,7 @@ export default function UserSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Add extra security to your account</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Not enabled</p>
+                <p className="text-sm text-gray-505 dark:text-gray-400">Not enabled</p>
               </div>
               <Button variant="outline" leftIcon={<Shield className="h-4 w-4" />}>
                 Enable 2FA
@@ -213,7 +213,7 @@ export default function UserSettings() {
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">Current Device</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Windows • Chrome • Hyderabad</p>
+                    <p className="text-sm text-gray-505 dark:text-gray-400">Windows • Chrome • Hyderabad</p>
                   </div>
                 </div>
                 <span className="px-2 py-1 bg-success-100 text-success-700 text-xs rounded-full">
@@ -247,7 +247,7 @@ export default function UserSettings() {
                 <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{setting.label}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{setting.description}</p>
+                    <p className="text-sm text-gray-505 dark:text-gray-400">{setting.description}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" defaultChecked className="sr-only peer" />
@@ -268,7 +268,7 @@ export default function UserSettings() {
                 <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{setting.label}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{setting.description}</p>
+                    <p className="text-sm text-gray-550 dark:text-gray-400">{setting.description}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" />

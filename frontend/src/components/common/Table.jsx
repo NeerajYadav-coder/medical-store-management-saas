@@ -94,7 +94,7 @@ export function Table({
   return (
     <div className={cn('overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900', className)}>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           {/* Header */}
           <thead className="bg-gray-50 dark:bg-gray-950">
             <tr>
@@ -139,7 +139,7 @@ export function Table({
           </thead>
 
           {/* Body */}
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
             {isLoading ? (
               <tr>
                 <td
@@ -174,10 +174,10 @@ export function Table({
                     onClick={() => onRowClick?.(row)}
                     className={cn(
                       'transition-colors',
-                      hoverable && 'hover:bg-gray-50 dark:hover:bg-gray-850',
-                      striped && rowIndex % 2 === 1 && 'bg-gray-50 dark:bg-gray-950/50',
+                      hoverable && 'hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-800',
+                      striped && rowIndex % 2 === 1 && 'bg-gray-50 dark:bg-gray-950/50 dark:bg-gray-800/30',
                       onRowClick && 'cursor-pointer',
-                      isSelected && 'bg-brand-50 dark:bg-brand-950/20'
+                      isSelected && 'bg-brand-50'
                     )}
                   >
                     {/* Selection checkbox */}
@@ -201,7 +201,7 @@ export function Table({
                       <td
                         key={column.key}
                         className={cn(
-                          'px-4 text-sm text-gray-900 dark:text-white whitespace-nowrap',
+                          'px-4 text-sm text-gray-900 dark:text-white dark:text-gray-100 whitespace-nowrap',
                           compact ? 'py-2' : 'py-3',
                           column.align === 'center' && 'text-center',
                           column.align === 'right' && 'text-right',
@@ -278,7 +278,7 @@ export function TablePagination({
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 px-4 py-3">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 dark:bg-gray-800 px-4 py-3">
       {/* Item count */}
       {showItemCount && (
         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -316,7 +316,7 @@ export function TablePagination({
                   'min-w-[32px] h-8 px-2 text-sm font-medium rounded-md transition-colors',
                   page === currentPage
                     ? 'bg-brand-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'
                 )}
               >
                 {page}

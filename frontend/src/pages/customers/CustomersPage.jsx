@@ -2,7 +2,7 @@
  * CustomersPage - Customer management with repeat buyer and loyalty tracking
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Plus, Search, Filter, Download, User, Crown, 
   RefreshCw, Phone, TrendingUp, ShoppingBag, Calendar
@@ -72,8 +72,8 @@ const CustomerRow = ({ customer, onClick }) => {
   return (
     <tr 
       className={cn(
-        'hover:bg-gray-50 dark:bg-gray-950 cursor-pointer transition-colors',
-        isDormant && 'bg-red-50/50'
+        'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+        isDormant && 'bg-red-50/50 dark:bg-red-950/20'
       )}
       onClick={() => onClick(customer)}
     >
@@ -178,6 +178,7 @@ export default function CustomersPage() {
       setCustomers(customerList);
       calculateStats(customerList);
     } catch (error) {
+      if (error?.isCancelled) return;
       console.error('Error loading customers:', error);
       toast.error('Failed to load customers');
     } finally {
@@ -195,7 +196,13 @@ export default function CustomersPage() {
     setStats(stats);
   };
 
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     const debounce = setTimeout(() => {
       if (searchQuery.length >= 2) {
         searchCustomers();
@@ -216,6 +223,7 @@ export default function CustomersPage() {
         : (Array.isArray(response?.data) ? response.data : []);
       setCustomers(customerList);
     } catch (error) {
+      if (error?.isCancelled) return;
       console.error('Error searching customers:', error);
     } finally {
       setLoading(false);
@@ -333,7 +341,7 @@ export default function CustomersPage() {
 
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
-        <div className="flex-1 relative">
+        <div className="flex-1 relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
@@ -350,7 +358,7 @@ export default function CustomersPage() {
               key={f.value}
               onClick={() => setFilter(f.value)}
               className={cn(
-                'px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                'px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap',
                 filter === f.value
                   ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white'
@@ -361,7 +369,11 @@ export default function CustomersPage() {
           ))}
         </div>
 
-        <Button variant="outline" className="w-full sm:w-auto justify-center" onClick={handleExport}>
+        <Button
+          variant="outline"
+          className="w-full sm:w-auto justify-center"
+          onClick={handleExport}
+        >
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
@@ -372,44 +384,44 @@ export default function CustomersPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-950">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Customer</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
-              <th className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">Purchases</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">Total Spent</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">Avg Order</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Last Visit</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Type</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {loading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center">
-                  <div className="animate-spin h-8 w-8 border-2 border-brand-500 border-t-transparent rounded-full mx-auto"></div>
-                </td>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Customer</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">Purchases</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">Total Spent</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">Avg Order</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Last Visit</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Type</th>
               </tr>
-            ) : customers.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-12 text-center">
-                  <User className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No customers found</h3>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {searchQuery ? `No customers match "${searchQuery}"` : 'Customers will appear here after making sales'}
-                  </p>
-                </td>
-              </tr>
-            ) : (
-              customers.map(customer => (
-                <CustomerRow
-                  key={customer._id}
-                  customer={customer}
-                  onClick={handleCustomerClick}
-                />
-              ))
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-12 text-center">
+                    <div className="animate-spin h-8 w-8 border-2 border-brand-500 border-t-transparent rounded-full mx-auto"></div>
+                  </td>
+                </tr>
+              ) : customers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-12 text-center">
+                    <User className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No customers found</h3>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {searchQuery ? `No customers match "${searchQuery}"` : 'Customers will appear here after making sales'}
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                customers.map(customer => (
+                  <CustomerRow
+                    key={customer._id}
+                    customer={customer}
+                    onClick={handleCustomerClick}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

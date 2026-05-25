@@ -37,8 +37,8 @@ export const Input = forwardRef(({
         <label
           htmlFor={inputId}
           className={cn(
-            'block text-sm font-medium text-gray-700 dark:text-gray-300',
-            disabled && 'text-gray-400'
+            'block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300',
+            disabled && 'text-gray-400 dark:text-gray-600'
           )}
         >
           {label}
@@ -65,10 +65,10 @@ export const Input = forwardRef(({
           aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           className={cn(
             'block w-full px-3 py-2.5 text-sm rounded-lg border transition-all duration-200',
-            'bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400',
-            'focus:outline-none focus:ring-2 focus:ring-offset-0',
+            'bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500',
+            'focus:outline-none focus:ring-2 focus:ring-offset-0 dark:focus:ring-offset-gray-900',
             // Default state
-            !error && 'border-gray-300 dark:border-gray-600 focus:border-brand-500 focus:ring-brand-500/20',
+            !error && 'border-gray-300 dark:border-gray-700 focus:border-brand-500 focus:ring-brand-500/20',
             // Error state
             error && 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/20 pr-10',
             // Disabled state
@@ -102,7 +102,7 @@ export const Input = forwardRef(({
           {error}
         </p>
       ) : hint ? (
-        <p id={`${inputId}-hint`} className="text-sm text-gray-500 dark:text-gray-400">
+        <p id={`${inputId}-hint`} className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
           {hint}
         </p>
       ) : null}
@@ -311,8 +311,8 @@ export const Textarea = forwardRef(({
         <label
           htmlFor={inputId}
           className={cn(
-            'block text-sm font-medium text-gray-700 dark:text-gray-300',
-            disabled && 'text-gray-400'
+            'block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300',
+            disabled && 'text-gray-400 dark:text-gray-600'
           )}
         >
           {label}
@@ -328,9 +328,9 @@ export const Textarea = forwardRef(({
         aria-invalid={!!error}
         className={cn(
           'block w-full px-3 py-2.5 text-sm rounded-lg border transition-all duration-200',
-          'bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 resize-none',
-          'focus:outline-none focus:ring-2 focus:ring-offset-0',
-          !error && 'border-gray-300 dark:border-gray-600 focus:border-brand-500 focus:ring-brand-500/20',
+          'bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none',
+          'focus:outline-none focus:ring-2 focus:ring-offset-0 dark:focus:ring-offset-gray-900',
+          !error && 'border-gray-300 dark:border-gray-700 focus:border-brand-500 focus:ring-brand-500/20',
           error && 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/20',
           disabled && 'bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 cursor-not-allowed',
           className
@@ -341,7 +341,7 @@ export const Textarea = forwardRef(({
       {error ? (
         <p className="text-sm text-danger-600">{error}</p>
       ) : hint ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">{hint}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">{hint}</p>
       ) : null}
     </div>
   )
@@ -372,8 +372,8 @@ export const Select = forwardRef(({
         <label
           htmlFor={inputId}
           className={cn(
-            'block text-sm font-medium text-gray-700 dark:text-gray-300',
-            disabled && 'text-gray-400'
+            'block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300',
+            disabled && 'text-gray-400 dark:text-gray-600'
           )}
         >
           {label}
@@ -389,8 +389,8 @@ export const Select = forwardRef(({
         className={cn(
           'block w-full px-3 py-2.5 text-sm rounded-lg border transition-all duration-200',
           'bg-white dark:bg-gray-900 text-gray-900 dark:text-white',
-          'focus:outline-none focus:ring-2 focus:ring-offset-0',
-          !error && 'border-gray-300 dark:border-gray-600 focus:border-brand-500 focus:ring-brand-500/20',
+          'focus:outline-none focus:ring-2 focus:ring-offset-0 dark:focus:ring-offset-gray-900',
+          !error && 'border-gray-300 dark:border-gray-700 focus:border-brand-500 focus:ring-brand-500/20',
           error && 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/20',
           disabled && 'bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 cursor-not-allowed',
           className
@@ -412,7 +412,7 @@ export const Select = forwardRef(({
       {error ? (
         <p className="text-sm text-danger-600">{error}</p>
       ) : hint ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">{hint}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">{hint}</p>
       ) : null}
     </div>
   )
@@ -454,7 +454,7 @@ export const Checkbox = forwardRef(({
           )}
           {...props}
         />
-        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-300">{label}</span>
       </label>
       {error && <p className="text-sm text-danger-600">{error}</p>}
     </div>

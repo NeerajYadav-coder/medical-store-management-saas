@@ -75,7 +75,7 @@ export default function AuthLayout() {
       {/* Right side - Auth form */}
       <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 overflow-y-auto h-full">
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center justify-center p-6 bg-white dark:bg-gray-900 border-b">
+        <div className="lg:hidden flex items-center justify-center p-6 bg-white dark:bg-gray-900 border-b dark:border-gray-700">
           <Link to={ROUTES.HOME} className="flex items-center gap-2">
             <div className="h-10 w-10 rounded-lg bg-brand-600 flex items-center justify-center">
               <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -94,7 +94,7 @@ export default function AuthLayout() {
         </div>
 
         {/* Mobile footer */}
-        <div className="lg:hidden text-center p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div className="lg:hidden text-center p-4 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
           © 2024 MedStore SaaS. All rights reserved.
         </div>
       </div>

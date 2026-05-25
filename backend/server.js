@@ -164,6 +164,7 @@ import dashboardRoutes from './routes/dashboard.routes.js';
 import symptomRoutes from './routes/symptom.routes.js';
 import doctorRoutes from './routes/doctor.routes.js';
 import auditRoutes from './routes/audit.routes.js';
+import whatsappRoutes from './routes/whatsapp.routes.js';
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/store', storeRoutes);
@@ -178,6 +179,7 @@ app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/symptoms', symptomRoutes);
 app.use('/api/v1/doctors', doctorRoutes);
 app.use('/api/v1/audit', auditRoutes);
+app.use('/api/v1/whatsapp', whatsappRoutes);
 
 /**
  * -----------------------
@@ -186,6 +188,8 @@ app.use('/api/v1/audit', auditRoutes);
  */
 app.use(errorHandler);
 
+import { startScheduler } from './utils/scheduler.js';
+
 /**
  * -----------------------
  * Server Boot
@@ -193,6 +197,9 @@ app.use(errorHandler);
  */
 const startServer = async () => {
   await connectDB();
+  
+  // Start the background scheduler
+  startScheduler();
 
   app.listen(env.PORT, () => {
     console.log(`Server running on port ${env.PORT}`);

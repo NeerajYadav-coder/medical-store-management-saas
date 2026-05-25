@@ -87,8 +87,8 @@ export default function DashboardHome() {
     todayTransactions: stats?.daily?.bills || 0,
     lowStockCount: stats?.alerts?.lowStock || 0,
     expiringCount: stats?.alerts?.expiry || 0,
-    pendingPurchases: 0, // Placeholder if backend doesn't support yet
-    activeStaff: 0, // Placeholder
+    pendingPurchases: stats?.pendingPurchases || 0,
+    activeStaff: stats?.activeStaff || 0,
     
     // Trends
     salesGrowth: stats?.monthly?.sales > 0 ? (((stats?.daily?.sales || 0) - ((stats?.monthly?.sales || 0) / 30)) / ((stats?.monthly?.sales || 1) / 30)) * 100 : 0, 
@@ -216,7 +216,7 @@ export default function DashboardHome() {
                       'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
                       dateRange === range
                         ? 'bg-brand-600 text-white'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800'
+                        : 'text-gray-600 dark:text-gray-400 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'
                     )}
                     onClick={() => setDateRange(range)}
                   >
@@ -248,7 +248,7 @@ export default function DashboardHome() {
                   )
                 })
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 dark:bg-gray-950 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-lg">
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-gray-950 dark:bg-gray-800 border-2 border-dashed border-gray-100 dark:border-gray-800 dark:border-gray-700 rounded-lg">
                   <BarChart3 className="h-8 w-8 mb-2 opacity-50" />
                   <p className="text-sm">No sales data for this period</p>
                 </div>
@@ -256,7 +256,7 @@ export default function DashboardHome() {
             </div>
 
             {/* Quick stats below chart */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 dark:border-gray-700">
               <div className="text-center">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCompactCurrency(thisWeekSales)}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">This Week</p>
@@ -292,7 +292,7 @@ export default function DashboardHome() {
                 dashboardData.recentSales.map((sale) => (
                   <div
                     key={sale._id}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-950 transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-55 dark:bg-gray-950 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center">
@@ -334,10 +334,10 @@ export default function DashboardHome() {
                   <div
                     key={alert._id}
                     className={cn(
-                      'p-3 rounded-lg border-l-4 cursor-pointer transition-colors hover:bg-gray-50 dark:bg-gray-950',
+                      'p-3 rounded-lg border-l-4 cursor-pointer transition-colors hover:bg-gray-55 dark:bg-gray-950 dark:hover:bg-gray-800',
                       alert.priority === 'CRITICAL' || alert.priority === 'HIGH'
-                        ? 'bg-danger-50 border-danger-500'
-                        : 'bg-warning-50 border-warning-500'
+                        ? 'bg-danger-50 dark:bg-danger-900/20 border-danger-500'
+                        : 'bg-warning-50 dark:bg-warning-900/20 border-warning-500'
                     )}
                   >
                     <div className="flex items-start gap-2">

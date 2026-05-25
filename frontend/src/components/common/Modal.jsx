@@ -109,7 +109,7 @@ export function Modal({
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="flex items-start justify-between border-b border-gray-100 dark:border-gray-800 px-6 py-4">
+            <div className="flex items-start justify-between border-b border-gray-100 dark:border-gray-700 px-6 py-4">
               <div>
                 {title && (
                   <h3
@@ -128,7 +128,7 @@ export function Modal({
                   type="button"
                   onClick={onClose}
                   className={cn(
-                    'rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400',
+                    'rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300',
                     'focus:outline-none focus:ring-2 focus:ring-brand-500'
                   )}
                 >
@@ -144,7 +144,7 @@ export function Modal({
 
           {/* Footer */}
           {footer && (
-            <div className="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 px-6 py-4 bg-gray-50 dark:bg-gray-950 rounded-b-xl">
+            <div className="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800 rounded-b-xl">
               {footer}
             </div>
           )}
@@ -195,7 +195,7 @@ export function ConfirmModal({
         </>
       }
     >
-      <p className="text-gray-600 dark:text-gray-400">{message}</p>
+      <p className="text-gray-600 dark:text-gray-300">{message}</p>
     </Modal>
   )
 }

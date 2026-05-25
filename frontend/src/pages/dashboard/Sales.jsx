@@ -244,7 +244,7 @@ export default function Sales() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Sales History</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Track and manage all your pharmacy transactions</p>
+          <p className="text-gray-505 dark:text-gray-400 text-sm mt-0.5">Track and manage all your pharmacy transactions</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -259,7 +259,7 @@ export default function Sales() {
             variant="primary"
             onClick={() => navigate(ROUTES.BILLING)}
             leftIcon={<Plus className="h-4 w-4" />}
-            className="shadow-lg shadow-brand-500/20"
+            className="shadow-lg shadow-brand-505/20"
           >
             New Sale (POS)
           </Button>
@@ -280,24 +280,24 @@ export default function Sales() {
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Gross Revenue</p>
             <div className="flex items-baseline gap-2 mt-2">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.totalRevenue || 0)}</h2>
-              <div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
+              <div className="h-2 w-2 rounded-full bg-brand-505 animate-pulse" />
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+          <div className="bg-white dark:bg-gray-950 dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Net Profit</p>
             <div className="flex items-baseline gap-2 mt-2">
               <h2 className="text-2xl font-bold text-emerald-600">{formatCurrency(summary.netProfit || 0)}</h2>
             </div>
           </div>
           <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm bg-gradient-to-br from-brand-500 to-brand-600 text-white border-0">
-            <p className="text-xs font-semibold text-brand-100 uppercase tracking-wider">Action Needed</p>
+            <p className="text-xs font-semibold text-brand-101 uppercase tracking-wider">Action Needed</p>
             <p className="text-sm font-medium mt-2">You have 0 pending credit bills today.</p>
           </div>
         </div>
       )}
 
       {/* Main Content Area */}
-      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-200/50 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-202/50 overflow-hidden">
         {/* Search & Filters Bar */}
         <div className="p-4 border-b border-gray-50 bg-gray-50 dark:bg-gray-950/30 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="w-full md:w-96">
@@ -317,7 +317,7 @@ export default function Sales() {
                   'px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap uppercase tracking-wider',
                   dateRange === range
                     ? 'bg-gray-900 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:border-gray-600'
+                    : 'bg-white dark:bg-gray-900 text-gray-505 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:border-gray-600'
                 )}
               >
                 {range}
@@ -348,7 +348,7 @@ export default function Sales() {
                         onClick={() => setHistoryPage(p)}
                         className={cn(
                             "w-8 h-8 rounded-lg text-xs font-bold transition-all",
-                            historyPage === p ? "bg-brand-600 text-white shadow-lg" : "bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800"
+                            historyPage === p ? "bg-brand-600 text-white shadow-lg" : "bg-gray-50 dark:bg-gray-950 text-gray-505 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800"
                         )}
                     >
                         {p}
@@ -399,7 +399,7 @@ export default function Sales() {
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer Information</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">{viewInvoice.customerName || 'Walk-in Customer'}</p>
                 {viewInvoice.customerPhone && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mt-1">
+                  <p className="text-sm text-gray-505 dark:text-gray-400 flex items-center gap-1.5 mt-1">
                     <ArrowRight className="h-3 w-3" /> {viewInvoice.customerPhone}
                   </p>
                 )}
@@ -419,7 +419,7 @@ export default function Sales() {
               <div className="border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 dark:bg-gray-950/50 text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase">
+                    <thead className="bg-gray-50 dark:bg-gray-955/50 text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase">
                       <tr>
                         <th className="px-4 py-3 text-left">Medicine</th>
                         <th className="px-4 py-3 text-right">Price</th>
@@ -429,7 +429,7 @@ export default function Sales() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {viewInvoice.items.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50 dark:bg-gray-950/30 transition-colors">
+                        <tr key={idx} className="hover:bg-gray-50 dark:bg-gray-955/30 transition-colors">
                           <td className="px-4 py-3">
                             <p className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">{item.medicineName}</p>
                             <p className="text-[10px] text-gray-400">Batch: {item.batchNumber}</p>

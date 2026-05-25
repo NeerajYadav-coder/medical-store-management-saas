@@ -443,7 +443,7 @@ export default function Inventory() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Inventory</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Live stock from batches · {pagination.total ?? 0} medicines</p>
+          <p className="text-gray-505 dark:text-gray-400 mt-1">Live stock from batches · {pagination.total ?? 0} medicines</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={handleExportAll} leftIcon={<Download className="h-4 w-4" />}>
@@ -480,15 +480,15 @@ export default function Inventory() {
           <p className="text-sm text-gray-500 dark:text-gray-400">Total Medicines</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
         </div>
-        <div className="bg-warning-50 rounded-lg border border-warning-200 p-4">
+        <div className="bg-warning-55 rounded-lg border border-warning-200 p-4">
           <p className="text-sm text-warning-600">Low Stock</p>
           <p className="text-2xl font-bold text-warning-700 mt-1">{stats.lowStock}</p>
         </div>
-        <div className="bg-danger-50 rounded-lg border border-danger-200 p-4">
+        <div className="bg-danger-55 rounded-lg border border-danger-200 p-4">
           <p className="text-sm text-danger-600">Out of Stock</p>
           <p className="text-2xl font-bold text-danger-700 mt-1">{stats.outOfStock}</p>
         </div>
-        <div className="bg-orange-50 rounded-lg border border-orange-200 p-4">
+        <div className="bg-orange-55 rounded-lg border border-orange-200 p-4">
           <p className="text-sm text-orange-600">Expiring Soon</p>
           <p className="text-2xl font-bold text-orange-700 mt-1">{stats.expiringSoon}</p>
         </div>

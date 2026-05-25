@@ -11,6 +11,7 @@ import Medicine from '../models/Medicine.js';
 import MedicineBatch from '../models/MedicineBatch.js';
 import Customer from '../models/Customer.js';
 import Doctor from '../models/Doctor.js';
+import whatsappService from '../services/whatsapp.service.js';
 import { protect } from '../middleware/auth.middleware.js';
 import { ownerOnly } from '../middleware/role.middleware.js';
 import { auditAction } from '../middleware/audit.middleware.js';
@@ -494,6 +495,11 @@ router.post('/', auditAction('CREATE', 'SALE'), async (req, res, next) => {
     }
     
     await session.commitTransaction();
+    
+    // Trigger WhatsApp Purchase Thank You asynchronously (non-blocking)
+    whatsappService.sendPurchaseReceipt(sale[0]._id).catch((err) => {
+      console.error('Failed to automatically send WhatsApp receipt:', err);
+    });
     
     res.status(201).json({
       success: true,

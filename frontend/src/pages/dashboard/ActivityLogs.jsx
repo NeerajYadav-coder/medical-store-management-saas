@@ -106,15 +106,15 @@ export default function ActivityLogs() {
   const getActionBadge = (action) => {
     switch (action) {
       case 'CREATE': 
-        return { label: 'Added', color: 'text-green-700 bg-green-50 border border-green-200' }
+        return { label: 'Added', color: 'text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30' }
       case 'UPDATE': 
-        return { label: 'Changed', color: 'text-blue-700 bg-blue-50 border border-blue-200' }
+        return { label: 'Changed', color: 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30' }
       case 'DELETE': 
-        return { label: 'Removed', color: 'text-red-700 bg-red-50 border border-red-200' }
+        return { label: 'Removed', color: 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30' }
       case 'LOGIN': 
-        return { label: 'Signed In', color: 'text-purple-700 bg-purple-50 border border-purple-200' }
+        return { label: 'Signed In', color: 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/30' }
       default: 
-        return { label: action, color: 'text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700' }
+        return { label: action, color: 'text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700' }
     }
   }
 
@@ -155,7 +155,7 @@ export default function ActivityLogs() {
         if (action === 'CREATE') {
           return (
             <span>
-              Sold medicines to <strong className="text-gray-900 dark:text-white font-semibold">{body.customerName || 'Walk-in Customer'}</strong> for <strong className="text-brand-600 font-semibold">{formatCurrency(body.grandTotal || 0)}</strong>.
+              Sold medicines to <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.customerName || 'Walk-in Customer'}</strong> for <strong className="text-brand-600 dark:text-brand-400 font-semibold">{formatCurrency(body.grandTotal || 0)}</strong>.
             </span>
           )
         }
@@ -168,7 +168,7 @@ export default function ActivityLogs() {
         if (action === 'CREATE') {
           return (
             <span>
-              Bought stock bill <strong className="text-gray-900 dark:text-white font-semibold font-mono">#{body.supplierBillNumber || ''}</strong> from supplier <strong className="text-gray-900 dark:text-white font-semibold">{body.supplierName || 'Unknown Supplier'}</strong> for <strong className="text-brand-600 font-semibold">{formatCurrency(body.grandTotal || 0)}</strong>.
+              Bought stock bill <strong className="text-gray-900 dark:text-gray-100 font-semibold font-mono">#{body.supplierBillNumber || ''}</strong> from supplier <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.supplierName || 'Unknown Supplier'}</strong> for <strong className="text-brand-600 dark:text-brand-400 font-semibold">{formatCurrency(body.grandTotal || 0)}</strong>.
             </span>
           )
         }
@@ -178,14 +178,14 @@ export default function ActivityLogs() {
         if (action === 'CREATE') {
           return (
             <span>
-              Added new medicine <strong className="text-gray-900 dark:text-white font-semibold">{body.name || 'Unknown'}</strong> ({body.dosage || 'N/A'}) to inventory.
+              Added new medicine <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.name || 'Unknown'}</strong> ({body.dosage || 'N/A'}) to inventory.
             </span>
           )
         }
         if (action === 'UPDATE') {
           return (
             <span>
-              Changed details or stock level for medicine <strong className="text-gray-900 dark:text-white font-semibold">{body.name || 'Unknown'}</strong>.
+              Changed details or stock level for medicine <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.name || 'Unknown'}</strong>.
             </span>
           )
         }
@@ -198,14 +198,14 @@ export default function ActivityLogs() {
         if (action === 'CREATE') {
           return (
             <span>
-              Added new helper <strong className="text-gray-900 dark:text-white font-semibold">{body.name || 'Unknown'}</strong> as role <span className="px-2 py-0.5 text-[10px] bg-gray-100 dark:bg-gray-800 rounded-full text-gray-700 dark:text-gray-300 font-bold tracking-wide uppercase">{body.role || 'STAFF'}</span>.
+              Added new helper <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.name || 'Unknown'}</strong> as role <span className="px-2 py-0.5 text-[10px] bg-gray-100 dark:bg-gray-800 rounded-full text-gray-700 dark:text-gray-300 font-bold tracking-wide uppercase">{body.role || 'STAFF'}</span>.
             </span>
           )
         }
         if (action === 'UPDATE') {
           return (
             <span>
-              Changed details for helper <strong className="text-gray-900 dark:text-white font-semibold">{body.name || 'Unknown'}</strong>.
+              Changed details for helper <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.name || 'Unknown'}</strong>.
             </span>
           )
         }
@@ -218,14 +218,14 @@ export default function ActivityLogs() {
         if (action === 'CREATE') {
           return (
             <span>
-              Added new supplier <strong className="text-gray-900 dark:text-white font-semibold">{body.name || 'Unknown'}</strong>.
+              Added new supplier <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.name || 'Unknown'}</strong>.
             </span>
           )
         }
         if (action === 'UPDATE') {
           return (
             <span>
-              Changed details for supplier <strong className="text-gray-900 dark:text-white font-semibold">{body.name || 'Unknown'}</strong>.
+              Changed details for supplier <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.name || 'Unknown'}</strong>.
             </span>
           )
         }
@@ -238,14 +238,14 @@ export default function ActivityLogs() {
         if (action === 'CREATE') {
           return (
             <span>
-              Added new customer <strong className="text-gray-900 dark:text-white font-semibold">{body.name || 'Walk-in Customer'}</strong> ({body.phone || 'N/A'}).
+              Added new customer <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.name || 'Walk-in Customer'}</strong> ({body.phone || 'N/A'}).
             </span>
           )
         }
         if (action === 'UPDATE') {
           return (
             <span>
-              Changed details for customer <strong className="text-gray-900 dark:text-white font-semibold">{body.name || 'Unknown'}</strong>.
+              Changed details for customer <strong className="text-gray-900 dark:text-gray-100 font-semibold">{body.name || 'Unknown'}</strong>.
             </span>
           )
         }
@@ -294,12 +294,12 @@ export default function ActivityLogs() {
               <input 
                 type="text"
                 placeholder="Search history..."
-                className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
+                className="w-full pl-9 pr-4 py-2 border border-gray-305 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-505 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
               />
             </div>
             <select 
-              className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
               value={filters.action}
               onChange={(e) => setFilters(prev => ({ ...prev, action: e.target.value }))}
             >
@@ -310,7 +310,7 @@ export default function ActivityLogs() {
               <option value="LOGIN">Sign In</option>
             </select>
             <select 
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg outline-none focus:ring-2 focus:ring-brand-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
               value={filters.entity}
               onChange={(e) => setFilters(prev => ({ ...prev, entity: e.target.value }))}
             >
@@ -336,7 +336,7 @@ export default function ActivityLogs() {
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">What Happened</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {isLoading ? (
                     // Loading Skeleton
                     [...Array(5)].map((_, i) => (
@@ -351,10 +351,10 @@ export default function ActivityLogs() {
                     logs.map((log) => {
                       const actionBadge = getActionBadge(log.action)
                       return (
-                        <tr key={log._id} className="hover:bg-gray-55/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0">
+                        <tr key={log._id} className="hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                             <div className="font-semibold text-gray-800 dark:text-gray-200">{formatDate(log.createdAt, 'MMM d, h:mm a')}</div>
-                            <div className="text-xs text-gray-400">{formatRelativeTime(log.createdAt)}</div>
+                            <div className="text-xs text-gray-400 dark:text-gray-500">{formatRelativeTime(log.createdAt)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -363,7 +363,7 @@ export default function ActivityLogs() {
                               </div>
                               <div>
                                 <div className="text-sm font-semibold text-gray-900 dark:text-white">{log.userId?.name || 'System'}</div>
-                                <div className="text-xs text-gray-400 font-medium px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full inline-block mt-0.5">{log.userId?.role || 'SYSTEM'}</div>
+                                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium px-2 py-0.5 bg-gray-100 dark:bg-gray-800 dark:bg-gray-700 rounded-full inline-block mt-0.5">{log.userId?.role || 'SYSTEM'}</div>
                               </div>
                             </div>
                           </td>
@@ -374,10 +374,10 @@ export default function ActivityLogs() {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xl">
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className="p-1 rounded bg-slate-100 text-slate-500">
+                              <span className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                                 {getEntityIcon(log.entityType || log.entity)}
                               </span>
-                              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{getFriendlyEntity(log.entityType || log.entity)}</span>
+                              <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{getFriendlyEntity(log.entityType || log.entity)}</span>
                             </div>
                             <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{getFriendlyDescription(log)}</div>
                           </td>
@@ -387,7 +387,7 @@ export default function ActivityLogs() {
                   ) : (
                     <tr>
                       <td colSpan={4} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                        <History className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                        <History className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
                         <p className="text-lg font-medium text-gray-900 dark:text-white">No logs found</p>
                         <p className="text-sm">Adjust filters or check back later.</p>
                       </td>
@@ -399,7 +399,7 @@ export default function ActivityLogs() {
 
             {/* Pagination */}
             {logs.length > 0 && (
-              <div className="bg-gray-50 dark:bg-gray-950 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t border-gray-200 dark:border-gray-750 flex items-center justify-between">
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   Page {pagination.page} of {pagination.pages}
                 </span>

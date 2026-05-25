@@ -3,6 +3,8 @@ import SaleItem from "../models/SaleItem.js";
 import Medicine from "../models/Medicine.js";
 import MedicineBatch from "../models/MedicineBatch.js";
 import StockAlert from "../models/StockAlert.js";
+import Purchase from "../models/Purchase.js";
+import User from "../models/User.js";
 
 /**
  * GET DASHBOARD SNAPSHOT
@@ -171,6 +173,20 @@ export const getDashboardSnapshot = async (req, res, next) => {
       // Ideally check lastSaleDate, but createdAt is a good proxy for "unsold" for now
     });
 
+    // 8. Pending purchases
+    const pendingPurchases = await Purchase.countDocuments({
+      medicalStoreId,
+      paymentStatus: { $in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
+      status: { $ne: 'CANCELLED' }
+    });
+
+    // 9. Active staff members
+    const activeStaff = await User.countDocuments({
+      medicalStoreId,
+      role: 'STAFF',
+      isActive: true
+    });
+
     // ----------------------------------------------------
     // DATA SANITIZATION FOR STAFF
     // ----------------------------------------------------
@@ -204,7 +220,9 @@ export const getDashboardSnapshot = async (req, res, next) => {
             delete s.netProfit;
             return s;
           }), // Filtered
-          deadStockCount: 0 // HIDDEN
+          deadStockCount: 0, // HIDDEN
+          pendingPurchases,
+          activeStaff
         },
       });
     }
@@ -234,7 +252,9 @@ export const getDashboardSnapshot = async (req, res, next) => {
           latest: latestAlerts
         },
         recentActivity: recentSales,
-        deadStockCount
+        deadStockCount,
+        pendingPurchases,
+        activeStaff
       },
     });
 

@@ -7,13 +7,25 @@ import { useState, useEffect } from 'react';
 import { cn } from '../../lib/utils';
 import symptomApi from '../../api/symptom.api';
 
+// Default symptoms (used before API loads)
+const defaultSymptoms = [
+  { _id: 'fever', name: 'fever', displayName: 'Fever', icon: '🌡️' },
+  { _id: 'cold', name: 'cold', displayName: 'Cold', icon: '🤧' },
+  { _id: 'cough', name: 'cough', displayName: 'Cough', icon: '😷' },
+  { _id: 'headache', name: 'headache', displayName: 'Headache', icon: '🤕' },
+  { _id: 'body_ache', name: 'body_ache', displayName: 'Body Ache', icon: '💪' },
+  { _id: 'stomach', name: 'stomach', displayName: 'Stomach', icon: '🤢' },
+  { _id: 'allergy', name: 'allergy', displayName: 'Allergy', icon: '🤧' },
+  { _id: 'other', name: 'other', displayName: 'Other', icon: '📋' },
+];
+
 export default function SymptomSelector({ 
   selected = [], 
   onChange, 
   maxSelections = 3,
   className = '' 
 }) {
-  const [symptoms, setSymptoms] = useState([]);
+  const [symptoms, setSymptoms] = useState(defaultSymptoms);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +39,7 @@ export default function SymptomSelector({
         setSymptoms(response);
       }
     } catch (error) {
-      console.error('Error loading symptoms:', error);
+      console.log('Using default symptoms');
     } finally {
       setLoading(false);
     }
