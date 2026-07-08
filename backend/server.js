@@ -182,6 +182,7 @@ import symptomRoutes from './routes/symptom.routes.js';
 import doctorRoutes from './routes/doctor.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import whatsappRoutes from './routes/whatsapp.routes.js';
+import reorderRoutes from './routes/reorder.routes.js';
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/store', storeRoutes);
@@ -197,6 +198,7 @@ app.use('/api/v1/symptoms', symptomRoutes);
 app.use('/api/v1/doctors', doctorRoutes);
 app.use('/api/v1/audit', auditRoutes);
 app.use('/api/v1/whatsapp', whatsappRoutes);
+app.use('/api/v1/reorder-suggestions', reorderRoutes);
 
 /**
  * -----------------------
@@ -208,6 +210,7 @@ app.use(errorHandler);
 import { startScheduler } from './utils/scheduler.js';
 import { WhatsappService } from './modules/whatsapp/services/whatsapp.service.js';
 import transporter from './config/mailer.js';
+import { startNightlyJob } from './services/rollupJob.js';
 
 /**
  * -----------------------
@@ -230,6 +233,7 @@ const startServer = async () => {
   
   // Start the background scheduler
   startScheduler();
+  startNightlyJob();
 
   // Load existing active WhatsApp sessions on boot
   await WhatsappService.loadExistingSessions();
