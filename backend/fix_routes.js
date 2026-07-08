@@ -17,12 +17,15 @@ router.post('/parse-invoice', async (req, res, next) => {
 
     const base64Data = image.replace(/^data:image\\/\\w+;base64,/, '');
     
-    // We will use Groq API with the 3 fallback keys
-    const GROQ_API_KEYS = [
-      'YOUR_GROQ_API_KEY_1',
-      'YOUR_GROQ_API_KEY_2',
-      'YOUR_GROQ_API_KEY_3'
-    ];
+    // We will use Groq API with the 3 fallback keys from environment
+    const GROQ_API_KEYS = process.env.GROQ_API_KEYS
+      ? process.env.GROQ_API_KEYS.split(',').map(k => k.trim())
+      : (process.env.GROQ_API_KEY ? [process.env.GROQ_API_KEY] : [
+          'YOUR_GROQ_API_KEY_1',
+          'YOUR_GROQ_API_KEY_2',
+          'YOUR_GROQ_API_KEY_3'
+        ]);
+
 
     // Qwen is superior for complex dense tables and multi-lingual OCR
     // Llama is good for general tasks. We will try Qwen first, then Llama.
