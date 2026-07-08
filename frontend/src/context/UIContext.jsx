@@ -52,11 +52,16 @@ export function UIProvider({ children }) {
       setIsTablet(width >= 768 && width < 1024)
       setIsDesktop(width >= 1024)
       
-      // Auto-close sidebar on mobile
+      // Auto-close sidebar on mobile, auto-collapse on tablet, auto-expand on desktop
       if (width < 768) {
         setIsSidebarOpen(false)
+        setIsSidebarCollapsed(false)
+      } else if (width >= 768 && width < 1024) {
+        setIsSidebarOpen(true)
+        setIsSidebarCollapsed(true)
       } else {
         setIsSidebarOpen(true)
+        setIsSidebarCollapsed(false)
       }
     }
 

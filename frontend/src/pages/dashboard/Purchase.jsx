@@ -881,7 +881,7 @@ export default function Purchase() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                       {/* Batch Number with auto-generate */}
                       <div className="col-span-1">
                         <div className="flex items-center justify-between mb-1.5">
@@ -1160,7 +1160,7 @@ export default function Purchase() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Bill Number"
                     placeholder="PUR-001"
@@ -1190,7 +1190,7 @@ export default function Purchase() {
                 </div>
 
                 {formData.paymentMode === 'CREDIT' && (
-                  <div className="grid grid-cols-2 gap-4 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-300">
                     <Input
                       label="Due Date"
                       type="date"
@@ -1302,14 +1302,14 @@ export default function Purchase() {
       >
         {viewPurchase && (
           <div className="space-y-8">
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Supplier Info</p>
                 <h4 className="text-lg font-bold text-gray-900 dark:text-white">{viewPurchase.supplierName}</h4>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{viewPurchase.supplierId?.phone}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{viewPurchase.supplierId?.address?.street}, {viewPurchase.supplierId?.address?.city}</p>
               </div>
-              <div className="text-right">
+              <div className="sm:text-right text-left">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Invoice Meta</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Bill Date: <strong>{formatDate(viewPurchase.supplierBillDate)}</strong></p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Payment Status:
@@ -1374,11 +1374,11 @@ export default function Purchase() {
         wrapperClassName="z-[60]"
       >
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Medicine Name" value={newMedicine.name} onChange={(e) => setNewMedicine({ ...newMedicine, name: e.target.value })} />
             <Input label="Generic Name (Salt)" value={newMedicine.genericName} onChange={(e) => setNewMedicine({ ...newMedicine, genericName: e.target.value })} />
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input label="Dosage (e.g. 500mg)" value={newMedicine.dosage} onChange={(e) => setNewMedicine({ ...newMedicine, dosage: e.target.value })} />
             <Select
               label="Form"
@@ -1403,7 +1403,7 @@ export default function Purchase() {
             </div>
 
             {['TABLET', 'CAPSULE'].includes(newMedicine.form) ? (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Base Unit</label>
                   <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-1">Tablet / Cap</p>
@@ -1416,7 +1416,7 @@ export default function Purchase() {
                 </div>
               </div>
             ) : ['SYRUP', 'SUSPENSION', 'DROPS'].includes(newMedicine.form) ? (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Base Unit</label>
                   <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-1">Bottle</p>
@@ -1425,7 +1425,7 @@ export default function Purchase() {
                 <Input label="Units/Outer Pack" type="number" value={newMedicine.unitsPerPack} onChange={(e) => setNewMedicine({ ...newMedicine, unitsPerPack: e.target.value })} />
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Base Unit</label>
                   <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-1">Single Unit</p>
@@ -1435,13 +1435,13 @@ export default function Purchase() {
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input label="HSN Code" value={newMedicine.hsnCode} onChange={(e) => setNewMedicine({ ...newMedicine, hsnCode: e.target.value })} />
             <Input label="Reorder Level" type="number" value={newMedicine.reorderLevel} onChange={(e) => setNewMedicine({ ...newMedicine, reorderLevel: e.target.value })} />
             <Input label="GST %" type="number" value={newMedicine.gstRate} onChange={(e) => setNewMedicine({ ...newMedicine, gstRate: e.target.value })} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800 bg-brand-50/30 p-4 rounded-xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800 bg-brand-50/30 p-4 rounded-xl">
             <Input label="Default MRP (Per Unit/Pill)" type="number" value={newMedicine.defaultMRP} onChange={(e) => setNewMedicine({ ...newMedicine, defaultMRP: e.target.value })} />
             <Input label="Target Sale Price (Per Unit/Pill)" type="number" value={newMedicine.defaultSellingPrice} onChange={(e) => setNewMedicine({ ...newMedicine, defaultSellingPrice: e.target.value })} />
           </div>
@@ -1891,7 +1891,7 @@ export default function Purchase() {
                     </div>
 
                     {/* Card fields */}
-                    <div className="p-4 grid grid-cols-2 gap-3">
+                    <div className="p-4 grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
                       {/* Batch Number */}
                       <div>
                         <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Batch Number</label>
@@ -1976,7 +1976,7 @@ export default function Purchase() {
                     </div>
 
                     {/* Card live summary */}
-                    <div className="px-4 pb-4 grid grid-cols-3 gap-2">
+                    <div className="px-4 pb-4 grid grid-cols-3 gap-1.5 sm:gap-2">
                       <div className="bg-white dark:bg-gray-900 rounded-lg px-3 py-2 border border-gray-100 dark:border-gray-800 text-center">
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Unit Cost</p>
                         <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(item.landingCost || 0)}</p>

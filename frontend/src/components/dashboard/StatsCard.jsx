@@ -18,8 +18,8 @@ export default function StatsCard({
   title,
   value,
   icon,
-  iconBg = 'bg-brand-100',
-  iconColor = 'text-brand-600',
+  iconBg = 'bg-system-blue/10',
+  iconColor = 'text-system-blue',
   trend,
   action,
   isLoading = false,
@@ -27,14 +27,14 @@ export default function StatsCard({
 }) {
   if (isLoading) {
     return (
-      <div className={cn('bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6', className)}>
+      <div className={cn('card p-6 bg-card border border-separator-apple/20 rounded-2xl', className)}>
         <div className="flex items-start justify-between">
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <Skeleton className="h-6 w-16 rounded" />
+          <Skeleton className="h-10 w-10 rounded-xl" />
+          <Skeleton className="h-6 w-16 rounded-full" />
         </div>
         <div className="mt-4 space-y-2">
-          <Skeleton className="h-8 w-24 rounded" />
-          <Skeleton className="h-4 w-32 rounded" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+          <Skeleton className="h-4 w-32 rounded-lg" />
         </div>
       </div>
     )
@@ -43,13 +43,13 @@ export default function StatsCard({
   return (
     <div
       className={cn(
-        'bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200',
+        'card p-6 bg-card border border-separator-apple/10 rounded-2xl hover-apple-lift transition-apple-default cursor-pointer',
         className
       )}
     >
       <div className="flex items-start justify-between">
         {/* Icon */}
-        <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', iconBg)}>
+        <div className={cn('h-10 w-10 rounded-xl flex items-center justify-center', iconBg)}>
           <span className={iconColor}>{icon}</span>
         </div>
 
@@ -57,10 +57,10 @@ export default function StatsCard({
         {trend && (
           <div
             className={cn(
-              'flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
+              'flex items-center gap-1 px-2.5 py-1 rounded-full text-apple-caption-1 font-semibold text-tabular-nums',
               trend.isPositive
-                ? 'bg-success-100 text-success-700'
-                : 'bg-danger-100 text-danger-700'
+                ? 'bg-system-green/10 text-system-green'
+                : 'bg-system-red/10 text-system-red'
             )}
           >
             {trend.isPositive ? (
@@ -68,28 +68,28 @@ export default function StatsCard({
             ) : (
               <TrendingDown className="h-3 w-3" />
             )}
-            {Math.abs(trend.value)}%
+            {Math.abs(trend.value).toFixed(1)}%
           </div>
         )}
       </div>
 
       {/* Value */}
       <div className="mt-4">
-        <p className="text-2xl font-bold text-gray-900 dark:text-white dark:text-white">{value}</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 mt-1">{title}</p>
+        <p className="text-apple-title-2 font-bold text-label-primary tracking-tight text-tabular-nums">{value}</p>
+        <p className="text-apple-subheadline text-label-secondary mt-1">{title}</p>
       </div>
 
       {/* Action link or trend label */}
       {action ? (
         <Link
           to={action.href}
-          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+          className="mt-4 inline-flex items-center gap-1 text-apple-subheadline font-medium text-system-blue hover:text-system-blue/80 transition-apple-micro active-apple-press"
         >
           {action.label}
           <ArrowRight className="h-3 w-3" />
         </Link>
       ) : trend?.label ? (
-        <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">{trend.label}</p>
+        <p className="mt-3 text-apple-caption-2 text-label-tertiary">{trend.label}</p>
       ) : null}
     </div>
   )

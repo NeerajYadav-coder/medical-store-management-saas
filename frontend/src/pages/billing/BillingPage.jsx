@@ -991,31 +991,31 @@ export default function BillingPage() {
 
   return (
     <div 
-      className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white font-sans select-none overflow-hidden"
+      className="flex flex-col h-screen bg-system-background text-label-primary font-sans select-none overflow-hidden"
       onClick={handleBackgroundClick}
     >
       {/* Immersive Billing Top Bar */}
-      <header className="flex flex-wrap sm:flex-nowrap items-center justify-between px-3 sm:px-6 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0 gap-2 sm:gap-3">
+      <header className="flex flex-wrap sm:flex-nowrap items-center justify-between px-3 sm:px-6 py-3 bg-secondary-background/80 border-b border-separator-apple/10 backdrop-blur-md shrink-0 gap-2 sm:gap-3">
         <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-emerald-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-system-green opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-system-green"></span>
             </span>
-            <span className="font-extrabold text-[10px] sm:text-base tracking-wider text-emerald-600 dark:text-emerald-400 hidden min-[400px]:inline">🟢 Ready</span>
+            <span className="font-extrabold text-[10px] sm:text-base tracking-wider text-system-green hidden min-[400px]:inline">🟢 Ready</span>
           </div>
 
-          <div className="hidden sm:block h-4 w-px bg-gray-200 dark:bg-gray-800"></div>
+          <div className="hidden sm:block h-4 w-px bg-separator-apple/10"></div>
 
           {/* Connection status indicator */}
-          <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-semibold text-label-secondary">
             {isOnline ? (
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400" title="Cloud Synced">
-                <Wifi className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Synced</span>
+              <span className="flex items-center gap-1 text-system-green" title="Cloud Synced">
+                <Wifi className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline font-mono">Synced</span>
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-red-500 animate-pulse" title="Offline Mode (Saving Locally)">
-                <WifiOff className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Offline</span>
+              <span className="flex items-center gap-1 text-system-red animate-pulse" title="Offline Mode (Saving Locally)">
+                <WifiOff className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline font-mono">Offline</span>
               </span>
             )}
           </div>
@@ -1023,8 +1023,8 @@ export default function BillingPage() {
 
         {/* Center title area */}
         <div className="text-center hidden lg:block">
-          <span className="font-bold text-gray-700 dark:text-gray-300 text-sm">{storeName}</span>
-          <span className="text-xs text-gray-500 ml-2">Bill No: #{billNumber}</span>
+          <span className="text-apple-subheadline font-semibold text-label-primary">{storeName}</span>
+          <span className="text-apple-caption-1 text-label-secondary ml-2 font-mono">Bill No: #{billNumber}</span>
         </div>
 
         {/* Right side controls */}
@@ -1032,10 +1032,10 @@ export default function BillingPage() {
           <button
             onClick={handleSpeedModeToggle}
             className={cn(
-              "px-2 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 border cursor-pointer",
+              "px-3 py-1.5 rounded-xl text-apple-footnote font-semibold transition-apple-micro active-apple-press flex items-center gap-1 border cursor-pointer",
               localSettings.speedMode 
-                ? "bg-amber-500 border-amber-600 text-white shadow-md shadow-amber-500/20"
-                : "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "bg-system-orange border-transparent text-white shadow-sm"
+                : "bg-secondary-background border-separator-apple/10 text-label-secondary hover:text-label-primary"
             )}
             title="Speed Mode (⚡)"
           >
@@ -1043,14 +1043,14 @@ export default function BillingPage() {
             <span className="hidden sm:inline">Speed Mode</span>
           </button>
 
-          <div className="text-[10px] sm:text-xs font-mono font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-950 px-2 sm:px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800">
+          <div className="text-apple-footnote font-mono font-medium text-label-secondary bg-secondary-background px-3 py-1.5 rounded-xl border border-separator-apple/10">
             {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
 
           {user?.role === 'OWNER' && (
             <button
               onClick={() => window.location.href = '/dashboard'}
-              className="p-1.5 sm:p-2 bg-gray-105 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-250 dark:border-gray-700 rounded-lg transition-colors text-gray-500 dark:text-gray-400 cursor-pointer"
+              className="p-1.5 sm:p-2 bg-secondary-background hover:bg-secondary-background/80 border border-separator-apple/10 rounded-lg transition-apple-micro active-apple-press text-label-secondary cursor-pointer"
               title="Dashboard Home"
             >
               <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -1059,7 +1059,7 @@ export default function BillingPage() {
 
           <button
             onClick={logout}
-            className="p-1.5 sm:p-2 bg-gray-100 dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-950/20 border border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-900 rounded-lg text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 bg-secondary-background hover:bg-system-red/10 border border-separator-apple/10 hover:border-system-red/20 rounded-lg text-label-secondary hover:text-system-red transition-apple-micro active-apple-press cursor-pointer"
             title="Log Out"
           >
             <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -1068,14 +1068,14 @@ export default function BillingPage() {
       </header>
 
       {/* Main Billing Grid Workspace */}
-      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[1.1fr_0.9fr] overflow-y-auto lg:overflow-hidden bg-gray-50 dark:bg-gray-950">
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[1.1fr_0.9fr] overflow-y-auto lg:overflow-hidden bg-system-background">
         
         {/* Left Hand side inputs & forms */}
         <div className="flex flex-col lg:overflow-y-auto p-4 lg:p-6 space-y-4 lg:space-y-6 bg-transparent shrink-0">
           
           <div className="relative" ref={searchRef}>
             <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              <Search className="h-4 w-4 sm:h-5 sm:w-5 text-brand-600" />
+              <Search className="h-4 w-4 sm:h-5 sm:w-5 text-system-blue" />
             </div>
             <input
               ref={searchInputRef}
@@ -1084,14 +1084,14 @@ export default function BillingPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              className="w-full pl-9 sm:pl-12 pr-20 sm:pr-28 py-3 sm:py-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:bg-white dark:focus:bg-gray-900 focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 text-sm sm:text-base font-medium shadow-sm transition-all"
+              className="w-full pl-9 sm:pl-12 pr-20 sm:pr-28 py-3 sm:py-4 rounded-2xl border border-separator-apple/10 bg-secondary-background text-label-primary focus:outline-none focus:border-system-blue focus:ring-4 focus:ring-system-blue/10 text-sm sm:text-base font-medium transition-apple-micro"
             />
             {/* Action buttons (Camera, Voice) inside input */}
             <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <button
                 type="button"
                 onClick={startVoiceSearch}
-                className="p-1.5 sm:p-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-brand-400 text-gray-500 dark:text-gray-400 rounded-xl transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 bg-secondary-background hover:text-system-blue hover:bg-system-blue/10 text-label-secondary rounded-xl transition-apple-micro active-apple-press cursor-pointer"
                 title="Voice Search"
               >
                 <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -1099,7 +1099,7 @@ export default function BillingPage() {
               <button
                 type="button"
                 onClick={startCamera}
-                className="p-1.5 sm:p-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-brand-400 text-gray-500 dark:text-gray-400 rounded-xl transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 bg-secondary-background hover:text-system-blue hover:bg-system-blue/10 text-label-secondary rounded-xl transition-apple-micro active-apple-press cursor-pointer"
                 title="Camera Scanner Backup"
               >
                 <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -1108,9 +1108,9 @@ export default function BillingPage() {
 
             {/* Smart Search Dropdown */}
             {showResults && searchQuery.length >= 2 && (
-              <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl max-h-[35vh] overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-secondary-background border border-separator-apple/10 rounded-2xl shadow-elevated max-h-[35vh] overflow-y-auto divide-y divide-separator-apple/10">
                 {searchResults.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500">
+                  <div className="p-6 text-center text-label-tertiary text-apple-subheadline">
                     No matching medicine in local cache
                   </div>
                 ) : (
@@ -1121,25 +1121,25 @@ export default function BillingPage() {
                       onClick={() => openQtyModal(medicine)}
                       disabled={medicine.availableQty <= 0 && medicine.batchId !== 'OUT_OF_STOCK'}
                       className={cn(
-                        "w-full flex items-center justify-between p-4 transition-colors text-left cursor-pointer",
+                        "w-full flex items-center justify-between p-4 transition-apple-micro text-left cursor-pointer",
                         idx === focusedMedicineIndex
-                          ? "bg-brand-50 dark:bg-brand-900/30 border-l-4 border-brand-600"
-                          : ""
+                          ? "bg-system-blue/10 border-l-4 border-system-blue"
+                          : "hover:bg-secondary-background/40"
                       )}
                     >
                       <div>
-                        <h4 className="font-bold text-gray-900 dark:text-white text-sm capitalize">
+                        <h4 className="font-bold text-label-primary text-apple-headline capitalize">
                           {medicine.name} {medicine.dosage}
                         </h4>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                        <p className="text-apple-caption-2 text-label-secondary mt-1 font-mono">
                           Batch: {medicine.batchNumber} · Exp: {new Date(medicine.expiryDate).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-extrabold text-brand-600 dark:text-brand-400">
+                        <p className="text-apple-subheadline font-bold text-system-blue text-tabular-nums">
                           {formatCurrency(medicine.sellingPrice)}
                         </p>
-                        <p className={cn("text-[10px] font-bold mt-1", medicine.availableQty > 0 ? "text-gray-500 dark:text-gray-400" : "text-red-500")}>
+                        <p className={cn("text-apple-caption-2 font-semibold mt-1", medicine.availableQty > 0 ? "text-label-secondary" : "text-system-red")}>
                           Stock: {medicine.availableQty}
                         </p>
                       </div>
@@ -1170,7 +1170,7 @@ export default function BillingPage() {
             />
           </div>
 
-          <div className="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl">
+          <div className="card p-4">
             <SymptomSelector
               selected={symptoms}
               onChange={setSymptoms}
@@ -1181,15 +1181,15 @@ export default function BillingPage() {
           </div>
 
           {/* Checkout billing configuration inputs */}
-          <div className="p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-105 dark:border-gray-800 pb-3">
-              <span className="text-xs font-black uppercase text-gray-400 tracking-wider">Checkout Options</span>
+          <div className="card p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-separator-apple/10 pb-3">
+              <span className="text-apple-caption-2 font-semibold uppercase text-label-secondary tracking-wider">Checkout Options</span>
             </div>
 
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-gray-700 dark:text-gray-300 font-semibold">Flat Discount (₹)</span>
+              <span className="text-apple-subheadline text-label-primary font-semibold">Flat Discount (₹)</span>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-label-tertiary text-apple-subheadline">₹</span>
                 <input
                   type="number"
                   value={discountValue || ''}
@@ -1198,7 +1198,7 @@ export default function BillingPage() {
                     setDiscountValue(parseFloat(e.target.value) || 0);
                   }}
                   placeholder="0"
-                  className="w-28 text-right pl-7 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white rounded-xl focus:border-brand-500 focus:outline-none transition-colors"
+                  className="w-28 text-right pl-7 pr-3 py-2 text-apple-subheadline border border-separator-apple/10 bg-secondary-background text-label-primary rounded-xl focus:border-system-blue focus:outline-none transition-apple-micro text-tabular-nums"
                   min="0"
                 />
               </div>
@@ -1206,14 +1206,14 @@ export default function BillingPage() {
 
             {/* Indian localized GST components */}
             {gstNumber && (
-              <div className="space-y-2 border-t border-gray-100 dark:border-gray-800 pt-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400 font-semibold">Taxable Amount</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(totals.taxableAmount)}</span>
+              <div className="space-y-2 border-t border-separator-apple/10 pt-3">
+                <div className="flex justify-between text-apple-subheadline">
+                  <span className="text-label-secondary font-semibold">Taxable Amount</span>
+                  <span className="font-bold text-label-primary text-tabular-nums">{formatCurrency(totals.taxableAmount)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400 font-semibold">Total GST (12%)</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(totals.totalGst)}</span>
+                <div className="flex justify-between text-apple-subheadline">
+                  <span className="text-label-secondary font-semibold">Total GST (12%)</span>
+                  <span className="font-bold text-label-primary text-tabular-nums">{formatCurrency(totals.totalGst)}</span>
                 </div>
               </div>
             )}
@@ -1222,22 +1222,22 @@ export default function BillingPage() {
         </div>
 
         {/* Right side: Real Time Transaction Cart & Checkout */}
-        <div className="flex flex-col bg-white dark:bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-800 lg:overflow-hidden lg:h-full shrink-0">
+        <div className="flex flex-col bg-secondary-background/30 border-t lg:border-t-0 lg:border-l border-separator-apple/10 lg:overflow-hidden lg:h-full shrink-0">
           {/* Cart Header */}
-          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between shrink-0">
+          <div className="px-6 py-4 bg-secondary-background/60 border-b border-separator-apple/10 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-brand-50 dark:bg-brand-950/20 text-brand-600 rounded-xl flex items-center justify-center border border-brand-100 dark:border-brand-900/30">
+              <div className="h-10 w-10 bg-system-blue/10 text-system-blue rounded-xl flex items-center justify-center">
                 <ShoppingCart className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="font-extrabold text-gray-900 dark:text-white text-base">Cart</h2>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">{cartItems.length} items scanned</p>
+                <h2 className="text-apple-headline font-semibold text-label-primary tracking-tight">Cart</h2>
+                <p className="text-apple-footnote text-label-secondary">{cartItems.length} items scanned</p>
               </div>
             </div>
             {cartItems.length > 0 && (
               <button
                 onClick={() => setCartItems([])}
-                className="text-xs font-extrabold text-red-650 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/30 transition-all cursor-pointer"
+                className="text-apple-caption-2 font-bold text-system-red hover:bg-system-red/10 border border-separator-apple/10 px-3 py-1.5 rounded-lg transition-apple-micro active-apple-press cursor-pointer"
               >
                 Clear Cart
               </button>
@@ -1246,7 +1246,7 @@ export default function BillingPage() {
 
           {/* Cart Scroll Items */}
           <div 
-            className="flex-1 lg:overflow-y-auto p-4 lg:p-6 space-y-3 bg-gray-50/30 dark:bg-transparent outline-none focus:bg-gray-100/50 dark:focus:bg-gray-900/20 transition-colors"
+            className="flex-1 lg:overflow-y-auto p-4 lg:p-6 space-y-3 bg-secondary-background/20 outline-none focus:bg-secondary-background/40 transition-apple-micro"
             ref={cartRef}
             tabIndex={0}
             onKeyDown={(e) => {
@@ -1280,56 +1280,56 @@ export default function BillingPage() {
             }}
           >
             {cartItems.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-650 py-12">
-                <div className="h-16 w-16 bg-white dark:bg-gray-950 rounded-2xl flex items-center justify-center mb-4 border border-gray-150 dark:border-gray-800">
-                  <ShoppingCart className="h-6 w-6 text-gray-400" />
+              <div className="h-full flex flex-col items-center justify-center text-label-tertiary py-12">
+                <div className="h-16 w-16 bg-secondary-background rounded-2xl flex items-center justify-center mb-4 border border-separator-apple/10">
+                  <ShoppingCart className="h-6 w-6 opacity-50" />
                 </div>
-                <p className="text-sm font-bold text-gray-500 dark:text-gray-400">Cart (empty)</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Ready for barcode scans...</p>
+                <p className="text-apple-subheadline font-semibold text-label-secondary">Cart is Empty</p>
+                <p className="text-apple-caption-1 opacity-70 mt-1">Ready for barcode scans...</p>
               </div>
             ) : (
               cartItems.map((item, index) => (
                 <div
                   key={`${item.medicineId}-${item.batchId}`}
                   className={cn(
-                    "flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white dark:bg-gray-950 border rounded-2xl transition-all",
+                    "flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-secondary-background border rounded-2xl transition-apple-micro",
                     index === focusedCartIndex
-                      ? "border-brand-500 shadow-md ring-2 ring-brand-500/20"
-                      : "border-gray-200 dark:border-gray-800 hover:border-brand-500/30"
+                      ? "border-system-blue ring-2 ring-system-blue/15 shadow-sm"
+                      : "border-separator-apple/10 hover:border-system-blue/20"
                   )}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate capitalize">{item.medicineName} {item.medicineDosage}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">Batch: {item.batchNumber} · Exp: {new Date(item.expiryDate).toLocaleDateString()}</p>
+                    <p className="text-apple-headline font-bold text-label-primary truncate capitalize">{item.medicineName} {item.medicineDosage}</p>
+                    <p className="text-apple-caption-2 text-label-secondary mt-1 font-mono">Batch: {item.batchNumber} · Exp: {new Date(item.expiryDate).toLocaleDateString()}</p>
                   </div>
                   
                   <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto mt-2 sm:mt-0">
-                    <div className="flex items-center bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shrink-0">
+                    <div className="flex items-center bg-system-background border border-separator-apple/10 rounded-xl overflow-hidden shrink-0">
                       <button
                         type="button"
                         onClick={() => updateQuantity(index, item.quantity - 1)}
-                        className="p-2 sm:p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
+                        className="p-2 sm:p-2.5 hover:bg-secondary-background/80 text-label-secondary transition-apple-micro cursor-pointer"
                       >
                         <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
-                      <span className="text-xs sm:text-sm font-black text-gray-800 dark:text-gray-100 w-8 sm:w-10 text-center">{item.quantity}</span>
+                      <span className="text-apple-headline font-black text-label-primary w-8 sm:w-10 text-center">{item.quantity}</span>
                       <button
                         type="button"
                         onClick={() => updateQuantity(index, item.quantity + 1)}
-                        className="p-2 sm:p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
+                        className="p-2 sm:p-2.5 hover:bg-secondary-background/80 text-label-secondary transition-apple-micro cursor-pointer"
                       >
                         <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                     </div>
                     
                     <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="min-w-[70px] text-right text-sm sm:text-base font-extrabold text-gray-900 dark:text-white shrink-0">
+                      <div className="min-w-[70px] text-right text-apple-headline font-semibold text-label-primary shrink-0 text-tabular-nums">
                         {formatCurrency(item.quantity * item.sellingPrice)}
                       </div>
                       <button
                         type="button"
                         onClick={() => removeFromCart(index)}
-                        className="p-2 sm:p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors shrink-0 cursor-pointer"
+                        className="p-2 sm:p-2.5 text-label-tertiary hover:text-system-red hover:bg-system-red/10 rounded-lg transition-apple-micro shrink-0 cursor-pointer"
                       >
                         <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                       </button>
@@ -1342,7 +1342,7 @@ export default function BillingPage() {
 
           {/* Large Payment Options */}
           <div 
-            className="p-6 bg-white dark:bg-gray-950 border-t border-gray-250 dark:border-gray-800 space-y-4 shrink-0 focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-900/50 transition-colors rounded-xl"
+            className="p-6 bg-secondary-background/60 border-t border-separator-apple/10 space-y-4 shrink-0 focus:outline-none focus:bg-secondary-background/40 transition-apple-micro rounded-xl"
             ref={paymentRef}
             tabIndex={0}
             onKeyDown={(e) => {
@@ -1359,8 +1359,6 @@ export default function BillingPage() {
                 symptomInputRef.current?.focus();
               } else if (e.key === 'Enter') {
                 e.preventDefault();
-                // If they hit enter on payment section but haven't selected one yet, default to cash if they just hit enter?
-                // Wait, if they are navigating with arrows, paymentMethod is set. If they just hit enter, they might want to select the first one.
                 if (!paymentMethod) {
                   setPaymentMethod('cash');
                 } else if (cartItems.length > 0) {
@@ -1372,8 +1370,8 @@ export default function BillingPage() {
               }
             }}
           >
-            <span className="text-xs font-black uppercase text-gray-400 tracking-wider">Payment Method (F8)</span>
-            <div className="grid grid-cols-4 gap-3">
+            <span className="text-apple-caption-2 font-black uppercase text-label-secondary tracking-wider">Payment Method (F8)</span>
+            <div className="grid grid-cols-2 min-[480px]:grid-cols-4 gap-3">
               {PAYMENT_MODES.map((mode) => {
                 const Icon = mode.icon;
                 const isSelected = paymentMethod === mode.value.toLowerCase();
@@ -1383,10 +1381,10 @@ export default function BillingPage() {
                     type="button"
                     onClick={() => setPaymentMethod(mode.value.toLowerCase())}
                     className={cn(
-                      "flex flex-col items-center gap-2 py-3 rounded-xl border text-center transition-all cursor-pointer",
+                      "flex flex-col items-center gap-2 py-3 rounded-xl border text-center transition-apple-micro active-apple-press cursor-pointer",
                       isSelected
-                        ? "bg-brand-650 border-brand-700 text-white font-black shadow-lg shadow-brand-600/10"
-                        : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400"
+                        ? "bg-system-blue border-transparent text-white font-semibold shadow-sm"
+                        : "bg-secondary-background border-separator-apple/10 text-label-secondary hover:bg-secondary-background/85"
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -1397,11 +1395,10 @@ export default function BillingPage() {
             </div>
           </div>
 
-          {/* Massive Checkout Pane */}
-          <div className="p-4 lg:p-6 bg-white dark:bg-gray-950 border-t border-gray-250 dark:border-gray-800 space-y-4 shrink-0 shadow-2xl sticky bottom-0 z-10 lg:static">
+          <div className="p-4 lg:p-6 bg-secondary-background/60 border-t border-separator-apple/10 space-y-4 shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] relative lg:static">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-gray-450 dark:text-gray-400">Total Amount Due</span>
-              <span className="text-3xl font-black text-brand-600 dark:text-brand-400">{formatCurrency(totals.grandTotal)}</span>
+              <span className="text-apple-caption-2 font-semibold uppercase tracking-wider text-label-secondary">Total Amount Due</span>
+              <span className="text-apple-title-2 font-bold tracking-tight text-label-primary text-tabular-nums">{formatCurrency(totals.grandTotal)}</span>
             </div>
 
             <button
@@ -1414,22 +1411,22 @@ export default function BillingPage() {
                 }
               }}
               disabled={processing || cartItems.length === 0 || !paymentMethod}
-              className="w-full py-4 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-lg rounded-2xl shadow-lg flex items-center justify-center gap-2.5 transition-all cursor-pointer focus:ring-4 focus:ring-brand-500/30"
+              className="w-full py-4 bg-system-blue hover:bg-system-blue/90 disabled:bg-secondary-background disabled:text-label-tertiary disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-apple-headline rounded-2xl flex items-center justify-center gap-2.5 transition-apple-micro active-apple-press shadow-sm"
             >
               {processing ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
                 <Receipt className="h-6 w-6" />
               )}
-              COMPLETE SALE (Enter)
+              Complete Sale (Enter)
             </button>
 
             {/* Reprint actions */}
-            <div className="flex gap-3 text-xs font-bold pt-2">
+            <div className="flex gap-3 text-apple-footnote font-bold pt-2">
               <button
                 onClick={handlePrint}
                 disabled={!lastBill || cartItems.length > 0}
-                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-850 border border-gray-200 dark:border-gray-850 disabled:opacity-30 rounded-xl flex items-center justify-center gap-2 text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                className="flex-1 py-3 bg-secondary-background hover:bg-secondary-background/85 border border-separator-apple/10 disabled:opacity-30 rounded-xl flex items-center justify-center gap-2 text-label-primary font-medium transition-apple-micro active-apple-press cursor-pointer"
               >
                 <Printer className="h-4 w-4" />
                 Reprint Last Bill
@@ -1441,7 +1438,7 @@ export default function BillingPage() {
                   window.open(`https://wa.me/${lastBill.customerPhone}?text=${encodeURIComponent(text)}`);
                 }}
                 disabled={!lastBill || !lastBill.customerPhone || cartItems.length > 0}
-                className="flex-1 py-3 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/20 border border-brand-100 dark:border-brand-900/30 disabled:opacity-30 rounded-xl flex items-center justify-center gap-2 text-brand-600 dark:text-brand-400 transition-colors cursor-pointer"
+                className="flex-1 py-3 bg-system-green/10 hover:bg-system-green/20 border border-system-green/25 disabled:opacity-30 rounded-xl flex items-center justify-center gap-2 text-system-green font-medium transition-apple-micro active-apple-press cursor-pointer"
               >
                 <Send className="h-4 w-4" />
                 WhatsApp Receipt
@@ -1456,21 +1453,21 @@ export default function BillingPage() {
       {/* Quantity Modal Dialog */}
       {qtyModal && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 dark:bg-slate-950/80 backdrop-blur-md"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-md"
           onClick={() => { setQtyModal(null); searchInputRef.current?.focus(); }}
         >
           <div
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-2xl p-6 w-full max-w-sm mx-4 text-gray-900 dark:text-slate-100"
+            className="bg-secondary-background border border-separator-apple/10 rounded-3xl shadow-elevated p-6 w-full max-w-sm mx-4 text-label-primary"
             onClick={e => e.stopPropagation()}
           >
-            <p className="text-xs font-extrabold uppercase tracking-widest text-brand-600 dark:text-brand-400 mb-1">Add Medicine</p>
-            <h3 className="text-lg font-black text-gray-900 dark:text-white capitalize mb-1">
+            <p className="text-apple-caption-2 font-bold uppercase tracking-widest text-system-blue mb-1">Add Medicine</p>
+            <h3 className="text-apple-title-3 font-bold text-label-primary capitalize mb-1">
               {qtyModal.medicine.name} {qtyModal.medicine.dosage}
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-apple-caption-2 text-label-secondary mb-4 font-mono">
               Batch: {qtyModal.medicine.batchNumber} · Available: {qtyModal.medicine.availableQty} · price: ₹{qtyModal.medicine.sellingPrice}
             </p>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
+            <label className="block text-apple-footnote font-semibold text-label-secondary mb-2">
               Quantity:
             </label>
             <input
@@ -1484,20 +1481,20 @@ export default function BillingPage() {
                 if (e.key === 'Enter') { e.preventDefault(); confirmQtyModal(); }
                 if (e.key === 'Escape') { setQtyModal(null); searchInputRef.current?.focus(); }
               }}
-              className="w-full text-3xl sm:text-4xl font-extrabold text-center py-3 sm:py-4 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 focus:border-brand-500 focus:outline-none rounded-2xl text-gray-900 dark:text-white mb-4 sm:mb-6"
+              className="w-full text-apple-title-1 font-bold text-center py-3 sm:py-4 bg-secondary-background border border-separator-apple/10 focus:border-system-blue focus:ring-4 focus:ring-system-blue/10 rounded-2xl text-label-primary mb-4 sm:mb-6 shadow-sm font-mono"
             />
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => { setQtyModal(null); searchInputRef.current?.focus(); }}
-                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-805 text-sm font-semibold rounded-xl text-gray-700 dark:text-slate-300 transition-colors cursor-pointer"
+                className="flex-1 py-3 bg-secondary-background hover:bg-secondary-background/80 text-apple-subheadline font-semibold rounded-xl text-label-primary transition-apple-micro active-apple-press cursor-pointer border border-separator-apple/10"
               >
                 Cancel (Esc)
               </button>
               <button
                 type="button"
                 onClick={confirmQtyModal}
-                className="flex-1 py-3 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl transition-colors cursor-pointer"
+                className="flex-1 py-3 bg-system-blue hover:bg-system-blue/90 text-white text-apple-subheadline font-semibold rounded-xl transition-apple-micro active-apple-press cursor-pointer shadow-sm"
               >
                 Add ↵
               </button>
@@ -1508,34 +1505,34 @@ export default function BillingPage() {
 
       {/* Camera Scanner Backup Modal */}
       {cameraOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 dark:bg-slate-950/90 backdrop-blur-md p-4">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-2xl overflow-hidden w-full max-w-md">
-            <div className="p-4 bg-gray-50 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
-              <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-2">
-                <Camera className="h-4 w-4 text-brand-600 dark:text-brand-400" /> Device Camera Scanner
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-md p-4">
+          <div className="bg-secondary-background border border-separator-apple/10 rounded-3xl shadow-elevated overflow-hidden w-full max-w-md">
+            <div className="p-4 bg-secondary-background/60 border-b border-separator-apple/10 flex justify-between items-center">
+              <span className="font-semibold text-label-primary text-apple-subheadline flex items-center gap-2">
+                <Camera className="h-4 w-4 text-system-blue" /> Device Camera Scanner
               </span>
-              <button onClick={stopCamera} className="text-gray-700 dark:text-slate-400 hover:text-black dark:hover:text-white text-xs font-bold bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg cursor-pointer">
+              <button onClick={stopCamera} className="text-label-secondary hover:text-label-primary text-apple-caption-2 font-bold bg-secondary-background border border-separator-apple/10 px-3 py-1.5 rounded-lg cursor-pointer transition-apple-micro active-apple-press">
                 Close
               </button>
             </div>
             
             <div className="relative aspect-video bg-black flex items-center justify-center">
               <video ref={videoRef} className="w-full h-full object-cover"></video>
-              <div className="absolute inset-8 border-2 border-brand-500/40 rounded-xl pointer-events-none"></div>
+              <div className="absolute inset-8 border-2 border-system-blue/40 rounded-xl pointer-events-none"></div>
             </div>
 
-            <div className="p-4 bg-white dark:bg-gray-900 space-y-3">
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 block text-center">Place barcode inside the square to scan.</span>
+            <div className="p-4 bg-secondary-background space-y-3">
+              <span className="text-[10px] text-label-secondary block text-center">Place barcode inside the square to scan.</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => simulateCameraScan('BT7432')}
-                  className="py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs rounded-xl font-bold text-gray-700 dark:text-slate-350 cursor-pointer"
+                  className="py-2.5 bg-secondary-background hover:bg-secondary-background/80 text-apple-caption-2 rounded-xl font-bold text-label-primary transition-apple-micro active-apple-press cursor-pointer border border-separator-apple/10"
                 >
                   Scan Demo Batch (BT7432)
                 </button>
                 <button
                   onClick={() => simulateCameraScan('CRO-2026')}
-                  className="py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs rounded-xl font-bold text-gray-700 dark:text-slate-350 cursor-pointer"
+                  className="py-2.5 bg-secondary-background hover:bg-secondary-background/80 text-apple-caption-2 rounded-xl font-bold text-label-primary transition-apple-micro active-apple-press cursor-pointer border border-separator-apple/10"
                 >
                   Scan Demo Barcode
                 </button>

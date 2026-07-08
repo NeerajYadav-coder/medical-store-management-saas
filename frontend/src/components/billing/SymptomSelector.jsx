@@ -74,7 +74,7 @@ export default function SymptomSelector({
 
   return (
     <div 
-      className={cn('space-y-2 outline-none rounded-xl focus:ring-2 focus:ring-brand-500/50 p-1 -m-1', className)}
+      className={cn('space-y-2 outline-none rounded-xl focus:ring-4 focus:ring-system-blue/10 p-1 -m-1', className)}
       ref={inputRef}
       tabIndex={0}
       onKeyDown={(e) => {
@@ -99,14 +99,14 @@ export default function SymptomSelector({
       }}
     >
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Why buying? <span className="text-gray-400 font-normal">(optional)</span>
+        <label className="text-apple-subheadline font-semibold text-label-primary">
+          Why buying? <span className="text-label-tertiary font-normal">(optional)</span>
         </label>
         {selected.length > 0 && (
           <button
             type="button"
             onClick={() => onChange([])}
-            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
+            className="text-apple-caption-1 text-label-secondary hover:text-label-primary transition-apple-micro cursor-pointer"
           >
             Clear
           </button>
@@ -121,13 +121,13 @@ export default function SymptomSelector({
             onClick={() => toggleSymptom(symptom)}
             disabled={!isSelected(symptom._id) && selected.length >= maxSelections}
             className={cn(
-              'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
-              'border flex items-center gap-1.5',
+              'px-3 py-1.5 rounded-full text-apple-caption-1 font-semibold transition-apple-micro active-apple-press',
+              'border flex items-center gap-1.5 cursor-pointer',
               isSelected(symptom._id)
-                ? 'bg-brand-100 border-brand-300 text-brand-700'
-                : 'bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400',
-              !isSelected(symptom._id) && selected.length >= maxSelections && 'opacity-50 cursor-not-allowed',
-              idx === focusedIndex ? 'ring-2 ring-brand-500 ring-offset-1 dark:ring-offset-gray-900' : ''
+                ? 'bg-system-blue/10 border-system-blue/20 text-system-blue font-bold shadow-sm'
+                : 'bg-secondary-background border-separator-apple/10 text-label-secondary hover:bg-secondary-background/85',
+              !isSelected(symptom._id) && selected.length >= maxSelections && 'opacity-30 cursor-not-allowed',
+              idx === focusedIndex ? 'ring-2 ring-system-blue ring-offset-1' : ''
             )}
           >
             <span>{symptom.icon}</span>
@@ -137,7 +137,7 @@ export default function SymptomSelector({
       </div>
       
       {selected.length > 0 && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-apple-caption-1 text-label-secondary mt-1">
           Selected: {selected.map(s => s.symptomName).join(', ')}
         </p>
       )}

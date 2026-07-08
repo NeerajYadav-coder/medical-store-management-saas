@@ -11,27 +11,27 @@ import { forwardRef } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 
-// Button variants using Tailwind classes
+// Button variants using Tailwind classes mapped to Apple design tokens
 const buttonVariants = {
   variant: {
-    primary: 'bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 shadow-sm',
-    secondary: 'bg-white dark:bg-gray-900 dark:bg-gray-800 text-gray-700 dark:text-gray-300 dark:text-gray-200 border border-gray-300 dark:border-gray-600 dark:border-gray-600 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700 focus:ring-brand-500',
-    destructive: 'bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500',
-    success: 'bg-success-600 text-white hover:bg-success-700 focus:ring-success-500',
-    warning: 'bg-warning-500 text-white hover:bg-warning-600 focus:ring-warning-500',
-    ghost: 'bg-transparent text-gray-700 dark:text-gray-300 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-800 focus:ring-gray-500',
-    link: 'bg-transparent text-brand-600 hover:text-brand-700 underline-offset-4 hover:underline',
-    outline: 'border-2 border-brand-600 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 focus:ring-brand-500',
+    primary: 'bg-system-blue text-white hover:bg-system-blue/90 focus:ring-system-blue shadow-sm font-semibold active-apple-press transition-apple-micro rounded-xl',
+    secondary: 'bg-secondary-background text-label-primary hover:bg-secondary-background/80 border border-separator-apple/20 focus:ring-system-blue active-apple-press transition-apple-micro rounded-xl',
+    destructive: 'bg-system-red text-white hover:bg-system-red/90 focus:ring-system-red active-apple-press transition-apple-micro rounded-xl',
+    success: 'bg-system-green text-white hover:bg-system-green/90 focus:ring-system-green active-apple-press transition-apple-micro rounded-xl',
+    warning: 'bg-system-orange text-white hover:bg-system-orange/90 focus:ring-system-orange active-apple-press transition-apple-micro rounded-xl',
+    ghost: 'bg-transparent text-label-secondary hover:bg-secondary-background/60 hover:text-label-primary focus:ring-system-blue active-apple-press transition-apple-micro rounded-xl',
+    link: 'bg-transparent text-system-blue hover:text-system-blue/80 underline-offset-4 hover:underline active-apple-press transition-apple-micro',
+    outline: 'border border-system-blue/60 text-system-blue hover:bg-system-blue/5 focus:ring-system-blue active-apple-press transition-apple-micro rounded-xl',
   },
   size: {
-    xs: 'h-7 px-2 text-xs rounded',
-    sm: 'h-8 px-3 text-sm rounded-md',
-    md: 'h-10 px-4 text-sm rounded-md',
-    lg: 'h-11 px-6 text-base rounded-lg',
-    xl: 'h-12 px-8 text-base rounded-lg',
-    icon: 'h-10 w-10 rounded-md',
-    'icon-sm': 'h-8 w-8 rounded-md',
-    'icon-lg': 'h-12 w-12 rounded-lg',
+    xs: 'h-8 px-3 text-apple-footnote rounded-lg',
+    sm: 'h-9 px-4 text-apple-subheadline rounded-lg',
+    md: 'h-11 px-5 text-apple-callout rounded-xl', // 44px high tap target
+    lg: 'h-12 px-6 text-apple-headline rounded-xl',
+    xl: 'h-14 px-8 text-apple-title-3 rounded-xl',
+    icon: 'h-11 w-11 rounded-xl flex items-center justify-center', // 44px min
+    'icon-sm': 'h-9 w-9 rounded-lg flex items-center justify-center',
+    'icon-lg': 'h-14 w-14 rounded-xl flex items-center justify-center',
   },
 }
 

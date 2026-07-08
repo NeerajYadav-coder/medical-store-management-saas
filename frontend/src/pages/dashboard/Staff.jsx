@@ -176,14 +176,14 @@ export default function Staff() {
       render: (_, user) => (
         <div className="flex items-center gap-3">
           <div className={cn(
-            'h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold',
-            user.role === 'MANAGER' ? 'bg-purple-500' : 'bg-brand-500'
+            'h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold text-apple-headline shadow-sm',
+            user.role === 'MANAGER' ? 'bg-purple-500' : 'bg-system-blue'
           )}>
             {user.name.charAt(0)}
           </div>
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">{user.name}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+            <p className="text-apple-headline font-semibold text-label-primary">{user.name}</p>
+            <p className="text-apple-caption-1 text-label-secondary">{user.email}</p>
           </div>
         </div>
       ),
@@ -193,8 +193,8 @@ export default function Staff() {
       label: 'Role',
       render: (value) => (
         <span className={cn(
-          'px-2.5 py-1 text-xs font-medium rounded-full',
-          value === 'MANAGER' ? 'bg-purple-100 text-purple-700' : 'bg-brand-100 text-brand-700'
+          'px-2.5 py-0.5 text-apple-footnote font-semibold rounded-full border border-separator-apple/10 bg-secondary-background text-label-secondary',
+          value === 'MANAGER' && 'text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30'
         )}>
           {value}
         </span>
@@ -207,11 +207,11 @@ export default function Staff() {
         <div className="flex items-center gap-2">
           <span className={cn(
             'h-2 w-2 rounded-full',
-            value ? 'bg-success-500' : 'bg-gray-300'
+            value ? 'bg-system-green' : 'bg-label-tertiary'
           )} />
           <span className={cn(
-            'text-sm',
-            value ? 'text-success-600' : 'text-gray-500 dark:text-gray-400'
+            'text-apple-subheadline font-semibold',
+            value ? 'text-system-green' : 'text-label-secondary'
           )}>
             {value ? 'Active' : 'Inactive'}
           </span>
@@ -222,14 +222,14 @@ export default function Staff() {
       key: 'lastLoginAt',
       label: 'Last Active',
       render: (value) => (
-        <span className="text-sm text-gray-500 dark:text-gray-400">{value ? formatRelativeTime(value) : 'Never'}</span>
+        <span className="text-apple-subheadline text-label-secondary font-mono">{value ? formatRelativeTime(value) : 'Never'}</span>
       ),
     },
     {
       key: 'createdAt',
       label: 'Joined',
       render: (value) => (
-        <span className="text-sm text-gray-500 dark:text-gray-400">{formatDate(value)}</span>
+        <span className="text-apple-subheadline text-label-secondary font-mono">{formatDate(value)}</span>
       ),
     },
     {
@@ -240,13 +240,13 @@ export default function Staff() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setEditUser(user)}
-            className="p-2 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50"
+            className="p-2 rounded-lg text-label-secondary hover:text-system-blue hover:bg-system-blue/10 transition-apple-micro active-apple-press"
           >
             <Edit className="h-4 w-4" />
           </button>
           <button
             onClick={() => setDeleteModal({ isOpen: true, item: user })}
-            className="p-2 rounded-lg text-gray-400 hover:text-danger-600 hover:bg-danger-50"
+            className="p-2 rounded-lg text-label-secondary hover:text-system-red hover:bg-system-red/10 transition-apple-micro active-apple-press"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -265,8 +265,8 @@ export default function Staff() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Staff Management</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your team members and permissions</p>
+          <h1 className="text-apple-title-1 font-semibold text-label-primary tracking-tight">Staff Management</h1>
+          <p className="text-apple-subheadline text-label-secondary mt-1">Manage your team members and permissions</p>
         </div>
         <Button
           size="sm"
@@ -281,41 +281,28 @@ export default function Staff() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+        <div className="card p-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-brand-100 flex items-center justify-center">
-              <Users className="h-5 w-5 text-brand-600" />
+            <div className="h-10 w-10 rounded-xl bg-system-blue/10 flex items-center justify-center">
+              <Users className="h-5 w-5 text-system-blue" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Staff</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStaff}</p>
+              <p className="text-apple-footnote text-label-secondary">Total Staff</p>
+              <p className="text-apple-title-3 font-bold text-label-primary tracking-tight mt-0.5 text-tabular-nums">{totalStaff}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+        <div className="card p-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-success-100 flex items-center justify-center">
-              <CheckCircle className="h-5 w-5 text-success-600" />
+            <div className="h-10 w-10 rounded-xl bg-system-green/10 flex items-center justify-center">
+              <CheckCircle className="h-5 w-5 text-system-green" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Active</p>
-              <p className="text-xl font-bold text-success-600">{activeStaff}</p>
+              <p className="text-apple-footnote text-label-secondary">Active</p>
+              <p className="text-apple-title-3 font-bold text-system-green tracking-tight mt-0.5 text-tabular-nums">{activeStaff}</p>
             </div>
           </div>
         </div>
-        {/* 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <Shield className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Managers</p>
-              <p className="text-xl font-bold text-purple-600">{managers}</p>
-            </div>
-          </div>
-        </div>
-        */}
       </div>
 
       {/* Table */}

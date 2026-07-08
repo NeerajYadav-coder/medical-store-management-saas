@@ -38,6 +38,7 @@ import { ROUTES } from '@config/routes.config'
 import Button from '@components/common/Button'
 import { Skeleton, SkeletonCard } from '@components/common/Loader'
 import StatsCard from '@components/dashboard/StatsCard'
+import ReorderSuggestionsWidget from '@components/dashboard/ReorderSuggestionsWidget'
 
 /**
  * Dashboard Home Page
@@ -109,10 +110,10 @@ export default function DashboardHome() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-apple-title-1 font-semibold text-label-primary tracking-tight">
             {getGreeting()}, {user?.name?.split(' ')[0]}! 👋
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-apple-subheadline text-label-secondary mt-1">
             Here's what's happening at {storeName} today.
           </p>
         </div>
@@ -123,6 +124,7 @@ export default function DashboardHome() {
             leftIcon={!isFetching ? <RefreshCcw className="h-4 w-4" /> : undefined}
             isLoading={isFetching}
             onClick={() => refetch()}
+            className="text-apple-subheadline font-medium"
           >
             {isFetching ? 'Refreshing...' : 'Refresh'}
           </Button>
@@ -131,6 +133,7 @@ export default function DashboardHome() {
             size="sm"
             leftIcon={<Plus className="h-4 w-4" />}
             onClick={() => navigate(ROUTES.BILLING)}
+            className="text-apple-subheadline font-semibold"
           >
             New Sale
           </Button>
@@ -144,8 +147,8 @@ export default function DashboardHome() {
           title="Today's Sales"
           value={formatCurrency(dashboardData.todaySales)}
           icon={<IndianRupee className="h-5 w-5" />}
-          iconBg="bg-success-100"
-          iconColor="text-success-600"
+          iconBg="bg-system-green/10"
+          iconColor="text-system-green"
           trend={{
             value: dashboardData.salesGrowth,
             label: 'vs avg daily',
@@ -159,8 +162,8 @@ export default function DashboardHome() {
           title="Transactions"
           value={dashboardData.todayTransactions}
           icon={<ShoppingCart className="h-5 w-5" />}
-          iconBg="bg-brand-100"
-          iconColor="text-brand-600"
+          iconBg="bg-system-blue/10"
+          iconColor="text-system-blue"
           trend={{
             value: dashboardData.transactionsGrowth,
             label: 'vs yesterday',
@@ -173,8 +176,8 @@ export default function DashboardHome() {
           title="Low Stock Items"
           value={dashboardData.lowStockCount}
           icon={<Package className="h-5 w-5" />}
-          iconBg="bg-warning-100"
-          iconColor="text-warning-600"
+          iconBg="bg-system-orange/10"
+          iconColor="text-system-orange"
           action={{
             label: 'View Items',
             href: ROUTES.INVENTORY + '?filter=low-stock',
@@ -186,8 +189,8 @@ export default function DashboardHome() {
           title="Expiring Soon"
           value={dashboardData.expiringCount}
           icon={<AlertTriangle className="h-5 w-5" />}
-          iconBg="bg-danger-100"
-          iconColor="text-danger-600"
+          iconBg="bg-system-red/10"
+          iconColor="text-system-red"
           action={{
             label: 'View All',
             href: ROUTES.INVENTORY + '?filter=expiring',
@@ -202,21 +205,21 @@ export default function DashboardHome() {
         <div className="lg:col-span-2 space-y-6">
           {/* Sales Chart Placeholder */}
           {showFinancials && (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="card p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sales Overview</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Revenue trend for the last 7 days</p>
+                <h3 className="card-title">Sales Overview</h3>
+                <p className="card-description">Revenue trend for the last 7 days</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-secondary-background p-1 rounded-xl border border-separator-apple/10">
                 {['7d', '30d', '90d'].map((range) => (
                   <button
                     key={range}
                     className={cn(
-                      'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                      'px-3 py-1.5 text-apple-footnote font-semibold rounded-lg transition-apple-micro active-apple-press',
                       dateRange === range
-                        ? 'bg-brand-600 text-white'
-                        : 'text-gray-600 dark:text-gray-400 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'
+                        ? 'bg-system-blue text-white shadow-sm'
+                        : 'text-label-secondary hover:text-label-primary'
                     )}
                     onClick={() => setDateRange(range)}
                   >
@@ -234,82 +237,82 @@ export default function DashboardHome() {
                   return (
                     <div key={idx} className="relative group w-full flex flex-col items-center justify-end h-full">
                       {/* Tooltip */}
-                      <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 pointer-events-none">
-                        {formatCurrency(day.sales)}<br/>
-                        <span className="text-gray-300">{new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</span>
+                      <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-label-primary text-system-background text-apple-footnote py-1.5 px-2.5 rounded-xl shadow-dropdown z-10 pointer-events-none text-center">
+                        <span className="font-semibold text-tabular-nums">{formatCurrency(day.sales)}</span><br/>
+                        <span className="text-[10px] text-label-secondary">{new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</span>
                       </div>
                       
                       {/* Bar */}
                       <div 
-                        className="w-full bg-brand-500 hover:bg-brand-600 rounded-t-sm transition-all duration-300" 
+                        className="w-full bg-system-blue hover:bg-system-blue/85 rounded-t-md transition-apple-default" 
                         style={{ height: `${heightPercent}%` }}
                       ></div>
                     </div>
                   )
                 })
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-gray-950 dark:bg-gray-800 border-2 border-dashed border-gray-100 dark:border-gray-800 dark:border-gray-700 rounded-lg">
-                  <BarChart3 className="h-8 w-8 mb-2 opacity-50" />
-                  <p className="text-sm">No sales data for this period</p>
+                <div className="w-full h-full flex flex-col items-center justify-center text-label-secondary bg-secondary-background/30 border border-dashed border-separator-apple/40 rounded-2xl">
+                  <BarChart3 className="h-8 w-8 mb-2 text-label-tertiary" />
+                  <p className="text-apple-subheadline font-medium">No sales data for this period</p>
                 </div>
               )}
             </div>
 
             {/* Quick stats below chart */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 dark:border-gray-700">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-separator-apple/20">
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCompactCurrency(thisWeekSales)}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">This Week</p>
+                <p className="text-apple-title-2 font-bold text-label-primary tracking-tight text-tabular-nums">{formatCompactCurrency(thisWeekSales)}</p>
+                <p className="text-apple-footnote text-label-secondary mt-1">This Week</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCompactCurrency(stats?.monthly?.sales || 0)}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">This Month</p>
+                <p className="text-apple-title-2 font-bold text-label-primary tracking-tight text-tabular-nums">{formatCompactCurrency(stats?.monthly?.sales || 0)}</p>
+                <p className="text-apple-footnote text-label-secondary mt-1">This Month</p>
               </div>
               <div className="text-center">
-                <p className={cn("text-2xl font-bold", weeklyGrowth >= 0 ? "text-success-600" : "text-danger-600")}>
+                <p className={cn("text-apple-title-2 font-bold tracking-tight text-tabular-nums", weeklyGrowth >= 0 ? "text-system-green" : "text-system-red")}>
                   {weeklyGrowth > 0 ? '+' : ''}{weeklyGrowth.toFixed(1)}%
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Growth (vs last wk)</p>
+                <p className="text-apple-footnote text-label-secondary mt-1">Growth (vs last wk)</p>
               </div>
             </div>
           </div>
           )}
 
           {/* Recent Sales */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Sales</h3>
+              <h3 className="card-title">Recent Sales</h3>
               <Link
                 to={ROUTES.SALES}
-                className="text-sm font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1"
+                className="text-apple-subheadline font-medium text-system-blue hover:text-system-blue/80 flex items-center gap-1 transition-apple-micro"
               >
                 View All <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-1">
               {dashboardData.recentSales.length > 0 ? (
                 dashboardData.recentSales.map((sale) => (
                   <div
                     key={sale._id}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50/40 dark:bg-gray-950 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary-background/60 active-apple-press transition-apple-micro cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center">
-                        <ShoppingCart className="h-5 w-5 text-brand-600" />
+                      <div className="h-10 w-10 rounded-full bg-system-blue/10 flex items-center justify-center">
+                        <ShoppingCart className="h-5 w-5 text-system-blue" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{sale.customerName || sale.customerId?.name || 'Walk-in Customer'}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-apple-headline font-semibold text-label-primary">{sale.customerName || sale.customerId?.name || 'Walk-in Customer'}</p>
+                        <p className="text-apple-subheadline text-label-secondary mt-0.5">
                           {sale.totalItems} item{sale.totalItems !== 1 ? 's' : ''} • {formatRelativeTime(sale.createdAt)}
                         </p>
                       </div>
                     </div>
-                    <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(sale.grandTotal)}</p>
+                    <p className="text-apple-headline font-semibold text-label-primary text-tabular-nums">{formatCurrency(sale.grandTotal)}</p>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                <div className="text-center py-6 text-label-secondary text-apple-subheadline">
                   No recent sales found
                 </div>
               )}
@@ -319,11 +322,14 @@ export default function DashboardHome() {
 
         {/* Right Column - Alerts & Quick Actions */}
         <div className="space-y-6">
+          {/* Smart Reorder Suggestions */}
+          {canPurchase && <ReorderSuggestionsWidget />}
+
           {/* Alerts */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alerts</h3>
-              <span className="px-2 py-1 text-xs font-medium rounded-full bg-danger-100 text-danger-600">
+              <h3 className="card-title">Alerts</h3>
+              <span className="px-2.5 py-0.5 text-apple-caption-1 font-semibold rounded-full bg-system-red/10 text-system-red text-tabular-nums">
                 {dashboardData.alerts.length} Active
               </span>
             </div>
@@ -334,25 +340,25 @@ export default function DashboardHome() {
                   <div
                     key={alert._id}
                     className={cn(
-                      'p-3 rounded-lg border-l-4 cursor-pointer transition-colors hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-800',
+                      'p-3 rounded-xl border-l-4 cursor-pointer transition-apple-micro active-apple-press',
                       alert.priority === 'CRITICAL' || alert.priority === 'HIGH'
-                        ? 'bg-danger-50 dark:bg-danger-900/20 border-danger-500'
-                        : 'bg-warning-50 dark:bg-warning-900/20 border-warning-500'
+                        ? 'bg-system-red/5 border-system-red hover:bg-system-red/10'
+                        : 'bg-system-orange/5 border-system-orange hover:bg-system-orange/10'
                     )}
                   >
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-3">
                       <AlertTriangle
                         className={cn(
-                          'h-4 w-4 mt-0.5 flex-shrink-0',
-                          alert.priority === 'CRITICAL' || alert.priority === 'HIGH' ? 'text-danger-600' : 'text-warning-600'
+                          'h-5 w-5 flex-shrink-0 mt-0.5',
+                          alert.priority === 'CRITICAL' || alert.priority === 'HIGH' ? 'text-system-red' : 'text-system-orange'
                         )}
                       />
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{alert.message}</p>
+                      <p className="text-apple-subheadline font-semibold text-label-primary leading-snug">{alert.message}</p>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                <div className="text-center py-6 text-label-secondary text-apple-subheadline">
                   All good! No pending alerts.
                 </div>
               )}
@@ -360,7 +366,7 @@ export default function DashboardHome() {
 
             <Button
               variant="ghost"
-              className="w-full mt-4"
+              className="w-full mt-4 text-apple-subheadline"
               rightIcon={<ArrowRight className="h-4 w-4" />}
               onClick={() => navigate(ROUTES.INVENTORY + '?filter=expiring')}
             >
@@ -369,35 +375,37 @@ export default function DashboardHome() {
           </div>
 
 
-          {/* Today's Schedule */}
-          <div className="bg-gradient-to-br from-brand-600 to-brand-700 rounded-xl p-6 text-white">
-            <div className="flex items-center gap-3 mb-4">
-              <Calendar className="h-6 w-6" />
+          {/* Today's Summary Card */}
+          <div className="card p-6 border border-separator-apple/10 shadow-soft">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-system-blue/10 rounded-xl">
+                <Calendar className="h-6 w-6 text-system-blue" />
+              </div>
               <div>
-                <h3 className="font-semibold">Today's Summary</h3>
-                <p className="text-sm text-brand-100">{formatDate(new Date())}</p>
+                <h3 className="text-apple-headline font-semibold text-label-primary tracking-tight">Today's Summary</h3>
+                <p className="text-apple-subheadline text-label-secondary">{formatDate(new Date())}</p>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-brand-100">Total Sales</span>
-                <span className="font-semibold">{formatCurrency(dashboardData.todaySales)}</span>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-separator-apple/10">
+                <span className="text-apple-subheadline text-label-secondary font-medium">Total Sales</span>
+                <span className="text-apple-title-3 font-bold text-label-primary tracking-tight text-tabular-nums">{formatCurrency(dashboardData.todaySales)}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-brand-100">Transactions</span>
-                <span className="font-semibold">{dashboardData.todayTransactions}</span>
+              <div className="flex items-center justify-between py-2 border-b border-separator-apple/10">
+                <span className="text-apple-subheadline text-label-secondary font-medium">Transactions</span>
+                <span className="text-apple-title-3 font-bold text-label-primary tracking-tight text-tabular-nums">{dashboardData.todayTransactions}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-brand-100">Pending Orders</span>
-                <span className="font-semibold">{dashboardData.pendingPurchases}</span>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-apple-subheadline text-label-secondary font-medium">Pending Orders</span>
+                <span className="text-apple-title-3 font-bold text-label-primary tracking-tight text-tabular-nums">{dashboardData.pendingPurchases}</span>
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-brand-500">
+            <div className="mt-6 pt-5 border-t border-separator-apple/10">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-brand-200" />
-                <span className="text-sm text-brand-100">
+                <Users className="h-4 w-4 text-label-secondary" />
+                <span className="text-apple-subheadline text-label-secondary font-medium">
                   {dashboardData.activeStaff} staff members active
                 </span>
               </div>
