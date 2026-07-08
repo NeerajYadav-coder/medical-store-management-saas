@@ -1,8 +1,10 @@
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { getFriendlyErrorMessage } from '@/utils/errorParser'
+import AuthAlertBanner from '@components/common/AuthAlertBanner'
 import { 
   CheckCircle, ArrowRight, Shield, Activity, TrendingUp, 
   AlertTriangle, Users, Lock, Server, FileText, Zap, 
@@ -18,6 +20,9 @@ export default function LandingPage() {
   const location = useLocation()
   const { login, isLoggingIn, loginError, clearLoginError } = useAuth()
   const [successMessage, setSuccessMessage] = useState('')
+  const [friendlyError, setFriendlyError] = useState('')
+  const errorTimeoutRef = useRef(null)
+  const successTimeoutRef = useRef(null)
 
   // Login Logic
   useEffect(() => {
@@ -28,7 +33,35 @@ export default function LandingPage() {
   }, [location.state])
 
   useEffect(() => {
+    if (loginError) {
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current)
+      setFriendlyError(getFriendlyErrorMessage(loginError))
+
+      errorTimeoutRef.current = setTimeout(() => {
+        setFriendlyError('')
+        clearLoginError()
+      }, 5000)
+    } else {
+      setFriendlyError('')
+    }
+  }, [loginError, clearLoginError])
+
+  useEffect(() => {
+    if (successMessage) {
+      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current)
+      
+      successTimeoutRef.current = setTimeout(() => {
+        setSuccessMessage('')
+      }, 5000)
+    }
+  }, [successMessage])
+
+  useEffect(() => {
     clearLoginError()
+    return () => {
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current)
+      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current)
+    }
   }, [clearLoginError])
 
   const {
@@ -120,6 +153,25 @@ export default function LandingPage() {
                   <p className="text-gray-500 dark:text-gray-400">Sign in to manage your store</p>
                 </div>
 
+                {successMessage && (
+                  <AuthAlertBanner
+                    message={successMessage}
+                    type="success"
+                    onClose={() => setSuccessMessage('')}
+                  />
+                )}
+
+                {friendlyError && (
+                  <AuthAlertBanner
+                    message={friendlyError}
+                    type="error"
+                    onClose={() => {
+                      setFriendlyError('')
+                      clearLoginError()
+                    }}
+                  />
+                )}
+
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <Input
                     label="Email address"
@@ -139,13 +191,6 @@ export default function LandingPage() {
                       error={errors.password?.message}
                     />
                   </div>
-
-                  {loginError && (
-                    <div className="p-3 bg-danger-50 text-danger-700 text-sm rounded-lg flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      {loginError.message || 'Login failed'}
-                    </div>
-                  )}
 
                   <Button type="submit" size="lg" className="w-full" isLoading={isLoggingIn}>
                     Sign In
@@ -359,7 +404,12 @@ export default function LandingPage() {
       {/* ⚫ 8️⃣ FOOTER */}
       <footer className="py-8 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
-          <div>© 2024 MedStore SaaS. All rights reserved.</div>
+          <div>
+            © 2024 MedStore SaaS. All rights reserved. 
+            <span className="hidden sm:inline mx-2">•</span> 
+            <br className="sm:hidden" /> 
+            Crafted by <a href="https://neerajyadav-coder.github.io/krishna-pharmacy/about.html" target="_blank" rel="noopener noreferrer" className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors font-medium">Krishna Pharmacy</a>
+          </div>
           <div className="flex gap-6">
             <a href="#" className="hover:text-gray-900 dark:text-white">Privacy Policy</a>
             <a href="#" className="hover:text-gray-900 dark:text-white">Terms of Service</a>

@@ -12,6 +12,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { toast as hotToast } from 'react-hot-toast'
 
 const UIContext = createContext(null)
 
@@ -137,10 +138,22 @@ export function UIProvider({ children }) {
 
   // Convenience toast methods
   const toast = {
-    success: (message, options = {}) => addToast({ type: 'success', message, ...options }),
-    error: (message, options = {}) => addToast({ type: 'error', message, ...options }),
-    warning: (message, options = {}) => addToast({ type: 'warning', message, ...options }),
-    info: (message, options = {}) => addToast({ type: 'info', message, ...options }),
+    success: (message, options = {}) => {
+      addToast({ type: 'success', message, ...options })
+      return hotToast.success(message, options)
+    },
+    error: (message, options = {}) => {
+      addToast({ type: 'error', message, ...options })
+      return hotToast.error(message, options)
+    },
+    warning: (message, options = {}) => {
+      addToast({ type: 'warning', message, ...options })
+      return hotToast(message, { icon: '⚠️', ...options })
+    },
+    info: (message, options = {}) => {
+      addToast({ type: 'info', message, ...options })
+      return hotToast(message, { icon: 'ℹ️', ...options })
+    },
   }
 
   // ==================== THEME ACTIONS ====================

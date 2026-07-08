@@ -212,6 +212,7 @@ export const OTPInput = forwardRef(({
             autoFocus={autoFocus && index === 0}
             className={cn(
               'w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-all',
+              'bg-white dark:bg-gray-900 text-gray-900 dark:text-white',
               'focus:outline-none focus:ring-2 focus:ring-offset-0',
               !error && 'border-gray-300 dark:border-gray-600 focus:border-brand-500 focus:ring-brand-500/20',
               error && 'border-danger-500 focus:border-danger-500',

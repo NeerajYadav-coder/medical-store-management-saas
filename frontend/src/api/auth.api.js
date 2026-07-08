@@ -142,6 +142,13 @@ export const authApi = {
   deleteStaff: async (id) => {
     return await api.delete(`/auth/staff/${id}`)
   },
+
+  /**
+   * Check email uniqueness
+   */
+  checkEmailUniqueness: async (email, type) => {
+    return await api.post('/auth/check-email-uniqueness', { email, type })
+  },
 }
 
 export default authApi

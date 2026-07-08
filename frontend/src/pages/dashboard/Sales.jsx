@@ -20,6 +20,7 @@ import {
   Filter,
   ArrowRight,
   Download,
+  Ban
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { formatCurrency } from '@utils/formatCurrency'
@@ -32,14 +33,17 @@ import { SearchInput } from '@components/common/Input'
 import { Table } from '@components/common/Table'
 import { Modal } from '@components/common/Modal'
 import { useAuth } from '@context/AuthContext'
+import { useStore } from '@context/StoreContext'
 
 export default function Sales() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const { hasPermission } = useAuth()
+  const { store, storeName, storeAddress, storePhone, drugLicense, gstNumber } = useStore()
 
   // Permissions
   const showFinancials = hasPermission('VIEW_FINANCIAL_REPORTS')
+  const canDeleteSale = hasPermission('DELETE_SALE') || useAuth().user?.role === 'OWNER'
 
   // State
   const [historyPage, setHistoryPage] = useState(1)
@@ -153,6 +157,18 @@ export default function Sales() {
           >
             <Printer className="h-4.5 w-4.5" />
           </button>
+          {canDeleteSale && sale.status !== 'VOID' && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVoidSale(sale);
+              }}
+              className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+              title="Void Sale"
+            >
+              <Ban className="h-4.5 w-4.5" />
+            </button>
+          )}
         </div>
       ),
     },
@@ -162,7 +178,11 @@ export default function Sales() {
     try {
       // Fetch full details including items
       const response = await saleApi.getById(sale._id);
-      setViewInvoice(response);
+      // The Axios interceptor already unwraps `data.data` which contains the full sale object + items
+      // Fallback to response.sale just in case another controller format is used
+      const invoiceData = response.sale ? { ...response.sale, items: response.items || [] } : response;
+      
+      setViewInvoice(invoiceData);
     } catch (error) {
       toast.error('Failed to load sale details');
     }
@@ -171,71 +191,278 @@ export default function Sales() {
   const handlePrintSale = async (sale) => {
     try {
       const response = await saleApi.getById(sale._id);
-      handlePrint(response);
+      const invoiceData = response.sale ? { ...response.sale, items: response.items || [] } : response;
+      handlePrint(invoiceData);
     } catch (error) {
       toast.error('Failed to prepare receipt for printing');
     }
   };
 
+  const handleVoidSale = async (sale) => {
+    if (!window.confirm(`Are you sure you want to void Bill #${sale.billNumber}? This will restore the inventory and cannot be undone.`)) return;
+    
+    try {
+      const reason = window.prompt("Reason for voiding sale:");
+      if (reason === null) return; // User cancelled
+      
+      await saleApi.void(sale._id, reason || 'Customer requested cancellation');
+      toast.success('Sale voided and inventory restored.');
+      
+      // We don't have queryClient in scope easily, so we just force a refresh of the page
+      window.location.reload();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to void sale');
+    }
+  };
+
   const handlePrint = (sale) => {
-    // Basic print functionality
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Bill #${sale.billNumber}</title>
-          <style>
-            body { font-family: 'Courier New', Courier, monospace; padding: 20px; width: 300px; }
-            .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; }
-            th { text-align: left; font-size: 12px; }
-            td { font-size: 11px; padding: 4px 0; }
-            .total-row { border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; }
-            .flex { display: flex; justify-content: space-between; }
-            .bold { font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h3 style="margin:0">MEDICAL STORE</h3>
-            <p style="font-size:10px;margin:5px 0">Bill No: ${sale.billNumber}</p>
-            <p style="font-size:10px;margin:0">${formatDate(sale.billDate)} ${formatTime(sale.billDate)}</p>
-          </div>
-          <div>
-            <p style="font-size:11px;margin:2px 0">Customer: ${sale.customerName || 'Walk-in'}</p>
-          </div>
-          <table style="margin: 10px 0">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th style="text-align:right">Qty</th>
-                <th style="text-align:right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${sale.items.map(item => `
-                <tr>
-                  <td>${item.medicineName}</td>
-                  <td style="text-align:right">${item.quantity}</td>
-                  <td style="text-align:right">${(item.totalAmount || (item.quantity * item.sellingPrice)).toFixed(2)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <div class="total-row">
-            <div class="flex"><span>Subtotal:</span> <span>${sale.subtotal?.toFixed(2)}</span></div>
-            <div class="flex"><span>Discount:</span> <span>-${sale.discountAmount?.toFixed(2)}</span></div>
-            <div class="flex"><span>GST:</span> <span>${sale.totalGst?.toFixed(2)}</span></div>
-            <div class="flex bold" style="font-size:14px;margin-top:5px">
-              <span>Grand Total:</span> <span style="margin-left:auto">₹${sale.grandTotal?.toFixed(2)}</span>
-            </div>
-          </div>
-          <p style="text-align:center;font-size:10px;margin-top:20px">Thank you! Visit Again.</p>
-          <script>window.print(); window.close();</script>
-        </body>
-      </html>
+    if (!sale) return;
+
+    const escapeHtml = (unsafe) => {
+      if (!unsafe) return '';
+      return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    };
+
+    const storeNamePrint = escapeHtml(storeName || 'Medical Store');
+    const storeAddressPrint = escapeHtml(storeAddress || '');
+    const storePhonePrint = escapeHtml(storePhone || '');
+    const ownerNamePrint = escapeHtml(store?.ownerName || '');
+    const dlNumberPrint = escapeHtml(drugLicense || '');
+    const gstNumberPrint = escapeHtml(gstNumber || '');
+
+    const WinPrint = window.open('', '', 'width=900,height=650');
+    if (!WinPrint) {
+      toast.error('Pop-up blocker is preventing print window. Please allow popups.');
+      return;
+    }
+
+    WinPrint.document.write('<html><head><title>Invoice_' + sale.billNumber + '</title>');
+    WinPrint.document.write(`
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          color: #1f2937;
+          max-width: 450px;
+          margin: 20px auto;
+          padding: 20px;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .store-name {
+          font-size: 22px;
+          font-weight: 800;
+          color: #111827;
+          margin: 0 0 4px 0;
+          letter-spacing: -0.5px;
+        }
+        .store-owner {
+          font-size: 12px;
+          font-weight: 600;
+          color: #4b5563;
+          margin: 0 0 8px 0;
+        }
+        .store-subtitle {
+          font-size: 11px;
+          color: #6b7280;
+          margin: 2px 0;
+          line-height: 1.4;
+        }
+        .divider {
+          border-top: 1px dashed #d1d5db;
+          margin: 14px 0;
+        }
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          font-size: 12px;
+          margin-bottom: 12px;
+        }
+        .info-label { color: #6b7280; }
+        .info-value { font-weight: 600; color: #1f2937; }
+        
+        .items-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 12px;
+          margin: 12px 0;
+        }
+        .items-table th {
+          border-bottom: 2px solid #374151;
+          padding: 8px 0;
+          font-weight: 700;
+          color: #374151;
+        }
+        .items-table td {
+          padding: 8px 0;
+          border-bottom: 1px solid #f3f4f6;
+          color: #4b5563;
+        }
+        
+        .totals-table {
+          width: 100%;
+          font-size: 12px;
+          margin-top: 10px;
+        }
+        .totals-table td {
+          padding: 4px 0;
+        }
+        .grand-total-row {
+          font-size: 16px;
+          font-weight: 800;
+          color: #111827;
+          border-top: 2px solid #374151;
+          border-bottom: 2px solid #374151;
+        }
+        .grand-total-row td {
+          padding: 10px 0;
+        }
+        
+        .personalized-footer {
+          margin-top: 24px;
+          text-align: center;
+          background: #f0fdf4;
+          border-radius: 8px;
+          padding: 12px;
+          border: 1px solid #d1fae5;
+        }
+        .hindi-message {
+          font-size: 14px;
+          font-weight: 700;
+          color: #065f46;
+          margin: 0 0 4px 0;
+        }
+        .english-message {
+          font-size: 11px;
+          font-style: italic;
+          color: #047857;
+          margin: 0;
+        }
+      </style>
     `);
-    printWindow.document.close();
+    WinPrint.document.write('</head><body>');
+    WinPrint.document.write(`
+      <div class="text-center">
+        <h1 class="store-name">${storeNamePrint}</h1>
+        ${ownerNamePrint ? `<p class="store-owner">Proprietor: ${ownerNamePrint}</p>` : ''}
+        <p class="store-subtitle">${storeAddressPrint}</p>
+        ${storePhonePrint ? `<p class="store-subtitle">Phone: ${storePhonePrint}</p>` : ''}
+        ${dlNumberPrint ? `<p class="store-subtitle">Drug License: ${dlNumberPrint}</p>` : ''}
+        ${gstNumberPrint ? `<p class="store-subtitle">GSTIN: ${gstNumberPrint}</p>` : ''}
+      </div>
+      <div class="divider"></div>
+    `);
+
+    WinPrint.document.write(`
+      <div class="info-grid">
+        <div>
+          <span class="info-label">Bill No:</span>
+          <span class="info-value">${escapeHtml(sale.billNumber)}</span>
+        </div>
+        <div class="text-right">
+          <span class="info-label">Date:</span>
+          <span class="info-value">${new Date(sale.billDate || sale.createdAt).toLocaleDateString('en-IN')}</span>
+        </div>
+        <div>
+          <span class="info-label">Customer:</span>
+          <span class="info-value">${escapeHtml(sale.customerName || 'Walk-in Customer')}</span>
+        </div>
+        ${sale.customerPhone ? `
+        <div class="text-right">
+          <span class="info-label">Phone:</span>
+          <span class="info-value">${sale.customerPhone}</span>
+        </div>
+        ` : ''}
+      </div>
+      <div class="divider"></div>
+    `);
+
+    WinPrint.document.write(`
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width: 50%;">Item Description</th>
+            <th class="text-right" style="width: 15%;">Qty</th>
+            <th class="text-right" style="width: 15%;">Price</th>
+            <th class="text-right" style="width: 20%;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+    `);
+
+    sale.items.forEach(item => {
+      const price = item.sellingPrice || 0;
+      const total = item.totalAmount || (item.quantity * price);
+      WinPrint.document.write(`
+        <tr>
+          <td>${escapeHtml(item.medicineName)}</td>
+          <td class="text-right">${item.quantity}</td>
+          <td class="text-right">${formatCurrency(price)}</td>
+          <td class="text-right">${formatCurrency(total)}</td>
+        </tr>
+      `);
+    });
+
+    WinPrint.document.write(`
+        </tbody>
+      </table>
+      <div class="divider"></div>
+    `);
+
+    WinPrint.document.write(`
+      <table class="totals-table">
+        <tr>
+          <td>Subtotal</td>
+          <td class="text-right">${formatCurrency(sale.subtotal)}</td>
+        </tr>
+    `);
+
+    if (sale.discountAmount > 0) {
+      WinPrint.document.write(`
+        <tr style="color: #059669; font-weight: 600;">
+          <td>Discount Applied</td>
+          <td class="text-right">-${formatCurrency(sale.discountAmount)}</td>
+        </tr>
+      `);
+    }
+
+    if (sale.totalGst > 0) {
+      WinPrint.document.write(`
+        <tr>
+          <td>Tax (GST)</td>
+          <td class="text-right">${formatCurrency(sale.totalGst)}</td>
+        </tr>
+      `);
+    }
+
+    WinPrint.document.write(`
+        <tr class="grand-total-row">
+          <td>Grand Total</td>
+          <td class="text-right">${formatCurrency(sale.grandTotal)}</td>
+        </tr>
+      </table>
+    `);
+
+    WinPrint.document.write(`
+      <div class="personalized-footer">
+        <p class="hindi-message">दवाई भी, दुआ भी — स्वस्थ रहें, खुश रहें!</p>
+        <p class="english-message">Thank you for trusting us with your health. Get well soon!</p>
+      </div>
+      <div style="text-align: center; margin-top: 15px; font-size: 10px; color: #9ca3af;">
+        Powered by MedStore — An initiative by <a href="https://neerajyadav-coder.github.io/krishna-pharmacy/about.html" target="_blank" rel="noopener noreferrer" style="color: #6b7280; text-decoration: none; font-weight: 600;">Krishna Pharmacy</a>
+      </div>
+    `);
+
+    WinPrint.document.write('</body></html>');
+    WinPrint.document.close();
+    WinPrint.focus();
+
+    setTimeout(() => {
+      WinPrint.print();
+      WinPrint.close();
+    }, 250);
   };
 
   return (
@@ -419,7 +646,7 @@ export default function Sales() {
               <div className="border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 dark:bg-gray-955/50 text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase">
+                    <thead className="bg-gray-50 dark:bg-gray-950/50 text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase">
                       <tr>
                         <th className="px-4 py-3 text-left">Medicine</th>
                         <th className="px-4 py-3 text-right">Price</th>
@@ -429,7 +656,7 @@ export default function Sales() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {viewInvoice.items.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50 dark:bg-gray-955/30 transition-colors">
+                        <tr key={idx} className="hover:bg-gray-50 dark:bg-gray-950/30 transition-colors">
                           <td className="px-4 py-3">
                             <p className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">{item.medicineName}</p>
                             <p className="text-[10px] text-gray-400">Batch: {item.batchNumber}</p>

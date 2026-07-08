@@ -12,6 +12,7 @@ import customerApi from '../../api/customer.api';
 import toast from 'react-hot-toast';
 import { cn } from '../../lib/utils';
 import { exportToPDF } from '../../utils/exportPDF';
+import CustomerModal from './CustomerModal';
 
 // Loyalty badge component
 const LoyaltyBadge = ({ category, size = 'md' }) => {
@@ -151,6 +152,9 @@ export default function CustomersPage() {
     vipCount: 0,
     totalRevenue: 0,
   });
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   useEffect(() => {
     loadCustomers();
@@ -231,8 +235,18 @@ export default function CustomersPage() {
   };
 
   const handleCustomerClick = (customer) => {
-    // TODO: Open customer detail modal
-    console.log('View customer:', customer);
+    setSelectedCustomer(customer);
+    setIsModalOpen(true);
+  };
+
+  const handleAddCustomerClick = () => {
+    setSelectedCustomer(null);
+    setIsModalOpen(true);
+  };
+
+  const handleModalSave = (savedCustomer) => {
+    setIsModalOpen(false);
+    loadCustomers();
   };
 
   const formatCurrency = (amount) => {
@@ -304,7 +318,7 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customers</h1>
           <p className="text-gray-500 dark:text-gray-400">Track repeat buyers and loyalty</p>
         </div>
-        <Button>
+        <Button onClick={handleAddCustomerClick}>
           <Plus className="h-4 w-4 mr-2" />
           Add Customer
         </Button>
@@ -429,7 +443,7 @@ export default function CustomersPage() {
       <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 text-sm text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-full bg-green-500"></div>
-          <span>Repeat Buyer (2+ purchases)</span>
+          <span>Repeat Buyer (4+ purchases)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-full bg-amber-500"></div>
@@ -440,6 +454,12 @@ export default function CustomersPage() {
           <span>Dormant (90+ days inactive)</span>
         </div>
       </div>
+      <CustomerModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        customer={selectedCustomer}
+        onSave={handleModalSave}
+      />
     </div>
   );
 }

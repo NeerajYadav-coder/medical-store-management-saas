@@ -39,7 +39,6 @@ import { Skeleton, SkeletonTableRows } from '@components/common/Loader'
 import { useDebouncedSearch } from '@hooks/useDebounce'
 import { useAuth } from '@context/AuthContext'
 import { useStore } from '@context/StoreContext'
-import PremiumModal from '@components/common/PremiumModal'
 import { exportToPDF } from '@utils/exportPDF'
 import toast from 'react-hot-toast'
 import MedicineForm from '@components/inventory/MedicineForm'
@@ -97,13 +96,13 @@ export default function Inventory() {
   const { store } = useStore()
   const [page, setPage] = useState(1)
   const [selectedMedicines, setSelectedMedicines] = useState([])
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, item: null })
   const [batchModal, setBatchModal] = useState({ isOpen: false, medicine: null })
   const [showFormModal, setShowFormModal] = useState(false)
   const [editingMedicine, setEditingMedicine] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
 
   // Handle delete
   const handleDeleteConfirm = async () => {
@@ -148,6 +147,61 @@ export default function Inventory() {
       toast.error(error.response?.data?.message || 'Failed to save medicine')
     } finally {
       setFormLoading(false)
+    }
+  }
+
+  // Handle CSV Import
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const toastId = toast.loading('Reading CSV file...');
+    
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      if (lines.length < 2) throw new Error('CSV must contain a header and at least one row');
+      
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const nameIdx = headers.findIndex(h => h.includes('name'));
+      const formIdx = headers.findIndex(h => h.includes('form'));
+      const dosageIdx = headers.findIndex(h => h.includes('dosage'));
+      const mrpIdx = headers.findIndex(h => h.includes('mrp'));
+      
+      if (nameIdx === -1 || formIdx === -1 || dosageIdx === -1 || mrpIdx === -1) {
+        throw new Error('CSV must contain: Name, Form, Dosage, and MRP columns');
+      }
+
+      toast.loading(`Importing ${lines.length - 1} medicines...`, { id: toastId });
+      let successCount = 0;
+      
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        if (cols.length < 4) continue;
+        
+        try {
+          await inventoryApi.createMedicine({
+            name: cols[nameIdx],
+            form: cols[formIdx].toUpperCase(),
+            dosage: cols[dosageIdx],
+            defaultMRP: parseFloat(cols[mrpIdx]) || 0,
+            defaultSellingPrice: parseFloat(cols[mrpIdx]) || 0,
+            unitType: 'STRIP'
+          });
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to import row ${i}:`, err);
+        }
+      }
+      
+      toast.success(`Successfully imported ${successCount} out of ${lines.length - 1} medicines`, { id: toastId });
+      queryClient.invalidateQueries(['medicines']);
+    } catch (error) {
+      toast.error(error.message || 'Failed to import CSV', { id: toastId });
+    } finally {
+      setIsImporting(false);
+      e.target.value = ''; // Reset input
     }
   }
 
@@ -451,20 +505,26 @@ export default function Inventory() {
           </Button>
           {canManageInventory && (
           <>
-            <Button variant="outline" size="sm" leftIcon={<Upload className="h-4 w-4" />}>
-              Import
-            </Button>
+            <label className={cn(
+              "inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-semibold transition-colors rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer shadow-sm",
+              isImporting && "opacity-50 cursor-not-allowed"
+            )}>
+              <Upload className="h-4 w-4" />
+              {isImporting ? 'Importing...' : 'Import'}
+              <input 
+                type="file" 
+                accept=".csv" 
+                className="hidden" 
+                onChange={handleImport}
+                disabled={isImporting}
+              />
+            </label>
             <Button
               size="sm"
               leftIcon={<Plus className="h-4 w-4" />}
               onClick={() => {
-                const isFree = store?.plan !== 'PREMIUM'
-                if (isFree && stats.total >= 100) {
-                  setIsUpgradeModalOpen(true)
-                } else {
-                  setEditingMedicine(null)
-                  setShowFormModal(true)
-                }
+                setEditingMedicine(null)
+                setShowFormModal(true)
               }}
             >
               Add Medicine
@@ -642,10 +702,7 @@ export default function Inventory() {
         isLoading={isDeleting}
       />
 
-      <PremiumModal 
-        isOpen={isUpgradeModalOpen} 
-        onClose={() => setIsUpgradeModalOpen(false)} 
-      />
+
 
       {/* Medicine Form Modal */}
       {showFormModal && (

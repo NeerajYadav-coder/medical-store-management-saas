@@ -8,7 +8,7 @@
  * - Form validation with Zod
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -23,10 +23,15 @@ import {
   Phone,
   Mail,
   Loader2,
+  AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { authApi } from '@api/auth.api'
 import { ROUTES } from '@config/routes.config'
+import { useToast } from '@context/UIContext'
+import { useAuth } from '@context/AuthContext'
+import { getFriendlyErrorMessage } from '@/utils/errorParser'
+import AuthAlertBanner from '@components/common/AuthAlertBanner'
 import Button from '@components/common/Button'
 import { Input, PasswordInput, PhoneInput, OTPInput, Select, Textarea } from '@components/common/Input'
 
@@ -49,7 +54,8 @@ const ownerSchema = z.object({
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Must contain uppercase letter')
     .regex(/[a-z]/, 'Must contain lowercase letter')
-    .regex(/[0-9]/, 'Must contain number'),
+    .regex(/[0-9]/, 'Must contain number')
+    .regex(/[^a-zA-Z0-9]/, 'Must contain special character'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -58,7 +64,6 @@ const ownerSchema = z.object({
 
 // Step 3: Verification Schema
 const verificationSchema = z.object({
-  phoneOtp: z.string().length(6, 'Enter 6-digit OTP'),
   emailOtp: z.string().length(6, 'Enter 6-digit OTP'),
 })
 
@@ -79,29 +84,60 @@ const STEPS = [
   {
     id: 'verify',
     title: 'Verification',
-    description: 'Verify your phone & email',
+    description: 'Verify your email address',
     icon: Shield,
   },
 ]
 
 export default function Register() {
   const navigate = useNavigate()
+  const { signup } = useAuth()
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
+  const [error, setErrorState] = useState('')
+  const errorTimeoutRef = useRef(null)
+
+  const setError = (msg) => {
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current)
+    }
+
+    if (!msg) {
+      setErrorState('')
+      return
+    }
+
+    const friendlyMsg = getFriendlyErrorMessage(msg)
+    setErrorState(friendlyMsg)
+
+    errorTimeoutRef.current = setTimeout(() => {
+      setErrorState('')
+    }, 5000)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current)
+      }
+    }
+  }, [])
   
   // Verification states
-  const [phoneOtpSent, setPhoneOtpSent] = useState(false)
   const [emailOtpSent, setEmailOtpSent] = useState(false)
-  const [phoneVerified, setPhoneVerified] = useState(false)
   const [emailVerified, setEmailVerified] = useState(false)
-  const [sendingOtp, setSendingOtp] = useState({ phone: false, email: false })
-  const [verifyingOtp, setVerifyingOtp] = useState({ phone: false, email: false })
-  const [resendTimer, setResendTimer] = useState({ phone: 0, email: 0 })
+  const [sendingOtp, setSendingOtp] = useState({ email: false })
+  const [verifyingOtp, setVerifyingOtp] = useState({ email: false })
+  const [resendTimer, setResendTimer] = useState({ email: 0 })
   
   // DEV MODE: Store OTPs for easy testing
-  const [devOtp, setDevOtp] = useState({ phone: '', email: '' })
+  const [devOtp, setDevOtp] = useState({ email: '' })
+
+  // Email Uniqueness early validation states
+  const [checkingEmail, setCheckingEmail] = useState(false)
+  const [showEmailExistsModal, setShowEmailExistsModal] = useState(false)
 
   // Single form for all steps - no dynamic resolver
   const {
@@ -128,7 +164,6 @@ export default function Register() {
       ownerEmail: '',
       password: '',
       confirmPassword: '',
-      phoneOtp: '',
       emailOtp: '',
     },
   })
@@ -137,7 +172,6 @@ export default function Register() {
   useEffect(() => {
     const interval = setInterval(() => {
       setResendTimer((prev) => ({
-        phone: prev.phone > 0 ? prev.phone - 1 : 0,
         email: prev.email > 0 ? prev.email - 1 : 0,
       }))
     }, 1000)
@@ -186,7 +220,23 @@ export default function Register() {
           return false
         }
         if (!values.password || values.password.length < 8) {
-          setError('Password must be at least 8 characters')
+          setError('Password must be at least 8 characters long')
+          return false
+        }
+        if (!/[a-z]/.test(values.password)) {
+          setError('Password must contain at least one lowercase letter')
+          return false
+        }
+        if (!/[A-Z]/.test(values.password)) {
+          setError('Password must contain at least one uppercase letter')
+          return false
+        }
+        if (!/[0-9]/.test(values.password)) {
+          setError('Password must contain at least one number')
+          return false
+        }
+        if (!/[^a-zA-Z0-9]/.test(values.password)) {
+          setError('Password must contain at least one special character')
           return false
         }
         if (values.password !== values.confirmPassword) {
@@ -201,9 +251,41 @@ export default function Register() {
   }
 
   // Handle step navigation
-  const goToNextStep = () => {
+  const goToNextStep = async () => {
     // Validate current step
     if (!validateCurrentStep()) return
+
+    const values = getValues()
+
+    if (currentStep === 0) {
+      setCheckingEmail(true)
+      try {
+        const res = await authApi.checkEmailUniqueness(values.storeEmail, 'store')
+        if (res && res.success === true && res.available === false) {
+          setShowEmailExistsModal(true)
+          return
+        }
+      } catch (err) {
+        setError(err.message || 'Error validating store email. Please try again.')
+        return
+      } finally {
+        setCheckingEmail(false)
+      }
+    } else if (currentStep === 1) {
+      setCheckingEmail(true)
+      try {
+        const res = await authApi.checkEmailUniqueness(values.ownerEmail, 'owner')
+        if (res && res.success === true && res.available === false) {
+          setShowEmailExistsModal(true)
+          return
+        }
+      } catch (err) {
+        setError(err.message || 'Error validating owner email. Please try again.')
+        return
+      } finally {
+        setCheckingEmail(false)
+      }
+    }
 
     // Capture ALL form values
     const currentValues = getValues()
@@ -228,41 +310,6 @@ export default function Register() {
   useEffect(() => {
     console.log('[Register] formData updated:', formData)
   }, [formData])
-
-  // Send phone OTP
-  const sendPhoneOtp = async () => {
-    const phone = formData.ownerPhone
-    console.log('[Register] Sending phone OTP to:', phone)
-    
-    if (!phone) {
-      setError('Phone number not found. Please go back and enter your details.')
-      return
-    }
-
-    setSendingOtp((prev) => ({ ...prev, phone: true }))
-    setError('')
-    try {
-      // Format phone with country code if needed
-      const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`
-      console.log('[Register] Formatted phone:', formattedPhone)
-      const response = await authApi.sendOTP('phone', formattedPhone, 'signup')
-      console.log('[Register] Phone OTP response:', response)
-      
-      // DEV MODE: Store the OTP for easy testing
-      if (response.devOtp) {
-        setDevOtp(prev => ({ ...prev, phone: response.devOtp }))
-        console.log('[DEV MODE] Phone OTP:', response.devOtp)
-      }
-      
-      setPhoneOtpSent(true)
-      setResendTimer((prev) => ({ ...prev, phone: 60 }))
-    } catch (err) {
-      console.error('[Register] Phone OTP error:', err)
-      setError(err.message || 'Failed to send OTP to phone')
-    } finally {
-      setSendingOtp((prev) => ({ ...prev, phone: false }))
-    }
-  }
 
   // Send email OTP
   const sendEmailOtp = async () => {
@@ -297,25 +344,6 @@ export default function Register() {
     }
   }
 
-  // Verify phone OTP
-  const verifyPhoneOtp = async (otp) => {
-    if (!otp || otp.length !== 6) return
-
-    setVerifyingOtp((prev) => ({ ...prev, phone: true }))
-    setError('')
-    try {
-      const formattedPhone = formData.ownerPhone.startsWith('+') 
-        ? formData.ownerPhone 
-        : `+91${formData.ownerPhone}`
-      await authApi.verifyOTP('phone', formattedPhone, otp, 'signup')
-      setPhoneVerified(true)
-    } catch (err) {
-      setError(err.message || 'Invalid OTP')
-    } finally {
-      setVerifyingOtp((prev) => ({ ...prev, phone: false }))
-    }
-  }
-
   // Verify email OTP
   const verifyEmailOtp = async (otp) => {
     if (!otp || otp.length !== 6) return
@@ -334,8 +362,8 @@ export default function Register() {
 
   // Final submission
   const onSubmit = async () => {
-    if (!phoneVerified || !emailVerified) {
-      setError('Please verify both phone and email')
+    if (!emailVerified) {
+      setError('Please verify your email')
       return
     }
 
@@ -351,12 +379,13 @@ export default function Register() {
           ? formData.ownerPhone 
           : `+91${formData.ownerPhone}`,
       }
-      await authApi.register(submissionData)
-      navigate(ROUTES.LOGIN, {
-        state: { message: 'Account created successfully! Please login.' },
-      })
+      await signup(submissionData)
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.')
+      if (err.errors && err.errors.length > 0) {
+        setError(err.errors[0].message)
+      } else {
+        setError(err.message || 'Registration failed. Please try again.')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -364,16 +393,13 @@ export default function Register() {
 
   // Auto-send OTPs when entering verification step (only if formData has values)
   useEffect(() => {
-    if (currentStep === 2 && formData.ownerPhone && formData.ownerEmail) {
+    if (currentStep === 2 && formData.ownerEmail) {
       console.log('[Register] Step 3 entered. FormData:', formData)
-      if (!phoneOtpSent && !sendingOtp.phone) {
-        sendPhoneOtp()
-      }
       if (!emailOtpSent && !sendingOtp.email) {
         sendEmailOtp()
       }
     }
-  }, [currentStep, formData.ownerPhone, formData.ownerEmail])
+  }, [currentStep, formData.ownerEmail])
 
   return (
     <div className="space-y-6">
@@ -437,11 +463,11 @@ export default function Register() {
       </div>
 
       {/* Error message */}
-      {error && (
-        <div className="p-4 rounded-lg bg-danger-50 border border-danger-200 text-danger-700">
-          <p className="text-sm">{error}</p>
-        </div>
-      )}
+      <AuthAlertBanner 
+        message={error} 
+        type="error" 
+        onClose={() => setError('')} 
+      />
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -525,7 +551,6 @@ export default function Register() {
                 error={errors.ownerPhone?.message}
                 {...register('ownerPhone')}
                 required
-                hint="Will be used for login OTP"
               />
               <Input
                 label="Email Address"
@@ -583,83 +608,6 @@ export default function Register() {
         {/* Step 3: Verification */}
         {currentStep === 2 && (
           <div className="space-y-6">
-            {/* Phone OTP */}
-            <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    'h-10 w-10 rounded-full flex items-center justify-center',
-                    phoneVerified ? 'bg-success-100' : 'bg-brand-100'
-                  )}>
-                    {phoneVerified ? (
-                      <Check className="h-5 w-5 text-success-600" />
-                    ) : (
-                      <Phone className="h-5 w-5 text-brand-600" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Phone Verification</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">+91 {formData.ownerPhone}</p>
-                  </div>
-                </div>
-                {phoneVerified && (
-                  <span className="text-sm font-medium text-success-600">Verified</span>
-                )}
-              </div>
-
-              {!phoneVerified && (
-                <>
-                  {phoneOtpSent ? (
-                    <div className="space-y-3">
-                      <OTPInput
-                        length={6}
-                        onChange={(otp) => setValue('phoneOtp', otp)}
-                        error={errors.phoneOtp?.message}
-                      />
-                      
-                      {/* DEV MODE: Show OTP for testing */}
-                      {devOtp.phone && (
-                        <div className="p-2 rounded bg-yellow-100 border border-yellow-300">
-                          <p className="text-xs text-yellow-800">
-                            🔧 DEV MODE - OTP: <strong className="font-mono text-lg">{devOtp.phone}</strong>
-                          </p>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={() => verifyPhoneOtp(getValues('phoneOtp'))}
-                          disabled={verifyingOtp.phone || getValues('phoneOtp')?.length !== 6}
-                          className="text-sm font-medium text-brand-600 hover:text-brand-700 disabled:opacity-50"
-                        >
-                          {verifyingOtp.phone ? 'Verifying...' : 'Verify OTP'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={sendPhoneOtp}
-                          disabled={resendTimer.phone > 0 || sendingOtp.phone}
-                          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 disabled:opacity-50"
-                        >
-                          {resendTimer.phone > 0 ? `Resend in ${resendTimer.phone}s` : 'Resend OTP'}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={sendPhoneOtp}
-                      isLoading={sendingOtp.phone}
-                      className="w-full"
-                    >
-                      Send OTP to Phone
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-
             {/* Email OTP */}
             <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 space-y-4">
               <div className="flex items-center justify-between">
@@ -688,24 +636,15 @@ export default function Register() {
                 <>
                   {emailOtpSent ? (
                     <div className="space-y-3">
-                      <OTPInput
+                       <OTPInput
                         length={6}
                         onChange={(otp) => setValue('emailOtp', otp)}
                         error={errors.emailOtp?.message}
                       />
                       
-                      {/* DEV MODE: Show OTP for testing */}
-                      {devOtp.email && (
-                        <div className="p-2 rounded bg-yellow-100 border border-yellow-300">
-                          <p className="text-xs text-yellow-800">
-                            🔧 DEV MODE - OTP: <strong className="font-mono text-lg">{devOtp.email}</strong>
-                          </p>
-                        </div>
-                      )}
-                      
                       <div className="flex items-center justify-between">
                         <button
-                          type="button"
+                           type="button"
                           onClick={() => verifyEmailOtp(getValues('emailOtp'))}
                           disabled={verifyingOtp.email || getValues('emailOtp')?.length !== 6}
                           className="text-sm font-medium text-brand-600 hover:text-brand-700 disabled:opacity-50"
@@ -758,6 +697,7 @@ export default function Register() {
             <Button
               type="button"
               onClick={goToNextStep}
+              isLoading={checkingEmail}
               rightIcon={<ArrowRight className="h-4 w-4" />}
             >
               Continue
@@ -766,7 +706,7 @@ export default function Register() {
             <Button
               type="submit"
               isLoading={isSubmitting}
-              disabled={!phoneVerified || !emailVerified}
+              disabled={!emailVerified}
             >
               Create Account
             </Button>
@@ -784,6 +724,35 @@ export default function Register() {
           Sign in
         </Link>
       </p>
+
+      {/* Reusable Email Exists Modal */}
+      {showEmailExistsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 dark:border-gray-800 transform scale-100 transition-all duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500 dark:text-red-400 mb-4">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                Email Already Registered
+              </h3>
+              
+              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-6">
+                This email is already registered. Please use a different email address.
+              </p>
+              
+              <Button
+                type="button"
+                className="w-full justify-center"
+                onClick={() => setShowEmailExistsModal(false)}
+              >
+                Okay, got it
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -41,6 +41,7 @@ export function Modal({
   closeOnOverlayClick = true,
   closeOnEscape = true,
   className,
+  wrapperClassName,
 }) {
   const modalRef = useRef(null)
   const previousActiveElement = useRef(null)
@@ -83,7 +84,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto"
+      className={cn("fixed inset-0 z-50 overflow-y-auto", wrapperClassName)}
       aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true"

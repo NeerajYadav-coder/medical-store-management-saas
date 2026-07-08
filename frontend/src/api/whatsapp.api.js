@@ -1,12 +1,54 @@
 /**
  * api/whatsapp.api.js
  * 
- * Client endpoints for WhatsApp notification settings and log retrieval
+ * Client endpoints for Baileys Multi-Tenant WhatsApp Integration
  */
 
 import api from '@config/axios'
 
 export const whatsappApi = {
+  /**
+   * Get current WhatsApp connection status
+   */
+  getStatus: async () => {
+    return await api.get('/whatsapp/status')
+  },
+
+  /**
+   * Trigger Baileys connection / session startup
+   */
+  connectStore: async () => {
+    return await api.post('/whatsapp/connect')
+  },
+
+  /**
+   * Fetch current generated QR code in memory
+   */
+  getQR: async () => {
+    return await api.get('/whatsapp/qr')
+  },
+
+  /**
+   * Disconnect and clear active Baileys session
+   */
+  disconnectStore: async () => {
+    return await api.post('/whatsapp/disconnect')
+  },
+
+  /**
+   * Reconnect WhatsApp session
+   */
+  reconnectStore: async () => {
+    return await api.post('/whatsapp/reconnect')
+  },
+
+  /**
+   * Update notification settings/preferences
+   */
+  updateSettings: async (settings) => {
+    return await api.post('/whatsapp/settings', settings)
+  },
+
   /**
    * Get WhatsApp logs
    * @param {object} params - Query params (page, limit, status, messageType)

@@ -82,12 +82,10 @@ function PublicRoute({ children }) {
     return <PageLoader text="Loading..." />
   }
 
-  // Redirect to dashboard if already authenticated
+  // Redirect to appropriate page if already authenticated
   if (isAuthenticated) {
-    if (user?.role === 'STAFF') {
-      return <Navigate to="/dashboard/billing" replace />
-    }
-    return <Navigate to={ROUTES.DASHBOARD} replace />
+    const to = user?.role === 'STAFF' ? '/dashboard/billing' : ROUTES.DASHBOARD
+    return <Navigate to={to} replace />
   }
 
   return children
@@ -170,9 +168,6 @@ export default function App() {
           <Route path="user" element={<UserSettings />} />
         </Route>
       </Route>
-
-      {/* Default redirects */}
-
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />

@@ -8,6 +8,8 @@ import { Search, Plus, User, Star, Crown, RefreshCw, X, Phone } from 'lucide-rea
 import { cn } from '../../lib/utils';
 import customerApi from '../../api/customer.api';
 
+import { saveItem } from '../../utils/db';
+
 // Loyalty badge component
 const LoyaltyBadge = ({ category }) => {
   const badges = {
@@ -31,6 +33,11 @@ const LoyaltyBadge = ({ category }) => {
 export default function CustomerSelector({ 
   selected = null, 
   onChange,
+  onAfterSelect,   // called after customer selected/added — moves focus to next field
+  onBeforeSelect,  // moves focus to previous field on ArrowUp
+  inputRef,
+  localCustomers = [],
+  onQuickCreate,
   className = '' 
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,7 +46,10 @@ export default function CustomerSelector({
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '' });
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const dropdownRef = useRef(null);
+  const customerItemRefs = useRef([]);
+  const phoneInputRef = useRef(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -53,27 +63,31 @@ export default function CustomerSelector({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Search customers
+  // Search customers locally
   useEffect(() => {
-    if (searchQuery.length >= 2) {
-      searchCustomers();
+    const query = searchQuery.trim().toLowerCase();
+    if (query.length >= 2) {
+      setFocusedIndex(0);
+      
+      const matched = localCustomers.filter(c => 
+        (c.phone && c.phone.includes(query)) || 
+        (c.name && c.name.toLowerCase().includes(query))
+      );
+      
+      // Auto-select if exactly 10 digit number matches phone
+      if (query.length === 10 && /^\d+$/.test(query)) {
+        const exactMatch = matched.find(c => c.phone === query);
+        if (exactMatch) {
+          selectCustomer(exactMatch);
+          return;
+        }
+      }
+      
+      setCustomers(matched.slice(0, 10));
     } else {
       setCustomers([]);
     }
-  }, [searchQuery]);
-
-  const searchCustomers = async () => {
-    try {
-      setLoading(true);
-      const response = await customerApi.search(searchQuery);
-      setCustomers(response || []);
-    } catch (error) {
-      console.error('Error searching customers:', error);
-      setCustomers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [searchQuery, localCustomers]);
 
   const selectCustomer = (customer) => {
     onChange({
@@ -87,6 +101,18 @@ export default function CustomerSelector({
     });
     setIsOpen(false);
     setSearchQuery('');
+    setTimeout(() => onAfterSelect?.(), 50); // move focus to Doctor field
+  };
+
+  // Open add-form pre-filled with current search query
+  const openAddForm = () => {
+    const isPhone = /^\d{10}$/.test(searchQuery);
+    setNewCustomer({
+      name: isPhone ? '' : searchQuery,
+      phone: isPhone ? searchQuery : '',
+    });
+    setShowAddForm(true);
+    setTimeout(() => phoneInputRef.current?.focus(), 50);
   };
 
   const clearSelection = () => {
@@ -94,15 +120,40 @@ export default function CustomerSelector({
   };
 
   const handleAddCustomer = async () => {
-    if (!newCustomer.phone?.trim()) return;
-    
+    if (!newCustomer.phone?.trim()) {
+      return;
+    }
+    const name = newCustomer.name?.trim() || 'Customer';
+    const phone = newCustomer.phone?.trim();
+
     try {
       setLoading(true);
-      const response = await customerApi.quickCreate(
-        newCustomer.name || 'Customer',
-        newCustomer.phone
-      );
-      selectCustomer(response);
+      if (navigator.onLine) {
+        const response = await customerApi.quickCreate(name, phone);
+        const customerData = response?.data || response;
+        selectCustomer(customerData);
+        if (onQuickCreate) {
+          onQuickCreate(customerData);
+        }
+      } else {
+        // Offline: create temporary customer
+        const tempCustomer = {
+          _id: `temp_${Date.now()}`,
+          name,
+          phone,
+          loyaltyCategory: 'NEW',
+          totalPurchases: 0,
+          totalSpent: 0,
+          isRepeatBuyer: false,
+          isActive: true,
+          isOfflineTemp: true,
+        };
+        await saveItem('customers', tempCustomer);
+        selectCustomer(tempCustomer);
+        if (onQuickCreate) {
+          onQuickCreate(tempCustomer);
+        }
+      }
       setNewCustomer({ name: '', phone: '' });
       setShowAddForm(false);
     } catch (error) {
@@ -171,11 +222,37 @@ export default function CustomerSelector({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
+            ref={inputRef}
             type="text"
             placeholder="Search by phone or name..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setFocusedIndex(0); }}
             onFocus={() => setIsOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { e.preventDefault(); setIsOpen(false); return; }
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (customers.length > 0 && customers[focusedIndex]) {
+                  selectCustomer(customers[focusedIndex]);
+                } else if (searchQuery.trim().length > 0 && !loading) {
+                  // No customer found — open add form with name pre-filled
+                  openAddForm();
+                }
+                return;
+              }
+              if (!isOpen || customers.length === 0) {
+                if (e.key === 'ArrowDown' && searchQuery === '') {
+                  e.preventDefault();
+                  onAfterSelect?.();
+                } else if (e.key === 'ArrowUp' && searchQuery === '') {
+                  e.preventDefault();
+                  onBeforeSelect?.();
+                }
+                return;
+              }
+              if (e.key === 'ArrowDown') { e.preventDefault(); const n = Math.min(focusedIndex + 1, customers.length - 1); setFocusedIndex(n); customerItemRefs.current[n]?.scrollIntoView({ block: 'nearest' }); }
+              else if (e.key === 'ArrowUp') { e.preventDefault(); const p = Math.max(focusedIndex - 1, 0); setFocusedIndex(p); customerItemRefs.current[p]?.scrollIntoView({ block: 'nearest' }); }
+            }}
             className={cn(
               'w-full pl-9 pr-4 py-2.5 rounded-lg border bg-white dark:bg-gray-900 text-gray-900 dark:text-white',
               'text-sm placeholder:text-gray-400',
@@ -194,52 +271,66 @@ export default function CustomerSelector({
               Searching...
             </div>
           ) : showAddForm ? (
-            /* Add New Customer Form */
-            <div className="p-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Add New Customer</h4>
+            /* Add New Customer Form — keyboard driven */
+            <div className="p-3 space-y-2">
+              <div className="flex items-center justify-between mb-1">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+                  <Plus className="h-3.5 w-3.5 text-brand-500" /> New Customer
+                </h4>
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
               <input
                 type="text"
-                placeholder="Customer name"
+                placeholder="Customer name (optional)"
                 value={newCustomer.name}
                 onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); phoneInputRef.current?.focus(); } if (e.key === 'Escape') setShowAddForm(false); }}
                 className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500"
               />
-              <input
-                type="tel"
-                placeholder="Phone number *"
-                value={newCustomer.phone}
-                onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500"
-                autoFocus
-              />
+              <div className="relative">
+                <input
+                  ref={phoneInputRef}
+                  type="tel"
+                  placeholder="Phone number * (Enter to save)"
+                  value={newCustomer.phone}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleAddCustomer(); }
+                    if (e.key === 'Escape') { setShowAddForm(false); }
+                  }}
+                  className="w-full px-3 py-2 text-sm border-2 border-brand-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-200 focus:outline-none"
+                />
+              </div>
+              <p className="text-[10px] text-gray-400">Name field optional · Tab/Enter to go to phone · Enter to save</p>
               <button
                 type="button"
                 onClick={handleAddCustomer}
-                disabled={!newCustomer.phone?.trim()}
-                className="w-full py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 disabled:opacity-50"
+                disabled={!newCustomer.phone?.trim() || loading}
+                className="w-full py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg hover:bg-brand-700 disabled:opacity-50 transition-colors"
               >
-                Add Customer
+                {loading ? 'Saving...' : 'Save & Continue ↵'}
               </button>
             </div>
           ) : (
             <>
               {/* Customer List */}
               {customers.length > 0 ? (
-                customers.map((customer) => (
+                customers.map((customer, cidx) => (
                   <button
                     key={customer._id}
+                    ref={el => customerItemRefs.current[cidx] = el}
                     type="button"
                     onClick={() => selectCustomer(customer)}
-                    className="w-full px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3"
+                    className={cn(
+                      "w-full px-3 py-2.5 text-left flex items-center gap-3",
+                      cidx === focusedIndex ? "bg-brand-50 dark:bg-brand-900/30" : ""
+                    )}
                   >
                     <div className={cn(
                       'h-10 w-10 rounded-full flex items-center justify-center',

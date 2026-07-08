@@ -25,7 +25,7 @@ import { formatDate, formatRelativeTime } from '@utils/formatDate'
 import { useAuth } from '@context/AuthContext'
 import { authApi } from '@api/auth.api'
 import { useStore } from '@context/StoreContext'
-import PremiumModal from '@components/common/PremiumModal'
+
 import Button from '@components/common/Button'
 import { Input, SearchInput, Select, PasswordInput } from '@components/common/Input'
 import { Table } from '@components/common/Table'
@@ -48,7 +48,7 @@ export default function Staff() {
   
   // State
   const [showAddModal, setShowAddModal] = useState(false)
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
+
   const [editUser, setEditUser] = useState(null)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, item: null })
   const [resetPasswordModal, setResetPasswordModal] = useState({ isOpen: false, user: null })
@@ -272,12 +272,7 @@ export default function Staff() {
           size="sm"
           leftIcon={<UserPlus className="h-4 w-4" />}
           onClick={() => {
-            const isFree = store?.plan !== 'PREMIUM'
-            if (isFree && staffList.length >= 2) {
-              setIsUpgradeModalOpen(true)
-            } else {
-              setShowAddModal(true)
-            }
+            setShowAddModal(true)
           }}
         >
           Add Staff
@@ -503,10 +498,7 @@ export default function Staff() {
         itemName={deleteModal.item?.name}
       />
 
-      <PremiumModal 
-        isOpen={isUpgradeModalOpen} 
-        onClose={() => setIsUpgradeModalOpen(false)} 
-      />
+
     </div>
   )
 }

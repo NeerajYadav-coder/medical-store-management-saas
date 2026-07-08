@@ -292,7 +292,7 @@ export default function DashboardHome() {
                 dashboardData.recentSales.map((sale) => (
                   <div
                     key={sale._id}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-55 dark:bg-gray-950 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50/40 dark:bg-gray-950 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center">
@@ -334,7 +334,7 @@ export default function DashboardHome() {
                   <div
                     key={alert._id}
                     className={cn(
-                      'p-3 rounded-lg border-l-4 cursor-pointer transition-colors hover:bg-gray-55 dark:bg-gray-950 dark:hover:bg-gray-800',
+                      'p-3 rounded-lg border-l-4 cursor-pointer transition-colors hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-800',
                       alert.priority === 'CRITICAL' || alert.priority === 'HIGH'
                         ? 'bg-danger-50 dark:bg-danger-900/20 border-danger-500'
                         : 'bg-warning-50 dark:bg-warning-900/20 border-warning-500'
@@ -347,7 +347,7 @@ export default function DashboardHome() {
                           alert.priority === 'CRITICAL' || alert.priority === 'HIGH' ? 'text-danger-600' : 'text-warning-600'
                         )}
                       />
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{alert.message}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{alert.message}</p>
                     </div>
                   </div>
                 ))
@@ -362,6 +362,7 @@ export default function DashboardHome() {
               variant="ghost"
               className="w-full mt-4"
               rightIcon={<ArrowRight className="h-4 w-4" />}
+              onClick={() => navigate(ROUTES.INVENTORY + '?filter=expiring')}
             >
               View All Alerts
             </Button>

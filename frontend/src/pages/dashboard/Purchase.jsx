@@ -30,7 +30,9 @@ import {
   CheckCircle2,
   X,
   Wand2,
-  RefreshCw
+  RefreshCw,
+  Pencil,
+  LayoutGrid
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { cn } from '@/utils/cn'
@@ -49,7 +51,7 @@ import { Table, TablePagination } from '@components/common/Table'
 import { Modal } from '@components/common/Modal'
 import { Skeleton, SkeletonTableRows } from '@components/common/Loader'
 import { useStore } from '@context/StoreContext'
-import PremiumModal from '@components/common/PremiumModal'
+
 
 /**
  * Purchase Page Component
@@ -58,7 +60,25 @@ export default function Purchase() {
   const queryClient = useQueryClient()
   const { store } = useStore()
   const [activeTab, setActiveTab] = useState('entry') // 'entry' or 'history'
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
+
+  // --- OCR Scan Invoice State ---
+  const [isOcrLoading, setIsOcrLoading] = useState(false)
+  const [showOcrModal, setShowOcrModal] = useState(false)
+  const [ocrResult, setOcrResult] = useState(null)
+  const [ocrMappedItems, setOcrMappedItems] = useState([])
+  const [ocrRowSearch, setOcrRowSearch] = useState({})
+  const [ocrRowResults, setOcrRowResults] = useState({})
+  const [ocrActiveRowIndex, setOcrActiveRowIndex] = useState(null)
+  const [newOcrSupplierName, setNewOcrSupplierName] = useState('')
+  const [newOcrSupplierPhone, setNewOcrSupplierPhone] = useState('')
+  const [newOcrSupplierEmail, setNewOcrSupplierEmail] = useState('')
+  const [newOcrSupplierGst, setNewOcrSupplierGst] = useState('')
+  const [newOcrSupplierDl, setNewOcrSupplierDl] = useState('')
+  const [isCreatingSupplier, setIsCreatingSupplier] = useState(false)
+
+  // --- Edit All Items Grid State ---
+  const [showEditGridModal, setShowEditGridModal] = useState(false)
+  const [editableGridItems, setEditableGridItems] = useState([])
 
   // --- Tab: HISTORY State ---
   const [historyPage, setHistoryPage] = useState(1)
@@ -68,6 +88,7 @@ export default function Purchase() {
     endDate: '',
   })
 
+  // --- Form State ---
   const [formData, setFormData] = useState({
     supplierId: '',
     supplierName: '',
@@ -174,17 +195,28 @@ export default function Purchase() {
     let subtotal = 0
     let totalTax = 0
     let totalDiscount = 0
+    let taxableAmount = 0
 
     items.forEach(item => {
       subtotal += item.subtotal
       totalTax += item.taxAmount
       totalDiscount += item.discountValue || 0
+      taxableAmount += item.taxableAmount || 0
     })
 
     const grandTotal = Math.round(subtotal + totalTax - totalDiscount)
     const roundOff = (subtotal + totalTax - totalDiscount) - grandTotal
 
-    return { subtotal, totalTax, totalDiscount, grandTotal, roundOff }
+    return { 
+      subtotal, 
+      totalTax, 
+      totalGst: totalTax, 
+      totalDiscount, 
+      discountAmount: totalDiscount,
+      taxableAmount, 
+      grandTotal, 
+      roundOff 
+    }
   }, [items])
 
   const calculateItemTotals = (updatedItem) => {
@@ -351,7 +383,16 @@ export default function Purchase() {
     if (!newMedicine.name || !newMedicine.dosage) return toast.error('Name and Dosage are required')
     try {
       const res = await medicineApi.create(newMedicine)
-      handleSelectMedicine(res)
+      if (ocrActiveRowIndex !== null && ocrActiveRowIndex !== undefined) {
+        setOcrMappedItems(prev => {
+          const updated = [...prev]
+          updated[ocrActiveRowIndex].matchedMedicine = res
+          return updated
+        })
+        setOcrActiveRowIndex(null)
+      } else {
+        handleSelectMedicine(res)
+      }
       setShowAddMedicineModal(false)
       toast.success('Medicine added to master list')
     } catch (err) {
@@ -359,8 +400,222 @@ export default function Purchase() {
     }
   }
 
+  const handleOcrUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsOcrLoading(true)
+    try {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onloadend = async () => {
+        const base64String = reader.result
+        try {
+          const res = await purchaseApi.parseInvoice({
+            image: base64String,
+            filename: file.name
+          })
+
+          const resData = res;
+          const hasItems = resData && Array.isArray(resData.items);
+
+          if (hasItems) {
+            // Auto-detect supplier
+            let matchedSup = null
+            if (resData.supplierName) {
+              const parsedUpper = resData.supplierName.toUpperCase()
+              matchedSup = suppliers.find(s => 
+                s.name.toUpperCase().includes(parsedUpper) ||
+                parsedUpper.includes(s.name.toUpperCase())
+              )
+            }
+
+            // Map items to database medicines
+            const itemsWithMapping = await Promise.all(resData.items.map(async (item) => {
+              let matchedMed = null
+              try {
+                const searchResults = await medicineApi.search(item.medicineName)
+                if (searchResults && searchResults.length > 0) {
+                  const exact = searchResults.find(m => m.name.toUpperCase() === item.medicineName.toUpperCase())
+                  matchedMed = exact || searchResults[0]
+                }
+              } catch (err) {
+                console.warn('Medicine search failed for', item.medicineName, err)
+              }
+
+              return {
+                ...item,
+                matchedMedicine: matchedMed,
+                importChecked: true,
+                originalName: item.medicineName
+              }
+            }))
+
+            setOcrResult({
+              supplierName: resData.supplierName || '',
+              supplierPhone: resData.supplierPhone || '',
+              supplierEmail: resData.supplierEmail || '',
+              supplierGstNumber: resData.supplierGstNumber || '',
+              supplierDrugLicenseNumber: resData.supplierDrugLicenseNumber || '',
+              supplierBillNumber: resData.supplierBillNumber || '',
+              supplierBillDate: resData.supplierBillDate || new Date().toISOString().split('T')[0],
+              matchedSupplier: matchedSup,
+            })
+            setNewOcrSupplierName(resData.supplierName || '')
+            setNewOcrSupplierPhone(resData.supplierPhone || '')
+            setNewOcrSupplierEmail(resData.supplierEmail || '')
+            setNewOcrSupplierGst(resData.supplierGstNumber || '')
+            setNewOcrSupplierDl(resData.supplierDrugLicenseNumber || '')
+            setOcrMappedItems(itemsWithMapping)
+            setShowOcrModal(true)
+            toast.success('Invoice scanned successfully!')
+          } else {
+            toast.error('Failed to parse invoice: Extracted items list not found')
+          }
+        } catch (apiErr) {
+          console.error(apiErr)
+          toast.error(apiErr.response?.data?.message || apiErr.message || 'OCR parsing failed')
+        } finally {
+          setIsOcrLoading(false)
+        }
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to read image file')
+      setIsOcrLoading(false)
+    }
+  }
+
+  const handleQuickCreateSupplier = async () => {
+    const name = newOcrSupplierName.trim() || ocrResult?.supplierName?.trim()
+    const phone = newOcrSupplierPhone.trim()
+    if (!name) return toast.error('Supplier Name is required')
+    if (!phone) return toast.error('Phone Number is required')
+
+    setIsCreatingSupplier(true)
+    try {
+      const res = await supplierApi.create({
+        name,
+        phone,
+        email: newOcrSupplierEmail.trim(),
+        gstNumber: newOcrSupplierGst.trim(),
+        drugLicenseNumber: newOcrSupplierDl.trim(),
+        marginCategory: 'UNKNOWN'
+      })
+      const newSup = res.data || res
+      toast.success('Supplier added successfully!')
+      
+      // Update local query cache immediately or trigger refetch
+      await queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+
+      // Auto link newly created supplier
+      setOcrResult(prev => ({
+        ...prev,
+        matchedSupplier: newSup
+      }))
+    } catch (err) {
+      toast.error(err.message || 'Failed to create supplier')
+    } finally {
+      setIsCreatingSupplier(false)
+    }
+  }
+
+  const handleRowSearch = async (idx, query) => {
+    setOcrRowSearch(prev => ({ ...prev, [idx]: query }))
+    if (query.length >= 2) {
+      try {
+        const res = await medicineApi.search(query)
+        setOcrRowResults(prev => ({ ...prev, [idx]: res || [] }))
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      setOcrRowResults(prev => ({ ...prev, [idx]: [] }))
+    }
+  }
+
+  const handleMapRowMedicine = (idx, medicine) => {
+    setOcrMappedItems(prev => {
+      const updated = [...prev]
+      updated[idx].matchedMedicine = medicine
+      return updated
+    })
+    setOcrRowSearch(prev => ({ ...prev, [idx]: '' }))
+    setOcrRowResults(prev => ({ ...prev, [idx]: [] }))
+  }
+
+  const handleImportOcrItems = () => {
+    const checkedItems = ocrMappedItems.filter(item => item.importChecked)
+    if (checkedItems.length === 0) {
+      toast.error('No items checked for import')
+      return
+    }
+
+    const unmappedChecked = checkedItems.filter(item => !item.matchedMedicine)
+    if (unmappedChecked.length > 0) {
+      toast.error(`Please map/link all checked medicines first (${unmappedChecked.length} left)`)
+      return
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      supplierId: ocrResult.matchedSupplier?._id || '',
+      supplierName: ocrResult.matchedSupplier?.name || ocrResult.supplierName || '',
+      supplierBillNumber: ocrResult.supplierBillNumber || '',
+      supplierBillDate: ocrResult.supplierBillDate || new Date().toISOString().split('T')[0]
+    }))
+
+    const importedList = checkedItems.map(item => {
+      const unitsPerPack = item.matchedMedicine.unitsPerPack || 1
+      const baseItem = {
+        medicineId: item.matchedMedicine._id,
+        medicineName: item.matchedMedicine.name,
+        dosage: item.matchedMedicine.dosage,
+        form: item.matchedMedicine.form,
+        unitsPerPack: unitsPerPack,
+        batchNumber: item.batchNumber || '',
+        expiryDate: item.expiryDate || '',
+        quantity: item.quantity || 1,
+        freeQuantity: item.freeQuantity || 0,
+        mrp: item.mrp || 0,
+        purchasePrice: item.purchasePrice || 0,
+        gstRate: item.gstRate || item.matchedMedicine.gstRate || 12,
+        discountPercent: item.discountPercent || 0,
+      }
+      return calculateItemTotals(baseItem)
+    })
+
+    setItems(prev => [...importedList, ...prev])
+    setShowOcrModal(false)
+    setOcrMappedItems([])
+    setOcrResult(null)
+    toast.success(`Imported ${importedList.length} items successfully!`)
+  }
+
   const handleRemoveItem = (idx) => {
     setItems(items.filter((_, i) => i !== idx))
+  }
+
+  const handleOpenEditGrid = () => {
+    // Deep-copy items so edits don't mutate until saved
+    setEditableGridItems(items.map(item => ({ ...item })))
+    setShowEditGridModal(true)
+  }
+
+  const handleSaveEditGrid = () => {
+    // Recalculate totals for every edited item before saving
+    const recalculated = editableGridItems.map(item => calculateItemTotals(item))
+    setItems(recalculated)
+    setShowEditGridModal(false)
+    toast.success(`${recalculated.length} item(s) updated successfully!`)
+  }
+
+  const handleUpdateGridItem = (idx, field, value) => {
+    setEditableGridItems(prev => {
+      const updated = [...prev]
+      updated[idx] = calculateItemTotals({ ...updated[idx], [field]: value })
+      return updated
+    })
   }
 
   const handleSubmit = async () => {
@@ -368,11 +623,35 @@ export default function Purchase() {
     if (!formData.supplierBillNumber) return toast.error('Bill number is required')
     if (items.length === 0) return toast.error('Add at least one item')
 
+    for (let idx = 0; idx < items.length; idx++) {
+      const item = items[idx]
+      if (!item.batchNumber?.trim()) {
+        return toast.error(`Item #${idx + 1} (${item.medicineName}) is missing a Batch Number.`)
+      }
+      if (!item.expiryDate) {
+        return toast.error(`Item #${idx + 1} (${item.medicineName}) is missing an Expiry Date.`)
+      }
+      if (parseFloat(item.quantity) <= 0) {
+        return toast.error(`Item #${idx + 1} (${item.medicineName}) must have a quantity greater than 0.`)
+      }
+      if (parseFloat(item.purchasePrice) <= 0) {
+        return toast.error(`Item #${idx + 1} (${item.medicineName}) must have a purchase price greater than 0.`)
+      }
+      if (parseFloat(item.mrp) <= 0) {
+        return toast.error(`Item #${idx + 1} (${item.medicineName}) must have an MRP/Selling Price greater than 0.`)
+      }
+    }
+
     try {
       setIsSubmitting(true)
       const payload = {
         ...formData,
-        ...totals,
+        subtotal: totals.subtotal,
+        discountAmount: totals.discountAmount,
+        taxableAmount: totals.taxableAmount,
+        totalGst: totals.totalGst,
+        roundOff: totals.roundOff,
+        grandTotal: totals.grandTotal,
         items: items.map(i => ({
           ...i,
           cgst: i.taxAmount / 2,
@@ -404,6 +683,22 @@ export default function Purchase() {
       toast.error(err.response?.data?.message || err.message || 'Failed to record purchase')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleVoidPurchase = async (id) => {
+    if (!window.confirm('Are you sure you want to void this purchase? This will rollback stock quantities and supplier balance.')) {
+      return
+    }
+    const toastId = toast.loading('Voiding purchase...');
+    try {
+      await purchaseApi.delete(id);
+      toast.success('Purchase voided successfully', { id: toastId });
+      queryClient.invalidateQueries(['purchases']);
+      queryClient.invalidateQueries(['suppliers']);
+      queryClient.invalidateQueries(['medicines']);
+    } catch (err) {
+      toast.error(err.message || 'Failed to void purchase', { id: toastId });
     }
   }
 
@@ -453,9 +748,14 @@ export default function Purchase() {
       label: '',
       align: 'right',
       render: (_, row) => (
-        <Button variant="ghost" size="sm" onClick={() => handleViewPurchase(row._id)}>
-          View
-        </Button>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => handleViewPurchase(row._id)}>
+            View
+          </Button>
+          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => handleVoidPurchase(row._id)}>
+            Void
+          </Button>
+        </div>
       )
     }
   ]
@@ -532,13 +832,8 @@ export default function Purchase() {
                       <p className="text-gray-900 dark:text-white font-bold text-lg">Medicine Not Found</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">"{medicineSearch}" is not in your master catalog.</p>
                       <Button size="lg" onClick={() => {
-                        const isFree = store?.plan !== 'PREMIUM'
-                        if (isFree && totalMedicines >= 100) {
-                          setIsUpgradeModalOpen(true)
-                        } else {
-                          setNewMedicine({ ...newMedicine, name: medicineSearch })
-                          setShowAddMedicineModal(true)
-                        }
+                        setNewMedicine({ ...newMedicine, name: medicineSearch })
+                        setShowAddMedicineModal(true)
                         setMedicineSearch('') // Clear search to hide this popup
                       }}>
                         <Plus className="h-4 w-4 mr-2" />
@@ -707,6 +1002,21 @@ export default function Purchase() {
 
                 {/* ITEMS LIST */}
                 <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
+                  {/* Table Header with Edit-All button */}
+                  <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800">
+                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      {items.length} Item{items.length !== 1 ? 's' : ''} Added
+                    </span>
+                    {items.length > 0 && (
+                      <button
+                        onClick={handleOpenEditGrid}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/30 dark:hover:bg-brand-900/40 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800 text-xs font-bold transition-all"
+                      >
+                        <LayoutGrid className="h-3.5 w-3.5" />
+                        Edit All Items
+                      </button>
+                    )}
+                  </div>
                   <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 font-semibold uppercase text-[10px] tracking-wider">
                       <tr>
@@ -773,6 +1083,46 @@ export default function Purchase() {
           {/* RIGHT SIDEBAR: INVOICE INFO & SUMMARY */}
           <div className="space-y-6">
 
+            {/* AI BILL SCANNER */}
+            <div className="bg-gradient-to-br from-brand-600 to-indigo-700 dark:from-brand-900 dark:to-indigo-950 rounded-2xl p-6 shadow-md text-white space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Wand2 className="h-4.5 w-4.5 text-white animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm">AI Invoice Scanner</h4>
+                  <p className="text-[10px] text-brand-200 font-medium">Auto-fill via Supplier Bill Photo</p>
+                </div>
+              </div>
+              <p className="text-xs text-brand-100 leading-relaxed">
+                Upload a photo of your supplier's bill. Gemini AI will automatically extract items, batches, expiries, rates, and margins.
+              </p>
+              
+              <label className={cn(
+                "border-2 border-dashed border-white/30 hover:border-white/60 bg-white/5 hover:bg-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all text-center",
+                isOcrLoading && "opacity-50 pointer-events-none cursor-wait"
+              )}>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleOcrUpload} 
+                  disabled={isOcrLoading}
+                />
+                {isOcrLoading ? (
+                  <>
+                    <RefreshCw className="h-6 w-6 animate-spin text-white" />
+                    <span className="text-xs font-bold">Scanning Invoice...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-6 w-6 text-white" />
+                    <span className="text-xs font-bold">Upload Bill Image</span>
+                  </>
+                )}
+              </label>
+            </div>
+
             {/* INVOICE INFO */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 overflow-hidden relative">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
@@ -786,7 +1136,6 @@ export default function Purchase() {
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Supplier</label>
                     <Link
                       to={ROUTES.SUPPLIERS}
-                      target="_blank"
                       className="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100 transition-colors"
                     >
                       <Plus className="h-3 w-3" /> Add New
@@ -1022,6 +1371,7 @@ export default function Purchase() {
         onClose={() => setShowAddMedicineModal(false)}
         title="Add New Medicine to Master"
         size="lg"
+        wrapperClassName="z-[60]"
       >
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
@@ -1098,21 +1448,585 @@ export default function Purchase() {
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="ghost" onClick={() => setShowAddMedicineModal(false)}>Cancel</Button>
             <Button onClick={() => {
-              const isFree = store?.plan !== 'PREMIUM'
-              if (isFree && totalMedicines >= 100) {
-                setIsUpgradeModalOpen(true)
-              } else {
-                handleQuickAdd()
-              }
+              handleQuickAdd()
             }}>Save & Add to Bill</Button>
           </div>
         </div>
       </Modal>
 
-      <PremiumModal 
-        isOpen={isUpgradeModalOpen} 
-        onClose={() => setIsUpgradeModalOpen(false)} 
-      />
+      {/* --- OCR VERIFICATION MODAL --- */}
+      {showOcrModal && ocrResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden animate-in zoom-in-95 duration-200 my-8">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-brand-600 rounded-lg flex items-center justify-center">
+                  <Wand2 className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Verify AI Extracted Invoice</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Review and match items before importing them into the purchase record</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowOcrModal(false)
+                  setOcrMappedItems([])
+                  setOcrResult(null)
+                }} 
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+              
+              {/* Invoice Metadata Verification Section */}
+              <div className="bg-brand-50/50 dark:bg-brand-950/20 rounded-xl p-4 border border-brand-100/50 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Supplier (AI Extracted: "{ocrResult.supplierName}")</label>
+                    <Select
+                      options={[
+                        { label: 'Select Supplier', value: '' },
+                        ...suppliers.map(s => ({ label: s.name, value: s._id }))
+                      ]}
+                      value={ocrResult.matchedSupplier?._id || ''}
+                      onChange={(e) => {
+                        const s = suppliers.find(sup => sup._id === e.target.value)
+                        setOcrResult(prev => ({
+                          ...prev,
+                          matchedSupplier: s || null
+                        }))
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Bill Number</label>
+                    <Input
+                      value={ocrResult.supplierBillNumber}
+                      onChange={(e) => setOcrResult(prev => ({ ...prev, supplierBillNumber: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Bill Date</label>
+                    <Input
+                      type="date"
+                      value={ocrResult.supplierBillDate}
+                      onChange={(e) => setOcrResult(prev => ({ ...prev, supplierBillDate: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                {!ocrResult.matchedSupplier && (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0" />
+                      <p className="text-xs font-bold">Supplier "{ocrResult.supplierName}" was not found in your database. Verify and add their details below:</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-10 gap-3 items-end">
+                      <div className="sm:col-span-4">
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Supplier Name</label>
+                        <Input 
+                          value={newOcrSupplierName} 
+                          onChange={(e) => setNewOcrSupplierName(e.target.value)} 
+                          placeholder="e.g. MAHAVEER MEDICAL AGENCY"
+                        />
+                      </div>
+                      <div className="sm:col-span-3">
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Phone Number</label>
+                        <Input 
+                          value={newOcrSupplierPhone} 
+                          onChange={(e) => setNewOcrSupplierPhone(e.target.value)} 
+                          placeholder="e.g. 9876543210"
+                        />
+                      </div>
+                      <div className="sm:col-span-3">
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Email Address</label>
+                        <Input 
+                          value={newOcrSupplierEmail} 
+                          onChange={(e) => setNewOcrSupplierEmail(e.target.value)} 
+                          placeholder="e.g. vendor@gmail.com"
+                        />
+                      </div>
+                      <div className="sm:col-span-4">
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">GSTIN Number</label>
+                        <Input 
+                          value={newOcrSupplierGst} 
+                          onChange={(e) => setNewOcrSupplierGst(e.target.value)} 
+                          placeholder="e.g. 09AANPG9333R1ZT"
+                        />
+                      </div>
+                      <div className="sm:col-span-4">
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Drug License Number(s)</label>
+                        <Input 
+                          value={newOcrSupplierDl} 
+                          onChange={(e) => setNewOcrSupplierDl(e.target.value)} 
+                          placeholder="e.g. UP8020B001216, UP21B001213"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Button 
+                          onClick={handleQuickCreateSupplier} 
+                          disabled={isCreatingSupplier}
+                          className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold h-10 flex items-center justify-center gap-1 text-xs"
+                        >
+                          {isCreatingSupplier ? 'Adding...' : '+ Add Supplier'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Items Verification Section */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Line Items ({ocrMappedItems.length})</h4>
+                
+                <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-x-auto">
+                  <table className="w-full text-xs text-left min-w-[900px]">
+                    <thead className="bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 font-semibold uppercase text-[10px] tracking-wider border-b border-gray-200 dark:border-gray-700">
+                      <tr>
+                        <th className="px-4 py-3 text-center w-10">Import</th>
+                        <th className="px-4 py-3">AI Extracted Name</th>
+                        <th className="px-4 py-3 w-72">Map to Catalog Medicine</th>
+                        <th className="px-4 py-3 text-center">Qty</th>
+                        <th className="px-4 py-3 text-center">Free</th>
+                        <th className="px-4 py-3 text-right">PTR (Pack)</th>
+                        <th className="px-4 py-3 text-right">MRP (Pack)</th>
+                        <th className="px-4 py-3 text-center">GST%</th>
+                        <th className="px-4 py-3">Batch</th>
+                        <th className="px-4 py-3">Expiry</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {ocrMappedItems.map((item, idx) => (
+                        <tr key={idx} className={cn(
+                          "hover:bg-gray-50/50 dark:hover:bg-gray-950/20 transition-colors",
+                          !item.importChecked && "opacity-50"
+                        )}>
+                          {/* Checkbox */}
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={item.importChecked}
+                              onChange={(e) => setOcrMappedItems(prev => {
+                                const updated = [...prev]
+                                updated[idx].importChecked = e.target.checked
+                                return updated
+                              })}
+                              className="h-4 w-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
+                            />
+                          </td>
+
+                          {/* AI Name */}
+                          <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">
+                            {item.originalName}
+                          </td>
+
+                          {/* Map to Catalog */}
+                          <td className="px-4 py-3">
+                            {item.matchedMedicine ? (
+                              <div className="flex items-center justify-between gap-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 px-2 py-1.5 rounded-lg text-emerald-800 dark:text-emerald-400">
+                                <span className="font-bold truncate max-w-[180px]">
+                                  {item.matchedMedicine.name} ({item.matchedMedicine.dosage})
+                                </span>
+                                <button 
+                                  onClick={() => setOcrMappedItems(prev => {
+                                    const updated = [...prev]
+                                    updated[idx].matchedMedicine = null
+                                    return updated
+                                  })}
+                                  className="text-[10px] text-red-500 hover:text-red-700 underline font-semibold shrink-0"
+                                >
+                                  Unlink
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2 relative">
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    placeholder="Search catalog..."
+                                    value={ocrRowSearch[idx] || ''}
+                                    onChange={(e) => handleRowSearch(idx, e.target.value)}
+                                    className="w-full px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-xs"
+                                  />
+                                  {ocrRowResults[idx] && ocrRowResults[idx].length > 0 && (
+                                    <div className="absolute z-[70] left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-40 overflow-y-auto">
+                                      {ocrRowResults[idx].map(med => (
+                                        <button
+                                          key={med._id}
+                                          type="button"
+                                          onClick={() => handleMapRowMedicine(idx, med)}
+                                          className="w-full text-left px-3 py-1.5 hover:bg-brand-50 dark:hover:bg-gray-800 text-[11px] border-b border-gray-100 dark:border-gray-800 last:border-0"
+                                        >
+                                          <strong>{med.name}</strong> ({med.dosage}) - {med.form}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setOcrActiveRowIndex(idx)
+                                      setNewMedicine({
+                                        name: item.cleanName || item.originalName,
+                                        genericName: item.genericName || '',
+                                        dosage: item.dosage || item.originalName.match(/\d+(mg|ml|gm)/i)?.[0] || '',
+                                        form: item.form || (item.originalName.toLowerCase().includes('syp') || item.originalName.toLowerCase().includes('drop') ? 'SYRUP' : 'TABLET'),
+                                        unitType: item.unitType || 'STRIP',
+                                        unitsPerPack: item.unitsPerPack || (item.unitType === 'BOTTLE' ? 1 : 10),
+                                        stripsPerBox: 1,
+                                        hsnCode: item.hsnCode || '',
+                                        reorderLevel: 10,
+                                        defaultMRP: item.mrp || 0,
+                                        defaultSellingPrice: item.mrp || 0,
+                                        manufacturer: item.manufacturer || '',
+                                        gstRate: item.gstRate || 12
+                                      })
+                                      setShowAddMedicineModal(true)
+                                    }}
+                                    className="px-2 py-1 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/20 dark:hover:bg-brand-900/30 text-brand-700 dark:text-brand-400 rounded border border-brand-200 dark:border-brand-900/50 font-bold text-[10px]"
+                                  >
+                                    + Add New
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Quantity */}
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => setOcrMappedItems(prev => {
+                                const updated = [...prev]
+                                updated[idx].quantity = parseInt(e.target.value) || 0
+                                return updated
+                              })}
+                              className="w-14 text-center py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white rounded"
+                            />
+                          </td>
+
+                          {/* Free Quantity */}
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="number"
+                              value={item.freeQuantity}
+                              onChange={(e) => setOcrMappedItems(prev => {
+                                const updated = [...prev]
+                                updated[idx].freeQuantity = parseInt(e.target.value) || 0
+                                return updated
+                              })}
+                              className="w-12 text-center py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white rounded"
+                            />
+                          </td>
+
+                          {/* Purchase Price (PTR) */}
+                          <td className="px-4 py-3 text-right">
+                            <input
+                              type="number"
+                              value={item.purchasePrice}
+                              onChange={(e) => setOcrMappedItems(prev => {
+                                const updated = [...prev]
+                                updated[idx].purchasePrice = parseFloat(e.target.value) || 0
+                                return updated
+                              })}
+                              className="w-16 text-right py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white rounded"
+                            />
+                          </td>
+
+                          {/* MRP */}
+                          <td className="px-4 py-3 text-right">
+                            <input
+                              type="number"
+                              value={item.mrp}
+                              onChange={(e) => setOcrMappedItems(prev => {
+                                const updated = [...prev]
+                                updated[idx].mrp = parseFloat(e.target.value) || 0
+                                return updated
+                              })}
+                              className="w-16 text-right py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white rounded"
+                            />
+                          </td>
+
+                          {/* GST Rate */}
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="number"
+                              value={item.gstRate}
+                              onChange={(e) => setOcrMappedItems(prev => {
+                                const updated = [...prev]
+                                updated[idx].gstRate = parseInt(e.target.value) || 0
+                                return updated
+                              })}
+                              className="w-12 text-center py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white rounded"
+                            />
+                          </td>
+
+                          {/* Batch */}
+                          <td className="px-4 py-3">
+                            <input
+                              type="text"
+                              value={item.batchNumber}
+                              onChange={(e) => setOcrMappedItems(prev => {
+                                const updated = [...prev]
+                                updated[idx].batchNumber = e.target.value.toUpperCase()
+                                return updated
+                              })}
+                              className="w-24 px-2 py-1 font-mono border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded"
+                            />
+                          </td>
+
+                          {/* Expiry */}
+                          <td className="px-4 py-3">
+                            <input
+                              type="date"
+                              value={item.expiryDate}
+                              onChange={(e) => setOcrMappedItems(prev => {
+                                const updated = [...prev]
+                                updated[idx].expiryDate = e.target.value
+                                return updated
+                              })}
+                              className="w-28 px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white rounded text-[11px]"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 flex justify-between items-center">
+              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                ⚠️ All checked items must be mapped to catalog medicines to import.
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowOcrModal(false)
+                    setOcrMappedItems([])
+                    setOcrResult(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleImportOcrItems}
+                  className="bg-brand-600 hover:bg-brand-500 text-white font-bold"
+                >
+                  Import Checked Items ({ocrMappedItems.filter(i => i.importChecked).length})
+                </Button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+
+      {/* --- EDIT ALL ITEMS GRID MODAL --- */}
+      {showEditGridModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-6xl w-full overflow-hidden animate-in zoom-in-95 duration-200 my-8 flex flex-col max-h-[90vh]">
+
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-brand-600 rounded-lg flex items-center justify-center">
+                  <LayoutGrid className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Edit All Bill Items</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{editableGridItems.length} item{editableGridItems.length !== 1 ? 's' : ''} — edit inline, then save to update the bill</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditGridModal(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              </button>
+            </div>
+
+            {/* Grid Body */}
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {editableGridItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+                  >
+                    {/* Card header */}
+                    <div className="flex items-center justify-between px-5 py-4 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 bg-brand-600 rounded-lg flex items-center justify-center shrink-0">
+                          <Package className="h-4.5 w-4.5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white text-sm">{item.medicineName}</p>
+                          <p className="text-[10px] text-gray-400 uppercase font-medium">{item.dosage} • {item.form}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditableGridItems(prev => prev.filter((_, i) => i !== idx))
+                        }}
+                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-300 hover:text-red-500 rounded-lg transition-colors"
+                        title="Remove item"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Card fields */}
+                    <div className="p-4 grid grid-cols-2 gap-3">
+                      {/* Batch Number */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Batch Number</label>
+                        <input
+                          type="text"
+                          value={item.batchNumber}
+                          onChange={(e) => handleUpdateGridItem(idx, 'batchNumber', e.target.value.toUpperCase())}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm font-mono outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                          placeholder="e.g. PCM-202505"
+                        />
+                      </div>
+                      {/* Expiry Date */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Expiry Date</label>
+                        <input
+                          type="date"
+                          value={item.expiryDate}
+                          onChange={(e) => handleUpdateGridItem(idx, 'expiryDate', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                        />
+                      </div>
+                      {/* Pack Qty */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Pack Qty</label>
+                        <input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => handleUpdateGridItem(idx, 'quantity', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                        />
+                      </div>
+                      {/* Free Qty */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Free Qty</label>
+                        <input
+                          type="number"
+                          value={item.freeQuantity}
+                          onChange={(e) => handleUpdateGridItem(idx, 'freeQuantity', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                        />
+                      </div>
+                      {/* Buying Price */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Buying Price / Pack</label>
+                        <input
+                          type="number"
+                          value={item.purchasePrice}
+                          onChange={(e) => handleUpdateGridItem(idx, 'purchasePrice', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                        />
+                      </div>
+                      {/* MRP */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">MRP / Pack</label>
+                        <input
+                          type="number"
+                          value={item.mrp}
+                          onChange={(e) => handleUpdateGridItem(idx, 'mrp', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                        />
+                      </div>
+                      {/* Discount */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Discount %</label>
+                        <input
+                          type="number"
+                          value={item.discountPercent}
+                          onChange={(e) => handleUpdateGridItem(idx, 'discountPercent', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                        />
+                      </div>
+                      {/* GST */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">GST %</label>
+                        <input
+                          type="number"
+                          value={item.gstRate}
+                          readOnly
+                          className="w-full px-3 py-2 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card live summary */}
+                    <div className="px-4 pb-4 grid grid-cols-3 gap-2">
+                      <div className="bg-white dark:bg-gray-900 rounded-lg px-3 py-2 border border-gray-100 dark:border-gray-800 text-center">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Unit Cost</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(item.landingCost || 0)}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-900 rounded-lg px-3 py-2 border border-gray-100 dark:border-gray-800 text-center">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Total Units</p>
+                        <p className="text-sm font-bold text-brand-600">{item.totalUnits || 0}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-900 rounded-lg px-3 py-2 border border-gray-100 dark:border-gray-800 text-center">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Margin</p>
+                        <p className={cn("text-sm font-bold", (item.margin || 0) > 15 ? "text-green-600" : "text-amber-600")}>
+                          {(item.margin || 0).toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {editableGridItems.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
+                  <FileText className="h-12 w-12 text-gray-200" />
+                  <p className="font-medium">No items to edit.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 flex items-center justify-between shrink-0">
+              <p className="text-xs text-gray-400">
+                Totals will be recalculated automatically on save.
+              </p>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setShowEditGridModal(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveEditGrid}
+                  className="bg-brand-600 hover:bg-brand-500 text-white font-bold"
+                >
+                  Save Changes ({editableGridItems.length} item{editableGridItems.length !== 1 ? 's' : ''})
+                </Button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+
     </div>
   )
 }

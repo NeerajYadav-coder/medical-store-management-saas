@@ -23,14 +23,24 @@ export default function SymptomSelector({
   selected = [], 
   onChange, 
   maxSelections = 3,
-  className = '' 
+  className = '',
+  inputRef,
+  onAfterSelect,
+  onBeforeSelect
 }) {
   const [symptoms, setSymptoms] = useState(defaultSymptoms);
   const [loading, setLoading] = useState(true);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   useEffect(() => {
     loadSymptoms();
   }, []);
+
+  useEffect(() => {
+    if (!selected || selected.length === 0) {
+      setFocusedIndex(-1);
+    }
+  }, [selected]);
 
   const loadSymptoms = async () => {
     try {
@@ -63,7 +73,31 @@ export default function SymptomSelector({
   const isSelected = (symptomId) => selected.some(s => s.symptomId === symptomId);
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div 
+      className={cn('space-y-2 outline-none rounded-xl focus:ring-2 focus:ring-brand-500/50 p-1 -m-1', className)}
+      ref={inputRef}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          setFocusedIndex(p => Math.min(p + 1, Math.min(symptoms.length, 8) - 1));
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          setFocusedIndex(p => Math.max(p - 1, 0));
+        } else if (e.key === 'ArrowDown' || e.key === 'Escape') {
+          e.preventDefault();
+          onAfterSelect?.();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          onBeforeSelect?.();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (symptoms[focusedIndex]) {
+            toggleSymptom(symptoms[focusedIndex]);
+          }
+        }
+      }}
+    >
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Why buying? <span className="text-gray-400 font-normal">(optional)</span>
@@ -80,7 +114,7 @@ export default function SymptomSelector({
       </div>
       
       <div className="flex flex-wrap gap-2">
-        {symptoms.slice(0, 8).map((symptom) => (
+        {symptoms.slice(0, 8).map((symptom, idx) => (
           <button
             key={symptom._id}
             type="button"
@@ -91,8 +125,9 @@ export default function SymptomSelector({
               'border flex items-center gap-1.5',
               isSelected(symptom._id)
                 ? 'bg-brand-100 border-brand-300 text-brand-700'
-                : 'bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800',
-              !isSelected(symptom._id) && selected.length >= maxSelections && 'opacity-50 cursor-not-allowed'
+                : 'bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400',
+              !isSelected(symptom._id) && selected.length >= maxSelections && 'opacity-50 cursor-not-allowed',
+              idx === focusedIndex ? 'ring-2 ring-brand-500 ring-offset-1 dark:ring-offset-gray-900' : ''
             )}
           >
             <span>{symptom.icon}</span>

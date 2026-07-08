@@ -110,6 +110,16 @@ export default function DashboardLayout() {
     }
   )
 
+  const isBillingPage = location.pathname === ROUTES.BILLING || location.pathname === '/dashboard/billing'
+
+  if (isBillingPage) {
+    return (
+      <div className="h-screen w-screen bg-gray-150 dark:bg-gray-950">
+        <Outlet />
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-800 dark:bg-gray-950 overflow-hidden">
       {/* Sidebar Overlay (Mobile) */}
@@ -162,8 +172,6 @@ export default function DashboardLayout() {
               const Icon = ICONS[item.icon]
               const isActive = location.pathname === item.path || 
                                (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
-              const isFree = store?.plan !== 'PREMIUM'
-              const isPremiumItem = item.path === ROUTES.REPORTS || item.path === ROUTES.AUDIT_LOGS
 
               return (
                 <li key={item.path}>
@@ -178,9 +186,6 @@ export default function DashboardLayout() {
                   >
                     {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
                     <span>{item.label}</span>
-                    {isFree && isPremiumItem && (
-                      <Lock className="ml-auto h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors" />
-                    )}
                     {item.badge && stats?.alerts?.total > 0 && (
                       <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-danger-500 text-white">
                         {stats.alerts.total}
@@ -259,7 +264,7 @@ export default function DashboardLayout() {
                 variant="primary"
                 size="sm"
                 className="hidden sm:flex"
-                onClick={() => navigate(ROUTES.SALES_NEW)}
+                onClick={() => navigate(ROUTES.BILLING)}
               >
                 + New Sale
               </Button>
@@ -302,7 +307,13 @@ export default function DashboardLayout() {
                       )}
                     </div>
                     <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800">
-                      <button className="text-sm text-brand-600 hover:text-brand-700 font-medium">
+                      <button
+                        className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                        onClick={() => {
+                          setIsNotificationsOpen(false)
+                          navigate(ROUTES.INVENTORY + '?filter=expiring')
+                        }}
+                      >
                         View all notifications
                       </button>
                     </div>

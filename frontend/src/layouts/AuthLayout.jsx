@@ -63,12 +63,17 @@ export default function AuthLayout() {
         </div>
 
         {/* Footer */}
-        <div className="relative flex items-center gap-4 text-sm text-white/60">
-          <span>© 2024 MedStore SaaS</span>
-          <span>•</span>
-          <a href="#" className="hover:text-white transition-colors">Privacy</a>
-          <span>•</span>
-          <a href="#" className="hover:text-white transition-colors">Terms</a>
+        <div className="relative flex flex-col gap-2 text-sm text-white/60">
+          <div className="flex items-center gap-4">
+            <span>© 2024 MedStore SaaS</span>
+            <span>•</span>
+            <a href="#" className="hover:text-white transition-colors">Privacy</a>
+            <span>•</span>
+            <a href="#" className="hover:text-white transition-colors">Terms</a>
+          </div>
+          <div>
+            Developed by <a href="https://neerajyadav-coder.github.io/krishna-pharmacy/about.html" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-medium">Krishna Pharmacy</a>
+          </div>
         </div>
       </div>
 
@@ -94,8 +99,9 @@ export default function AuthLayout() {
         </div>
 
         {/* Mobile footer */}
-        <div className="lg:hidden text-center p-4 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
-          © 2024 MedStore SaaS. All rights reserved.
+        <div className="lg:hidden text-center p-4 text-sm text-gray-500 dark:text-gray-400 flex flex-col gap-1">
+          <span>© 2024 MedStore SaaS. All rights reserved.</span>
+          <span>Powered by <a href="https://neerajyadav-coder.github.io/krishna-pharmacy/about.html" target="_blank" rel="noopener noreferrer" className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors font-medium">Krishna Pharmacy</a></span>
         </div>
       </div>
     </div>
