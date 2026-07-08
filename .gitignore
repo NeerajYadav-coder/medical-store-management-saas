@@ -2,8 +2,21 @@
 node_modules/
 
 # Env files (secrets)
+.env
+.env.*
 backend/.env
 frontend/.env
 
-# Logs
+# Logs and debug files
 *.log
+error_output.html
+
+# Production builds
+dist/
+build/
+
+# OS/IDE files
+.DS_Store
+.vscode/
+.idea/
+
