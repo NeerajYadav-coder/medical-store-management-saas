@@ -3,7 +3,7 @@ import SaleItem from "../models/SaleItem.js";
 import Customer from "../models/Customer.js";
 import MedicineBatch from "../models/MedicineBatch.js";
 import Medicine from "../models/Medicine.js";
-import { deductStockFIFO } from "../utils/fifoStock.js";
+import { getFifoDeductionPlan, executeFifoDeductionPlan } from "../utils/fifoStock.js";
 import { calculateProfit } from "../utils/profitCalc.js";
 import { calculateAutoDiscount } from "../utils/discountCalc.js";
 
@@ -16,11 +16,31 @@ export const createSale = async (req, res, next) => {
     const medicalStoreId = req.user.medicalStoreId;
     const { customerId, items, manualDiscount = 0, paymentMode } = req.body;
 
-    if (!items || items.length === 0) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Sale items are required",
       });
+    }
+
+    if (manualDiscount < 0) {
+      return res.status(400).json({ success: false, message: "Discount cannot be negative" });
+    }
+
+    if (!paymentMode) {
+      return res.status(400).json({ success: false, message: "Payment mode is required" });
+    }
+
+    for (const item of items) {
+      if (!item.medicineId || typeof item.quantity !== 'number' || typeof item.sellingPricePerUnit !== 'number') {
+        return res.status(400).json({ success: false, message: "Invalid item format. medicineId, quantity, and sellingPricePerUnit (numbers) are required." });
+      }
+      if (item.quantity <= 0) {
+        return res.status(400).json({ success: false, message: "Quantity must be greater than zero." });
+      }
+      if (item.sellingPricePerUnit < 0) {
+        return res.status(400).json({ success: false, message: "Selling price cannot be negative." });
+      }
     }
 
     // Compute total & auto discount
@@ -37,7 +57,27 @@ export const createSale = async (req, res, next) => {
 
     const finalAmount = totalAmount - discountApplied;
 
-    // Create sale
+    // --- PRE-FLIGHT CHECK (Dry Run) ---
+    // Consolidate items in case of duplicate medicineId in the request
+    const itemsMap = new Map();
+    for (const item of items) {
+      if (itemsMap.has(item.medicineId)) {
+        itemsMap.get(item.medicineId).quantity += item.quantity;
+      } else {
+        itemsMap.set(item.medicineId, { ...item });
+      }
+    }
+    const consolidatedItems = Array.from(itemsMap.values());
+
+    const stockPlans = [];
+    for (const item of consolidatedItems) {
+      // This will throw if ANY item cannot be fulfilled (aborting before DB writes)
+      const plan = await getFifoDeductionPlan(item.medicineId, item.quantity, medicalStoreId);
+      stockPlans.push({ item, plan });
+    }
+
+    // --- EXECUTION (Transactional Data Write) ---
+    // At this point, we are guaranteed to have stock for all items
     const sale = await Sale.create({
       medicalStoreId,
       customerId,
@@ -46,30 +86,29 @@ export const createSale = async (req, res, next) => {
       discountType: manualDiscount ? "MANUAL" : discountApplied ? "AUTO" : "NONE",
       finalAmount,
       paymentMode,
-      profitAmount: 0, // will calculate after batch deduction
+      profitAmount: 0,
     });
 
     let totalProfit = 0;
 
-    // Process sale items with FIFO batch deduction
-    for (const item of items) {
-      const { medicineId, quantity, sellingPricePerUnit } = item;
-
-      // Deduct batches
-      const batchesUsed = await deductStockFIFO(medicalStoreId, medicineId, quantity);
+    for (const { item, plan } of stockPlans) {
+      const batchesUsed = await executeFifoDeductionPlan(plan);
 
       for (const batch of batchesUsed) {
-        const profit = calculateProfit(batch.purchasePricePerUnit, sellingPricePerUnit, batch.quantityDeducted);
+        const profit = calculateProfit([{
+          purchasePricePerUnit: batch.purchasePricePerUnit, 
+          sellingPricePerUnit: item.sellingPricePerUnit, 
+          quantity: batch.quantityDeducted
+        }]);
         totalProfit += profit;
 
-        // Create sale item
         await SaleItem.create({
           saleId: sale._id,
-          medicineId,
+          medicineId: item.medicineId,
           batchId: batch.batchId,
           quantity: batch.quantityDeducted,
-          sellingPricePerUnit,
-          totalPrice: batch.quantityDeducted * sellingPricePerUnit,
+          sellingPricePerUnit: item.sellingPricePerUnit,
+          totalPrice: batch.quantityDeducted * item.sellingPricePerUnit,
         });
       }
     }

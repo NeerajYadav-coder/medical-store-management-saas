@@ -176,11 +176,14 @@ router.post('/quick', auditAction('CREATE', 'CUSTOMER'), async (req, res, next) 
   try {
     const { name, phone } = req.body;
     
-    // Check if customer exists
-    let customer = await Customer.findOne({
-      medicalStoreId: req.user.medicalStoreId,
-      phone,
-    });
+    let customer = null;
+    if (phone?.trim()) {
+      // Check if customer exists by phone
+      customer = await Customer.findOne({
+        medicalStoreId: req.user.medicalStoreId,
+        phone: phone.trim(),
+      });
+    }
     
     if (customer) {
       return res.status(200).json({
@@ -193,7 +196,7 @@ router.post('/quick', auditAction('CREATE', 'CUSTOMER'), async (req, res, next) 
     // Create new customer
     customer = await Customer.create({
       name: name || 'Customer',
-      phone,
+      phone: phone?.trim() || undefined,
       medicalStoreId: req.user.medicalStoreId,
     });
     

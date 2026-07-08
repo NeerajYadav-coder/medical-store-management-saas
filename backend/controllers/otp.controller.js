@@ -77,6 +77,21 @@ export const sendOtp = async (req, res, next) => {
       });
     }
 
+    // Cooldown check - limit request frequency to 1 per 60 seconds
+    const sixtySecondsAgo = new Date(Date.now() - 60 * 1000);
+    const recentCooldownOTP = await OTP.findOne({
+      destination,
+      type,
+      createdAt: { $gte: sixtySecondsAgo },
+    });
+
+    if (recentCooldownOTP) {
+      return res.status(429).json({
+        success: false,
+        message: 'Please wait 60 seconds before requesting another OTP.',
+      });
+    }
+
     // Delete any existing unverified OTPs for this destination
     await OTP.deleteMany({
       destination,

@@ -10,15 +10,22 @@ const checkAndRunTasks = async () => {
     const now = new Date();
     const currentDay = now.getDate();
     const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
 
-    // At 21:00 (9:00 PM), trigger daily reports for all stores
-    if (currentHour === 21 && lastDailyReportRunDay !== currentDay) {
-      console.log("[Scheduler] Running daily WhatsApp reports job...");
+    // At 16:53 (4:53 PM) for testing, or 21:00 (9:00 PM) for production daily reports
+    const isTestTime = (currentHour === 16 && currentMinute === 53);
+    const isProdTime = (currentHour === 21 && currentMinute === 0);
+
+    if ((isTestTime || isProdTime) && lastDailyReportRunDay !== currentDay) {
+      console.log(`[Scheduler] Triggered daily WhatsApp reports job at ${now.toLocaleTimeString()}`);
       const stores = await MedicalStore.find({ isActive: true });
+      console.log(`[Scheduler] Found ${stores.length} active stores`);
       for (const store of stores) {
+        console.log(`[Scheduler] Store: ${store.name}, dailyReportEnabled: ${store.whatsappConfig?.dailyReportEnabled}`);
         if (store.whatsappConfig?.dailyReportEnabled) {
           try {
             await whatsappService.sendDailyReport(store._id);
+            console.log(`[Scheduler] Sent daily report successfully for ${store.name}`);
           } catch (err) {
             console.error(`Failed to send daily report for store ${store.name}:`, err);
           }
@@ -45,7 +52,7 @@ const checkAndRunTasks = async () => {
 export const startScheduler = () => {
   console.log("[Scheduler] Initializing lightweight task scheduler...");
   
-  // Run checks immediately, and check every 5 minutes (300000 ms) for precision
+  // Run checks immediately, and check every 15 seconds (15000 ms) for precision
   checkAndRunTasks();
-  setInterval(checkAndRunTasks, 5 * 60 * 1000); 
+  setInterval(checkAndRunTasks, 15 * 1000); 
 };

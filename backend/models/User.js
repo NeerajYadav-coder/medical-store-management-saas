@@ -110,7 +110,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 12;
 
 const userSchema = new mongoose.Schema(
   {
@@ -155,6 +155,27 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isPhoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    tokenVersion: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
+    passwordResetToken: {
+      type: String,
+      default: null,
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null,
+    },
     lastLoginAt: {
       type: Date,
     },
@@ -170,7 +191,6 @@ userSchema.pre('save', async function () {
   if (!this.isModified('passwordHash')) return;
   this.passwordHash = await bcrypt.hash(this.passwordHash, SALT_ROUNDS);
 });
-
 
 /**
  * Instance method: compare password

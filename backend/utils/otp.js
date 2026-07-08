@@ -26,11 +26,16 @@ export function hashOTP(otp) {
 }
 
 /**
- * Verify OTP against hash
+ * Verify OTP against hash (timing-safe)
  */
 export function verifyOTPHash(otp, hash) {
   const otpHash = hashOTP(otp);
-  return otpHash === hash;
+  const buf1 = Buffer.from(otpHash, 'hex');
+  const buf2 = Buffer.from(hash, 'hex');
+  if (buf1.length !== buf2.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(buf1, buf2);
 }
 
 /**

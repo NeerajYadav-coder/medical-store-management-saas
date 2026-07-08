@@ -1,0 +1,18 @@
+{
+  "watch": ["*.js", "controllers", "routes", "models", "middleware", "services", "utils", "modules", "config", "constants", "seeds"],
+  "ext": "js,json",
+  "ignore": [
+    "modules/whatsapp/sessions",
+    "modules/whatsapp/sessions/*",
+    "modules/whatsapp/sessions/**/*",
+    "**/modules/whatsapp/sessions/**",
+    "**/modules/whatsapp/sessions/**/*",
+    "**/sessions/**",
+    "node_modules/**",
+    "**/*.log",
+    "**/*.tmp",
+    "**/baileys_store.json"
+  ],
+  "delay": 1000
+}
+

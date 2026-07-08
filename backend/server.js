@@ -105,6 +105,10 @@
 
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import mongoSanitize from './middleware/mongoSanitize.middleware.js';
+import sanitizeBody from './middleware/sanitize.middleware.js';
 
 import env from './config/env.js';
 import connectDB from './config/db.js';
@@ -116,12 +120,25 @@ const app = express();
 
 /**
  * -----------------------
- * Global Middleware
+ * Global Security & Utility Middleware
  * -----------------------
  */
 
+// Set security HTTP headers
+app.use(helmet());
+
 // Parse JSON bodies
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Parse cookies
+app.use(cookieParser());
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize);
+
+// Global request body sanitizer (Mass Assignment protection)
+app.use(sanitizeBody);
 
 // Enable CORS
 app.use(
@@ -189,6 +206,8 @@ app.use('/api/v1/whatsapp', whatsappRoutes);
 app.use(errorHandler);
 
 import { startScheduler } from './utils/scheduler.js';
+import { WhatsappService } from './modules/whatsapp/services/whatsapp.service.js';
+import transporter from './config/mailer.js';
 
 /**
  * -----------------------
@@ -198,8 +217,22 @@ import { startScheduler } from './utils/scheduler.js';
 const startServer = async () => {
   await connectDB();
   
+  // Validate SMTP configuration at startup — fail fast if credentials are wrong
+  try {
+    await transporter.verify();
+    console.log('[Email] ✅ SMTP transporter verified — ready to send emails');
+  } catch (smtpError) {
+    console.error('[Email] ❌ SMTP verification failed:', smtpError.message);
+    console.error('[Email]    Check SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in your .env');
+    // Non-fatal: log the error but do not crash the server.
+    // Email is a supporting feature; the app should still boot.
+  }
+  
   // Start the background scheduler
   startScheduler();
+
+  // Load existing active WhatsApp sessions on boot
+  await WhatsappService.loadExistingSessions();
 
   app.listen(env.PORT, () => {
     console.log(`Server running on port ${env.PORT}`);
@@ -207,3 +240,33 @@ const startServer = async () => {
 };
 
 startServer();
+
+// Graceful shutdown handling
+const handleShutdown = async (signal) => {
+  console.log(`\n[Server] Received ${signal}. Initiating graceful shutdown...`);
+  try {
+    await WhatsappService.cleanup();
+    // Give sockets 2 seconds to send final close frames to WhatsApp servers.
+    // Without this, the TCP connection drops abruptly and the old session remains
+    // "open" on WhatsApp's side for a few seconds, causing 440 on next boot.
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log("[Server] Graceful shutdown cleanup complete. Exiting.");
+  } catch (err) {
+    console.error("[Server] Error during WhatsApp cleanup:", err);
+  }
+  process.exit(0);
+};
+
+process.on("SIGINT", () => handleShutdown("SIGINT"));
+process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+process.on("SIGUSR2", () => handleShutdown("SIGUSR2")); // nodemon restart
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[Fatal] Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("[Fatal] Uncaught Exception:", error);
+});
+
+

@@ -59,25 +59,23 @@
 
 
 
-/**
- * routes/auth.routes.js
- *
- * Responsibility:
- * - Define authentication-related API routes
- * - Keep routes clean and predictable
- * - Delegate logic to controller
- */
-
 import express from 'express';
 import {
   signup,
   login,
   getMe,
   logout,
+  logoutAll,
+  refreshToken,
+  forgotPassword,
+  resetPassword,
+  changePassword,
   createStaff,
   getStaff,
   updateStaff,
   deleteStaff,
+  updateProfile,
+  checkEmailUniqueness,
 } from '../controllers/auth.controller.js';
 import {
   sendOtp,
@@ -87,7 +85,22 @@ import {
 import { protect } from '../middleware/auth.middleware.js';
 import { ownerOnly } from '../middleware/role.middleware.js';
 import { auditAction } from '../middleware/audit.middleware.js';
-
+import { sanitizeBody } from '../middleware/sanitize.middleware.js';
+import {
+  validate,
+  loginSchema,
+  signupSchema,
+  sendOtpSchema,
+  verifyOtpSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from '../middleware/validation.middleware.js';
+import {
+  loginLimiter,
+  signupLimiter,
+  otpLimiter,
+  passwordResetLimiter,
+} from '../middleware/rateLimit.middleware.js';
 
 const router = express.Router();
 
@@ -98,15 +111,23 @@ const router = express.Router();
  */
 
 // OTP Routes (for signup verification)
-router.post('/send-otp', sendOtp);
-router.post('/verify-otp', verifyOtp);
+router.post('/send-otp', otpLimiter, validate(sendOtpSchema), sendOtp);
+router.post('/verify-otp', otpLimiter, validate(verifyOtpSchema), verifyOtp);
 router.get('/check-verification', checkVerification);
 
 // Signup (OWNER)
-router.post('/signup', signup);
+router.post('/check-email-uniqueness', checkEmailUniqueness);
+router.post('/signup', signupLimiter, validate(signupSchema), signup);
 
 // Login
-router.post('/login', auditAction('LOGIN', 'USER'), login);
+router.post('/login', loginLimiter, validate(loginSchema), login);
+
+// Refresh Token (Rotation)
+router.post('/refresh', refreshToken);
+
+// Forgot & Reset Password
+router.post('/forgot-password', passwordResetLimiter, validate(forgotPasswordSchema), forgotPassword);
+router.post('/reset-password', passwordResetLimiter, validate(resetPasswordSchema), resetPassword);
 
 /**
  * -----------------------
@@ -116,9 +137,14 @@ router.post('/login', auditAction('LOGIN', 'USER'), login);
 
 // Get current logged-in user profile
 router.get('/me', protect, getMe);
+router.put('/profile', protect, sanitizeBody, auditAction('UPDATE', 'USER'), updateProfile);
+
+// Change Password
+router.post('/change-password', protect, passwordResetLimiter, changePassword);
 
 // Logout
 router.post('/logout', protect, logout);
+router.post('/logout-all', protect, logoutAll);
 
 /**
  * -----------------------
@@ -126,13 +152,13 @@ router.post('/logout', protect, logout);
  * -----------------------
  */
 // Create new staff
-router.post('/staff', protect, ownerOnly, auditAction('CREATE', 'USER'), createStaff);
+router.post('/staff', protect, ownerOnly, sanitizeBody, auditAction('CREATE', 'USER'), createStaff);
 
 // Get list of staff
 router.get('/staff', protect, ownerOnly, getStaff);
 
 // Update staff member
-router.put('/staff/:id', protect, ownerOnly, auditAction('UPDATE', 'USER'), updateStaff);
+router.put('/staff/:id', protect, ownerOnly, sanitizeBody, auditAction('UPDATE', 'USER'), updateStaff);
 
 // Delete staff member
 router.delete('/staff/:id', protect, ownerOnly, auditAction('DELETE', 'USER'), deleteStaff);
