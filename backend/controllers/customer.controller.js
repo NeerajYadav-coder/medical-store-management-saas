@@ -7,7 +7,18 @@ import Customer from "../models/Customer.js";
 export const createCustomer = async (req, res, next) => {
   try {
     const medicalStoreId = req.user.medicalStoreId;
-    const { name, phone, familyGroupId, category } = req.body;
+    const { 
+      name, 
+      phone, 
+      email,
+      address,
+      dateOfBirth,
+      gender,
+      familyGroupId, 
+      category,
+      notes,
+      creditLimit
+    } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -20,8 +31,14 @@ export const createCustomer = async (req, res, next) => {
       medicalStoreId,
       name,
       phone,
+      email,
+      address,
+      dateOfBirth,
+      gender,
       familyGroupId,
       category,
+      notes,
+      creditLimit,
       totalPurchaseAmount: 0,
       totalProfitGenerated: 0,
     });

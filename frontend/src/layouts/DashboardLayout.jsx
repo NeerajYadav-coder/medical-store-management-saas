@@ -64,7 +64,7 @@ export default function DashboardLayout() {
   const navigate = useNavigate()
   const { user, logout, isLoggingOut, hasPermission } = useAuth()
   const { store, storeName } = useStore()
-  const { isSidebarOpen, toggleSidebar, closeSidebar, isMobile } = useUI()
+  const { isSidebarOpen, toggleSidebar, closeSidebar, isMobile, isSidebarCollapsed, toggleSidebarCollapse } = useUI()
   const { isDarkMode, toggleTheme } = useTheme()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
@@ -110,12 +110,22 @@ export default function DashboardLayout() {
     }
   )
 
+  const isBillingPage = location.pathname === ROUTES.BILLING || location.pathname === '/dashboard/billing'
+
+  if (isBillingPage) {
+    return (
+      <div className="h-screen w-screen bg-gray-150 dark:bg-gray-950">
+        <Outlet />
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-800 dark:bg-gray-950 overflow-hidden">
       {/* Sidebar Overlay (Mobile) */}
       {isSidebarOpen && isMobile && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={closeSidebar}
         />
       )}
@@ -123,17 +133,17 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white',
-          'transform transition-transform duration-300 ease-in-out',
-          'flex flex-col shadow-2xl',
-          'lg:relative lg:translate-x-0',
+          'sidebar',
+          isSidebarCollapsed ? 'sidebar-collapsed' : 'w-72',
+          'flex flex-col shadow-sm md:shadow-none',
+          'md:relative md:translate-x-0',
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-slate-700/50">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-border/50">
           <Link to={user?.role === 'STAFF' ? ROUTES.BILLING : ROUTES.DASHBOARD} className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-slate-800 overflow-hidden flex items-center justify-center flex-shrink-0 border border-slate-700/50">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 overflow-hidden flex items-center justify-center flex-shrink-0 text-primary">
               {store?.logo ? (
                 <img src={store.logo} alt="Store Logo" className="h-full w-full object-cover" />
               ) : (
@@ -142,14 +152,16 @@ export default function DashboardLayout() {
                 </svg>
               )}
             </div>
-            <div>
-              <span className="font-bold text-lg">MedStore</span>
-              <p className="text-xs text-slate-400 truncate max-w-[140px]">{storeName}</p>
-            </div>
+            {!isSidebarCollapsed && (
+              <div>
+                <span className="font-semibold text-lg text-foreground tracking-tight">MedStore</span>
+                <p className="text-xs text-muted-foreground truncate max-w-[140px]">{storeName}</p>
+              </div>
+            )}
           </Link>
           <button
             onClick={closeSidebar}
-            className="lg:hidden p-2 rounded-lg hover:bg-slate-800 text-slate-400"
+            className="md:hidden p-2 rounded-xl hover:bg-secondary text-muted-foreground"
           >
             <X className="h-5 w-5" />
           </button>
@@ -162,25 +174,18 @@ export default function DashboardLayout() {
               const Icon = ICONS[item.icon]
               const isActive = location.pathname === item.path || 
                                (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
-              const isFree = store?.plan !== 'PREMIUM'
-              const isPremiumItem = item.path === ROUTES.REPORTS || item.path === ROUTES.AUDIT_LOGS
 
               return (
                 <li key={item.path}>
                   <NavLink
                     to={item.path}
                     className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
-                      isActive
-                        ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30'
-                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      'sidebar-nav-item',
+                      isActive && 'sidebar-nav-item-active'
                     )}
                   >
                     {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
                     <span>{item.label}</span>
-                    {isFree && isPremiumItem && (
-                      <Lock className="ml-auto h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors" />
-                    )}
                     {item.badge && stats?.alerts?.total > 0 && (
                       <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-danger-500 text-white">
                         {stats.alerts.total}
@@ -194,7 +199,7 @@ export default function DashboardLayout() {
         </nav>
 
         {/* Alerts Card */}
-        {user?.role !== 'STAFF' && expiringCount > 0 && (
+        {!isSidebarCollapsed && user?.role !== 'STAFF' && expiringCount > 0 && (
           <div className="mx-4 mb-4 p-4 rounded-xl bg-gradient-to-br from-warning-500/20 to-warning-600/10 border border-warning-500/30">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-warning-500/20">
@@ -209,40 +214,53 @@ export default function DashboardLayout() {
         )}
 
         {/* User Profile */}
-        <div className="p-4 border-t border-slate-700/50">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-brand-600 flex items-center justify-center text-white font-semibold">
+        <div className="p-4 border-t border-border/50">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold shrink-0">
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-              <p className="text-xs text-slate-400 truncate">{user?.role}</p>
-            </div>
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 transition-colors"
-            >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
+            {!isSidebarCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.role}</p>
+              </div>
+            )}
+            {!isSidebarCollapsed && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-xl hover:bg-secondary text-muted-foreground transition-colors shrink-0"
+              >
+                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+            )}
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
+      <div className="flex-1 flex flex-col overflow-hidden bg-background">
+        <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-6 flex-shrink-0 sticky top-0 z-40">
           {/* Left side */}
           <div className="flex items-center gap-4">
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 lg:hidden"
+              className="p-2 rounded-xl hover:bg-secondary text-muted-foreground md:hidden"
             >
               <Menu className="h-6 w-6" />
             </button>
 
+            {/* Sidebar Collapse Toggle (Desktop/Tablet) */}
+            <button
+              onClick={toggleSidebarCollapse}
+              className="hidden md:flex p-2 rounded-xl hover:bg-secondary text-muted-foreground transition-colors"
+              title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
             {/* Breadcrumb or page title */}
             <div className="hidden sm:block">
-              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h1 className="text-lg font-semibold text-foreground tracking-tight">
                 {SIDEBAR_NAV_ITEMS.find(item => 
                   location.pathname === item.path || 
                   (item.path !== ROUTES.DASHBOARD && location.pathname.startsWith(item.path))
@@ -259,7 +277,7 @@ export default function DashboardLayout() {
                 variant="primary"
                 size="sm"
                 className="hidden sm:flex"
-                onClick={() => navigate(ROUTES.SALES_NEW)}
+                onClick={() => navigate(ROUTES.BILLING)}
               >
                 + New Sale
               </Button>
@@ -273,7 +291,7 @@ export default function DashboardLayout() {
                     e.stopPropagation()
                     setIsNotificationsOpen(!isNotificationsOpen)
                   }}
-                  className="relative p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400"
+                  className="relative p-2 rounded-xl hover:bg-secondary text-muted-foreground transition-colors"
                 >
                   <Bell className="h-5 w-5" />
                   {latestAlerts.length > 0 && (
@@ -283,9 +301,9 @@ export default function DashboardLayout() {
 
                 {/* Notifications dropdown */}
                 {isNotificationsOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                  <div className="absolute right-0 mt-2 w-80 bg-card rounded-2xl shadow-elevated border border-border py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="px-4 py-2 border-b border-border/50">
+                      <h3 className="font-semibold text-foreground">Notifications</h3>
                     </div>
                     <div className="max-h-72 overflow-y-auto">
                       {latestAlerts.length > 0 ? (
@@ -302,7 +320,13 @@ export default function DashboardLayout() {
                       )}
                     </div>
                     <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800">
-                      <button className="text-sm text-brand-600 hover:text-brand-700 font-medium">
+                      <button
+                        className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                        onClick={() => {
+                          setIsNotificationsOpen(false)
+                          navigate(ROUTES.INVENTORY + '?filter=expiring')
+                        }}
+                      >
                         View all notifications
                       </button>
                     </div>
@@ -311,6 +335,15 @@ export default function DashboardLayout() {
               </div>
             )}
 
+            {/* Theme Toggle (Header) */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl hover:bg-secondary text-muted-foreground transition-colors"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+
             {/* User menu */}
             <div className="user-menu relative">
               <button
@@ -318,20 +351,20 @@ export default function DashboardLayout() {
                   e.stopPropagation()
                   setIsUserMenuOpen(!isUserMenuOpen)
                 }}
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-800"
+                className="flex items-center gap-2 p-2 rounded-xl hover:bg-secondary transition-colors"
               >
-                <div className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-sm font-medium">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-semibold">
                   {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
-                <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </button>
 
               {/* User dropdown */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                  <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
-                    <p className="font-medium text-gray-900 dark:text-white">{user?.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                <div className="absolute right-0 mt-2 w-56 bg-card rounded-2xl shadow-elevated border border-border py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                  <div className="px-4 py-2 border-b border-border/50">
+                    <p className="font-semibold text-foreground">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   {user?.role !== 'STAFF' && (
                     <div className="py-1">
@@ -378,7 +411,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6 bg-gray-100 dark:bg-gray-800 dark:bg-gray-950">
+        <main className="flex-1 overflow-auto p-4 lg:p-6">
           <Outlet />
         </main>
       </div>

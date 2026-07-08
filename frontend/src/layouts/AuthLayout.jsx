@@ -2,100 +2,119 @@
  * layouts/AuthLayout.jsx
  * 
  * RESPONSIBILITY:
- * - Layout wrapper for authentication pages
- * - Branding, background, and structure
+ * - Layout wrapper for authentication pages (Register)
+ * - Apple HIG-compliant split layout with branding panel
+ * - Uses shared design tokens from the MedStore Apple design system
  */
 
 import { Outlet, Link } from 'react-router-dom'
 import { ROUTES } from '@config/routes.config'
+import { Activity, Shield, Server, Zap } from 'lucide-react'
 
 export default function AuthLayout() {
   return (
-    <div className="h-screen w-full flex overflow-hidden">
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 p-12 flex-col justify-between relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white dark:bg-gray-900 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-white dark:bg-gray-900 rounded-full blur-3xl" />
+    <div className="h-screen w-full flex overflow-hidden bg-system-background">
+      {/* Left side — Brand storytelling panel */}
+      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] p-10 flex-col justify-between relative overflow-hidden">
+        {/* Subtle ambient glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-system-blue/8 blur-[120px]" />
+          <div className="absolute bottom-[-15%] right-[-10%] w-[400px] h-[400px] rounded-full bg-system-indigo/8 blur-[100px]" />
         </div>
 
-        {/* Content */}
-        <div className="relative">
-          {/* Logo */}
-          <Link to={ROUTES.HOME} className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-white dark:bg-gray-900/20 backdrop-blur flex items-center justify-center">
-              <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-              </svg>
+        {/* Top — Logo */}
+        <div className="relative z-10">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="h-9 w-9 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all group-hover:bg-white/15">
+              <Activity className="h-4.5 w-4.5 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">MedStore</span>
+            <span className="text-apple-headline font-bold text-white tracking-tight">MedStore</span>
           </Link>
         </div>
 
-        {/* Tagline */}
-        <div className="relative space-y-6">
-          <h1 className="text-4xl font-bold text-white leading-tight">
-            Smart Pharmacy<br />
-            Management for<br />
-            Modern India
-          </h1>
-          <p className="text-lg text-white/80 max-w-md">
-            Join thousands of pharmacies using MedStore to manage inventory, 
-            track expiry, and grow their business.
-          </p>
+        {/* Center — Value proposition */}
+        <div className="relative z-10 space-y-8">
+          <div className="space-y-4">
+            <h1 className="text-[36px] font-bold text-white leading-[1.1] tracking-tight">
+              Your pharmacy,<br />built for tomorrow.
+            </h1>
+            <p className="text-apple-body text-white/60 max-w-sm leading-relaxed">
+              Join medical stores across India managing inventory, compliance, and daily billing with absolute confidence.
+            </p>
+          </div>
 
-          {/* Stats */}
-          <div className="flex gap-8 pt-6">
-            <div>
-              <div className="text-3xl font-bold text-white">10K+</div>
-              <div className="text-sm text-white/60">Active Stores</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white">₹50Cr+</div>
-              <div className="text-sm text-white/60">Sales Tracked</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white">99.9%</div>
-              <div className="text-sm text-white/60">Uptime</div>
-            </div>
+          {/* Trust proof points */}
+          <div className="space-y-4">
+            {[
+              { icon: Shield, text: 'Schedule H/H1 compliance guard' },
+              { icon: Server, text: 'Isolated per-store cloud databases' },
+              { icon: Zap, text: 'Keyboard-first POS billing engine' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-white/8 border border-white/8 flex items-center justify-center flex-shrink-0">
+                  <item.icon className="h-4 w-4 text-white/70" />
+                </div>
+                <span className="text-apple-caption-1 text-white/50 font-medium">{item.text}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="relative flex items-center gap-4 text-sm text-white/60">
-          <span>© 2024 MedStore SaaS</span>
-          <span>•</span>
-          <a href="#" className="hover:text-white transition-colors">Privacy</a>
-          <span>•</span>
-          <a href="#" className="hover:text-white transition-colors">Terms</a>
+        {/* Bottom — Attribution */}
+        <div className="relative z-10 space-y-1.5">
+          <div className="flex items-center gap-3 text-apple-caption-2 text-white/30">
+            <span>© 2026 MedStore SaaS</span>
+            <span>·</span>
+            <a href="#" className="hover:text-white/50 transition-colors">Privacy</a>
+            <span>·</span>
+            <a href="#" className="hover:text-white/50 transition-colors">Terms</a>
+          </div>
+          <div className="text-apple-caption-2 text-white/30">
+            Designed by{' '}
+            <a
+              href="https://neerajyadav-coder.github.io/krishna-pharmacy/about.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white/50 transition-colors font-medium"
+            >
+              Krishna Pharmacy
+            </a>
+          </div>
         </div>
       </div>
 
-      {/* Right side - Auth form */}
-      <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 overflow-y-auto h-full">
+      {/* Right side — Form area */}
+      <div className="flex-1 flex flex-col bg-system-background overflow-y-auto h-full">
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center justify-center p-6 bg-white dark:bg-gray-900 border-b dark:border-gray-700">
-          <Link to={ROUTES.HOME} className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-lg bg-brand-600 flex items-center justify-center">
-              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-              </svg>
-            </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">MedStore</span>
+        <div className="lg:hidden flex items-center justify-center py-5 px-6 bg-system-background border-b border-separator-apple/10">
+          <Link to="/" className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-system-blue" />
+            <span className="text-apple-headline font-bold text-label-primary tracking-tight">MedStore</span>
           </Link>
         </div>
 
-        {/* Form container */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
-          <div className="w-full max-w-md">
+        {/* Form container — vertically + horizontally centered */}
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+          <div className="w-full max-w-lg">
             <Outlet />
           </div>
         </div>
 
         {/* Mobile footer */}
-        <div className="lg:hidden text-center p-4 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
-          © 2024 MedStore SaaS. All rights reserved.
+        <div className="lg:hidden text-center py-4 px-6 text-apple-caption-2 text-label-tertiary space-y-0.5">
+          <span>© 2026 MedStore SaaS. All rights reserved.</span>
+          <br />
+          <span>
+            Designed by{' '}
+            <a
+              href="https://neerajyadav-coder.github.io/krishna-pharmacy/about.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-system-blue transition-colors font-medium"
+            >
+              Krishna Pharmacy
+            </a>
+          </span>
         </div>
       </div>
     </div>

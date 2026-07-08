@@ -25,7 +25,7 @@ export const ROUTES = {
 
   // Sales routes
   SALES: '/dashboard/sales',
-  SALES_NEW: '/dashboard/sales/new',
+  SALES_NEW: '/dashboard/billing',
   SALES_VIEW: '/dashboard/sales/:id',
   BILLING: '/dashboard/billing',
 

@@ -9,19 +9,6 @@ export const createMedicine = async (req, res, next) => {
   try {
     const medicalStoreId = req.user.medicalStoreId;
 
-    // Premium plan check: Free plan restricted to 100 medicine records
-    const store = await MedicalStore.findById(medicalStoreId);
-    if (!store || store.plan !== 'PREMIUM') {
-      const medicineCount = await Medicine.countDocuments({
-        medicalStoreId,
-      });
-      if (medicineCount >= 100) {
-        return res.status(403).json({
-          success: false,
-          message: 'Upgrade to Premium plan to add more than 100 medicines.',
-        });
-      }
-    }
 
     const {
       name,

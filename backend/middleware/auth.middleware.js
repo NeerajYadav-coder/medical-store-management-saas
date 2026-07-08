@@ -87,20 +87,19 @@ import User from '../models/User.js';
 
 export const protect = async (req, res, next) => {
   try {
-    /**
-     * Expect token in Authorization header
-     * Format: Bearer <token>
-     */
+    let token = null;
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Authentication required',
       });
     }
-
-    const token = authHeader.split(' ')[1];
 
     /**
      * Verify token
@@ -108,16 +107,29 @@ export const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
 
     /**
-     * Attach user context to request
-     * This is CRITICAL for multi-tenant isolation
+     * Fetch user from DB to get permissions, tokenVersion and ensure active status
      */
-    // Fetch user from DB to get permissions and ensure active status
-    const user = await User.findById(decoded.userId).select('name email role medicalStoreId permissions isActive');
+    const user = await User.findById(decoded.userId).select('name email role medicalStoreId permissions isActive tokenVersion');
 
-    if (!user || !user.isActive) {
+    if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'User request failed: User inactive or not found',
+        message: 'User request failed: User not found',
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'User request failed: User inactive',
+      });
+    }
+
+    // Token version validation (for session invalidation/logout-all)
+    if (decoded.tokenVersion !== user.tokenVersion) {
+      return res.status(401).json({
+        success: false,
+        message: 'Session expired or invalidated. Please login again.',
       });
     }
 

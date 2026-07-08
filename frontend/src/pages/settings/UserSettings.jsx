@@ -7,7 +7,7 @@
  * - Account preferences
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import {
   User,
@@ -20,10 +20,12 @@ import {
   Camera,
   Key,
   LogOut,
+  Edit3,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useAuth } from '@context/AuthContext'
 import { useToast } from '@context/UIContext'
+import { authApi } from '@api/auth.api'
 import Button from '@components/common/Button'
 import { Input, PasswordInput, Select } from '@components/common/Input'
 import { Modal } from '@components/common/Modal'
@@ -32,13 +34,14 @@ import { Modal } from '@components/common/Modal'
  * User Settings Page
  */
 export default function UserSettings() {
-  const { user, logout } = useAuth()
+  const { user, logout, refetchUser } = useAuth()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('profile')
+  const [isEditing, setIsEditing] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
-  const { register, handleSubmit, formState: { errors, isDirty } } = useForm({
+  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm({
     defaultValues: {
       name: user?.name || '',
       email: user?.email || '',
@@ -46,14 +49,30 @@ export default function UserSettings() {
     },
   })
 
+  // Synchronize dynamic user settings values when context user changes
+  useEffect(() => {
+    if (user) {
+      reset({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      })
+    }
+  }, [user, reset])
+
   const onSubmit = async (data) => {
     setIsUpdating(true)
     try {
-      // await authApi.updateProfile(data)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await authApi.updateProfile({
+        name: data.name,
+        phone: data.phone,
+      })
+      await refetchUser()
       toast.success('Profile updated successfully')
+      reset(data)
+      setIsEditing(false)
     } catch (error) {
-      toast.error(error.message || 'Failed to update profile')
+      toast.error(error.response?.data?.message || error.message || 'Failed to update profile')
     } finally {
       setIsUpdating(false)
     }
@@ -110,15 +129,16 @@ export default function UserSettings() {
                 </div>
                 <button
                   type="button"
-                  className="absolute bottom-0 right-0 h-8 w-8 bg-white dark:bg-gray-900 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm hover:bg-gray-50 dark:bg-gray-955"
+                  className="absolute bottom-0 right-0 h-8 w-8 bg-white dark:bg-gray-900 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                  disabled={!isEditing}
                 >
                   <Camera className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">{user?.name}</p>
-                <p className="text-sm text-gray-505 dark:text-gray-400">{user?.role}</p>
-                <p className="text-sm text-gray-505 dark:text-gray-400">{user?.email}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{user?.role}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
               </div>
             </div>
           </div>
@@ -132,6 +152,7 @@ export default function UserSettings() {
                 placeholder="Your name"
                 leftIcon={<User className="h-5 w-5" />}
                 error={errors.name?.message}
+                disabled={!isEditing}
                 {...register('name', { required: 'Name is required' })}
               />
               <Input
@@ -139,6 +160,7 @@ export default function UserSettings() {
                 type="tel"
                 placeholder="9876543210"
                 leftIcon={<Phone className="h-5 w-5" />}
+                disabled={!isEditing}
                 {...register('phone')}
               />
               <Input
@@ -153,16 +175,38 @@ export default function UserSettings() {
             </div>
           </div>
 
-          {/* Save Button */}
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              isLoading={isUpdating}
-              disabled={!isDirty}
-              leftIcon={<Save className="h-4 w-4" />}
-            >
-              Save Changes
-            </Button>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3">
+            {!isEditing ? (
+              <Button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                leftIcon={<Edit3 className="h-4 w-4" />}
+              >
+                Edit Profile
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditing(false)
+                    reset()
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  isLoading={isUpdating}
+                  disabled={!isDirty}
+                  leftIcon={<Save className="h-4 w-4" />}
+                >
+                  Save Changes
+                </Button>
+              </>
+            )}
           </div>
         </form>
       )}
@@ -176,7 +220,7 @@ export default function UserSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Change your password</p>
-                <p className="text-sm text-gray-505 dark:text-gray-400">Last changed 30 days ago</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Last changed 30 days ago</p>
               </div>
               <Button
                 variant="outline"
@@ -194,7 +238,7 @@ export default function UserSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Add extra security to your account</p>
-                <p className="text-sm text-gray-505 dark:text-gray-400">Not enabled</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Not enabled</p>
               </div>
               <Button variant="outline" leftIcon={<Shield className="h-4 w-4" />}>
                 Enable 2FA
@@ -213,7 +257,7 @@ export default function UserSettings() {
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">Current Device</p>
-                    <p className="text-sm text-gray-505 dark:text-gray-400">Windows • Chrome • Hyderabad</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Windows • Chrome • Hyderabad</p>
                   </div>
                 </div>
                 <span className="px-2 py-1 bg-success-100 text-success-700 text-xs rounded-full">
@@ -247,7 +291,7 @@ export default function UserSettings() {
                 <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{setting.label}</p>
-                    <p className="text-sm text-gray-505 dark:text-gray-400">{setting.description}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{setting.description}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" defaultChecked className="sr-only peer" />
@@ -268,7 +312,7 @@ export default function UserSettings() {
                 <div key={setting.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{setting.label}</p>
-                    <p className="text-sm text-gray-550 dark:text-gray-400">{setting.description}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{setting.description}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" />

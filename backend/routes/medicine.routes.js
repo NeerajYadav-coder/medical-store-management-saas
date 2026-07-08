@@ -154,26 +154,65 @@ router.get('/search', async (req, res, next) => {
 router.get('/search-with-stock', async (req, res, next) => {
   try {
     const { q } = req.query;
-    const regex = new RegExp(q, 'i');
+    if (!q || q.trim().length < 2) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    const cleanQ = q.trim();
+    const regex = new RegExp(cleanQ, 'i');
     
-    // First find matching medicines
-    const medicines = await Medicine.find({
+    // 1. Find batches where batchNumber matches the search query directly (e.g. barcode/batch scan)
+    const matchedBatches = await MedicineBatch.find({
       medicalStoreId: req.user.medicalStoreId,
       isActive: true,
-      $or: [
-        { name: regex },
-        { genericName: regex },
-        { manufacturer: regex },
-        { tags: regex },
-      ],
-    })
-      .limit(10)
-      .lean();
+      quantityRemaining: { $gt: 0 },
+      expiryDate: { $gt: new Date() },
+      batchNumber: regex,
+    }).limit(10).lean();
+
+    const matchedMedIds = matchedBatches.map(b => b.medicineId);
+
+    // 2. Parse keywords from search query for robust text matching
+    const words = cleanQ.split(/\s+/).filter(Boolean);
+    const andConditions = words.map(word => {
+      const wordRegex = new RegExp(word, 'i');
+      return {
+        $or: [
+          { name: wordRegex },
+          { genericName: wordRegex },
+          { manufacturer: wordRegex },
+          { tags: wordRegex },
+          { dosage: wordRegex },
+          { form: wordRegex },
+        ]
+      };
+    });
+
+    const medicineQuery = {
+      medicalStoreId: req.user.medicalStoreId,
+      isActive: true,
+    };
+
+    if (andConditions.length > 0) {
+      if (matchedMedIds.length > 0) {
+        medicineQuery.$or = [
+          { $and: andConditions },
+          { _id: { $in: matchedMedIds } }
+        ];
+      } else {
+        medicineQuery.$and = andConditions;
+      }
+    } else if (matchedMedIds.length > 0) {
+      medicineQuery._id = { $in: matchedMedIds };
+    }
+
+    // Find medicines matching query
+    const medicines = await Medicine.find(medicineQuery).limit(15).lean();
     
-    // Then get available batches for each
     const results = [];
     
     for (const medicine of medicines) {
+      // Find batches for this medicine
       const batches = await MedicineBatch.find({
         medicalStoreId: req.user.medicalStoreId,
         medicineId: medicine._id,
@@ -182,11 +221,20 @@ router.get('/search-with-stock', async (req, res, next) => {
         isActive: true,
       })
         .sort({ expiryDate: 1 })
-        .limit(3)
+        .limit(5)
         .lean();
       
       if (batches.length > 0) {
-        for (const batch of batches) {
+        // Sort batches so that a batch directly matching the query comes first
+        const sortedBatches = [...batches].sort((a, b) => {
+          const aMatch = a.batchNumber.toLowerCase().includes(cleanQ.toLowerCase());
+          const bMatch = b.batchNumber.toLowerCase().includes(cleanQ.toLowerCase());
+          if (aMatch && !bMatch) return -1;
+          if (!aMatch && bMatch) return 1;
+          return 0;
+        });
+
+        for (const batch of sortedBatches) {
           results.push({
             _id: medicine._id,
             name: medicine.name,
@@ -205,6 +253,7 @@ router.get('/search-with-stock', async (req, res, next) => {
           });
         }
       } else {
+        // Out of stock placeholder
         results.push({
           _id: medicine._id,
           name: medicine.name,
@@ -459,6 +508,14 @@ router.put('/:id', hasPermission(PERMISSIONS.MANAGE_INVENTORY), auditAction('UPD
       });
     }
     
+    // CASCADE UPDATE: Sync medicineName to batches if the name was modified
+    if (req.body.name) {
+      await MedicineBatch.updateMany(
+        { medicineId: medicine._id, medicalStoreId: req.user.medicalStoreId },
+        { medicineName: req.body.name }
+      );
+    }
+    
     res.status(200).json({
       success: true,
       data: medicine,
@@ -513,6 +570,17 @@ router.delete('/:id', hasPermission(PERMISSIONS.MANAGE_INVENTORY), auditAction('
         message: 'Medicine not found',
       });
     }
+    
+    // CASCADE DELETE: Deactivate all associated batches to remove them from stock valuation and sales
+    await MedicineBatch.updateMany(
+      { medicineId: medicine._id, medicalStoreId: req.user.medicalStoreId },
+      { 
+        isActive: false, 
+        deactivationReason: 'Parent medicine deleted',
+        deactivatedAt: new Date(),
+        deactivatedBy: req.user._id 
+      }
+    );
     
     res.status(200).json({
       success: true,

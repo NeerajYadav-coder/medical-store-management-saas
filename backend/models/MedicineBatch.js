@@ -173,14 +173,7 @@ medicineBatchSchema.pre('save', function() {
   const effectiveReceived = this.quantityReceived + this.freeQuantity + this.quantityReturned;
   const effectiveUsed = this.quantitySold + this.quantityDamaged;
   this.quantityRemaining = effectiveReceived - effectiveUsed;
-  
-  // Price validations
-  if (this.mrp < this.sellingPrice) {
-    throw new Error('MRP cannot be less than Selling Price');
-  }
-  if (this.sellingPrice < this.purchasePrice) {
-    throw new Error('Selling Price cannot be less than Purchase Price (Base Unit)');
-  }
+  // Price validations removed to allow selling price to be less than purchase price (e.g. for promotions, discounts)
 
   // Expiry validation (Only for new batches)
   if (this.isNew && this.expiryDate && this.expiryDate < new Date()) {

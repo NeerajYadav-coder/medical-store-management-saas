@@ -90,45 +90,22 @@ export const getDashboardSnapshot = async (req, res, next) => {
     ]);
 
     // 4. Top 5 Profitable Medicines (Smart Analysis)
-    // We join SaleItem with Medicine to get names
-    const topMedicines = await SaleItem.aggregate([
-      { $match: { medicalStoreId } },
-      {
-        $group: {
-          _id: "$medicineId",
-          totalQuantity: { $sum: "$quantity" },
-          totalRevenue: { $sum: { $multiply: ["$quantity", "$sellingPrice"] } },
-          totalProfit: { 
-            $sum: { 
-              $multiply: [
-                "$quantity", 
-                { $subtract: ["$sellingPrice", "$purchasePrice"] } 
-              ] 
-            } 
-          }
-        }
-      },
-      { $sort: { totalProfit: -1 } },
-      { $limit: 5 },
-      {
-        $lookup: {
-          from: "medicines",
-          localField: "_id",
-          foreignField: "_id",
-          as: "medicine"
-        }
-      },
-      { $unwind: "$medicine" },
-      {
-        $project: {
-          name: "$medicine.name",
-          dosage: "$medicine.dosage",
-          totalQuantity: 1,
-          totalRevenue: 1,
-          totalProfit: 1
-        }
-      }
-    ]);
+    // Instead of aggregating millions of SaleItems (which is O(N) and includes voided sales bugs),
+    // we use the pre-calculated atomic aggregate stats on the Medicine collection directly.
+    const topMeds = await Medicine.find({ 
+      medicalStoreId,
+      totalProfit: { $gt: 0 }
+    })
+    .sort({ totalProfit: -1 })
+    .limit(5);
+
+    const topMedicines = topMeds.map(m => ({
+      name: m.name,
+      dosage: m.dosage,
+      totalQuantity: m.totalUnitsSold,
+      totalRevenue: m.totalRevenue,
+      totalProfit: m.totalProfit
+    }));
 
     // 5. Alerts Summary (Actionable Intelligence)
     const alerts = await StockAlert.aggregate([

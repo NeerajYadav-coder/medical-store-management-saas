@@ -1,109 +1,98 @@
 /**
  * utils/sendEmail.js
- * 
- * Email sending utility using console logging for development
- * In production, integrate with Nodemailer, SendGrid, or other email providers
+ *
+ * Production-grade email utility backed by Nodemailer (Gmail SMTP).
+ * All credentials are read from environment variables via config/mailer.js.
+ *
+ * This file intentionally keeps the same function signatures as the original
+ * stub so that otp.controller.js and any other callers require zero changes.
  */
 
-import env from '../config/env.js';
+import transporter from '../config/mailer.js';
+import { generateOtpEmail } from '../templates/otp.template.js';
+import { generateResetPasswordEmail } from '../templates/resetPassword.template.js';
 
 /**
- * Send Email (development mode: logs to console)
- * 
+ * sendEmail({ to, subject, text, html })
+ *
+ * Core dispatch function used by all higher-level helpers.
+ * Falls back to console-log in development when SMTP is not configured.
+ *
  * @param {Object} options
- * @param {string} options.to - Recipient email
- * @param {string} options.subject - Email subject
- * @param {string} options.text - Plain text body
- * @param {string} options.html - HTML body (optional)
+ * @param {string}   options.to      - Recipient email address
+ * @param {string}   options.subject - Email subject line
+ * @param {string}   [options.text]  - Plain-text fallback body
+ * @param {string}   [options.html]  - HTML body (preferred)
  * @returns {Promise<{success: boolean, messageId?: string}>}
  */
 export async function sendEmail({ to, subject, text, html }) {
-  // Development mode - just log to console
-  if (env.NODE_ENV === 'development' || !env.SMTP_HOST) {
+  // ── Development / no-SMTP fallback ──────────────────────────────────────────
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log('\n========================================');
-    console.log('📧 EMAIL (DEV MODE)');
+    console.log('📧 EMAIL (no SMTP configured — console only)');
     console.log('----------------------------------------');
-    console.log(`To: ${to}`);
+    console.log(`To:      ${to}`);
     console.log(`Subject: ${subject}`);
-    console.log(`Body: ${text}`);
+    console.log(`Body:    ${text || '(HTML only)'}`);
     console.log('========================================\n');
-    
-    return {
-      success: true,
-      messageId: `dev_${Date.now()}`,
-      mode: 'development',
-    };
+    return { success: true, messageId: `console_${Date.now()}`, mode: 'console' };
   }
 
-  // Production mode - integrate with email provider
-  // Example with Nodemailer (uncomment and configure)
-  /*
+  // ── Real send via Nodemailer ─────────────────────────────────────────────────
   try {
-    const nodemailer = require('nodemailer');
-    
-    const transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT || 587,
-      secure: env.SMTP_PORT === 465,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS,
-      },
-    });
-    
-    const result = await transporter.sendMail({
-      from: env.EMAIL_FROM || '"MedStore" <noreply@medstore.com>',
+    const info = await transporter.sendMail({
+      from: `"Krishna Pharmacy" <${process.env.SMTP_USER}>`,
       to,
       subject,
-      text,
-      html,
+      text: text || '',   // plain-text fallback for email clients that block HTML
+      html: html || '',
     });
-    
-    return {
-      success: true,
-      messageId: result.messageId,
-    };
-  } catch (error) {
-    console.error('[Email] Failed to send:', error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
-  */
 
-  // Fallback
-  return {
-    success: true,
-    messageId: `mock_${Date.now()}`,
-  };
+    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | MessageId: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+
+  } catch (error) {
+    console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${error.message}`);
+    // Return failure so the caller (otp.controller) can surface a proper 500
+    return { success: false, error: error.message };
+  }
 }
 
 /**
- * Send OTP via Email
+ * sendOTPEmail(email, otp)
+ *
+ * Sends the branded Krishna Pharmacy OTP email.
+ * Uses the professional HTML template from templates/otp.template.js.
+ *
+ * @param {string}        email - Recipient address
+ * @param {string|number} otp   - The one-time password
+ * @returns {Promise<{success: boolean, messageId?: string}>}
  */
 export async function sendOTPEmail(email, otp) {
-  // IMPORTANT: Must return the result
-  const result = await sendEmail({
+  return sendEmail({
     to: email,
-    subject: 'Your MedStore Verification Code',
-    text: `Your verification code is: ${otp}. Valid for 10 minutes. Do not share this code with anyone.`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #6366f1;">MedStore Verification</h2>
-        <p>Your verification code is:</p>
-        <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-          <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1f2937;">${otp}</span>
-        </div>
-        <p>This code is valid for <strong>10 minutes</strong>.</p>
-        <p style="color: #6b7280; font-size: 14px;">If you didn't request this code, please ignore this email.</p>
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-        <p style="color: #9ca3af; font-size: 12px;">© ${new Date().getFullYear()} MedStore. All rights reserved.</p>
-      </div>
-    `,
+    subject: 'Your Verification Code – Krishna Pharmacy',
+    text: `Your OTP is: ${otp}. Valid for 5 minutes. Do not share this code with anyone.`,
+    html: generateOtpEmail(otp),
   });
-  
-  return result;
+}
+
+/**
+ * sendPasswordResetEmail(email, resetUrl)
+ *
+ * Sends the branded Krishna Pharmacy Password Reset email.
+ *
+ * @param {string} email - Recipient address
+ * @param {string} resetUrl - The password reset URL
+ * @returns {Promise<{success: boolean, messageId?: string}>}
+ */
+export async function sendPasswordResetEmail(email, resetUrl) {
+  return sendEmail({
+    to: email,
+    subject: 'Reset your password – Krishna Pharmacy',
+    text: `Reset your password by visiting this link: ${resetUrl}. Valid for 10 minutes.`,
+    html: generateResetPasswordEmail(resetUrl),
+  });
 }
 
 export default sendEmail;

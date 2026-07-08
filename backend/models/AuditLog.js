@@ -6,7 +6,7 @@ const auditLogSchema = new mongoose.Schema(
     medicalStoreId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "MedicalStore",
-      required: true,
+      required: false,
       index: true,
     },
 
@@ -14,7 +14,7 @@ const auditLogSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
       index: true,
     },
 

@@ -168,8 +168,8 @@ customerSchema.methods.updateStatsAfterSale = async function(saleTotal, profit, 
   this.avgOrderValue = this.totalSpent / this.totalPurchases;
   this.lastVisitDate = new Date();
   
-  // Mark as repeat buyer after 2nd purchase
-  if (this.totalPurchases >= 2 && !this.isRepeatBuyer) {
+  // Mark as repeat buyer after 4th purchase
+  if (this.totalPurchases >= 4 && !this.isRepeatBuyer) {
     this.isRepeatBuyer = true;
   }
   

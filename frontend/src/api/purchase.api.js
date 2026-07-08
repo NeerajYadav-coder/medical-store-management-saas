@@ -24,6 +24,16 @@ const purchaseApi = {
   update: async (id, data) => {
     return await api.patch(`/purchase/${id}`, data);
   },
+
+  // Void purchase
+  delete: async (id) => {
+    return await api.delete(`/purchase/${id}`);
+  },
+
+  // Parse supplier invoice image using Gemini AI OCR
+  parseInvoice: async (data) => {
+    return await api.post('/purchase/parse-invoice', data);
+  },
 };
 
 export default purchaseApi;

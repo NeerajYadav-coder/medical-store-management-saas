@@ -369,15 +369,19 @@
  */
 
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import User from '../models/User.js';
 import MedicalStore from '../models/MedicalStore.js';
 import OTP from '../models/OTP.js';
+import RefreshToken from '../models/RefreshToken.js';
+import AuditLog from '../models/AuditLog.js';
 import env from '../config/env.js';
 import { ROLES } from '../constants/roles.js';
 import { ROLE_PERMISSIONS } from '../constants/permissions.js';
+import { sendPasswordResetEmail } from '../utils/sendEmail.js';
 
 /**
- * Utility: Generate JWT Access Token
+ * Utility: Generate JWT Access Token (Short-lived: 15 minutes)
  */
 const generateAccessToken = (user) => {
   return jwt.sign(
@@ -385,13 +389,38 @@ const generateAccessToken = (user) => {
       userId: user._id,
       role: user.role,
       medicalStoreId: user.medicalStoreId,
+      tokenVersion: user.tokenVersion,
     },
     env.JWT_ACCESS_SECRET,
     {
-      expiresIn: env.JWT_ACCESS_EXPIRES_IN,
+      expiresIn: '15m',
     }
   );
 };
+
+/**
+ * Utility: Generate Cryptographically Secure Refresh Token
+ */
+const generateRefreshToken = () => {
+  return crypto.randomBytes(40).toString('hex');
+};
+
+/**
+ * Hash raw token (SHA-256)
+ */
+const hashToken = (token) => {
+  return crypto.createHash('sha256').update(token).digest('hex');
+};
+
+/**
+ * Secure HttpOnly Cookie Options
+ */
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+});
 
 /**
  * Helper: Check if OTP is verified
@@ -413,9 +442,6 @@ const isOTPVerified = async (destination, type, purpose = 'signup') => {
  * SIGNUP → OWNER ONLY
  * -----------------------
  * POST /api/v1/auth/signup
- *
- * Creates MedicalStore + OWNER user atomically
- * Requires phone AND email OTP verification
  */
 export const signup = async (req, res, next) => {
   try {
@@ -435,28 +461,27 @@ export const signup = async (req, res, next) => {
       password,
     } = req.body;
 
-    // Basic validation (all mandatory per story)
-    if (!storeName || !ownerName || !storePhone || !storeEmail || !address || 
-        !drugLicenseNumber || !ownerEmail || !ownerPhone || !password) {
-      return res.status(400).json({
+    const normalizedEmail = ownerEmail.trim().toLowerCase();
+    const normalizedStoreEmail = storeEmail.trim().toLowerCase();
+
+    // Prevent duplicate owner email (global check)
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(409).json({
         success: false,
-        message: 'All fields are required: storeName, ownerName, storePhone, storeEmail, address, drugLicenseNumber, ownerEmail, ownerPhone, password',
+        message: 'Owner email already exists',
       });
     }
 
-    // ===== OTP VERIFICATION CHECK =====
-    // Check if phone is verified
-    const phoneVerified = await isOTPVerified(ownerPhone, 'phone', 'signup');
-    if (!phoneVerified) {
-      return res.status(400).json({
+    const existingStore = await MedicalStore.findOne({ email: normalizedStoreEmail });
+    if (existingStore) {
+      return res.status(409).json({
         success: false,
-        message: 'Phone number not verified. Please verify your phone number first.',
-        verificationRequired: 'phone',
+        message: 'Medical store with this email already exists',
       });
     }
 
-    // Check if email is verified
-    const emailVerified = await isOTPVerified(ownerEmail, 'email', 'signup');
+    const emailVerified = await isOTPVerified(normalizedEmail, 'email', 'signup');
     if (!emailVerified) {
       return res.status(400).json({
         success: false,
@@ -465,24 +490,6 @@ export const signup = async (req, res, next) => {
       });
     }
 
-    // Prevent duplicate owner email (global check is OK for owner)
-    const existingUser = await User.findOne({ email: ownerEmail });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'Owner email already exists',
-      });
-    }
-
-    const existingStore = await MedicalStore.findOne({ email: storeEmail });
-    if (existingStore) {
-      return res.status(409).json({
-        success: false,
-        message: 'Medical store with this email already exists',
-      });
-    }
-
-
     /**
      * Step 1: Create MedicalStore FIRST
      */
@@ -490,24 +497,26 @@ export const signup = async (req, res, next) => {
       name: storeName,
       ownerName,
       phone: storePhone,
-      email: storeEmail,
+      email: normalizedStoreEmail,
       address,
       drugLicenseNumber,
       gstNumber,
-      createdBy: undefined, // set after owner creation
+      createdBy: undefined,
     });
 
     /**
-     * Step 2: Create OWNER user
+     * Step 2: Create OWNER user (automatically verified since OTP passed)
      */
     const ownerUser = await User.create({
       name: ownerName,
-      email: ownerEmail,
+      email: normalizedEmail,
       phone: ownerPhone,
       passwordHash: password,
       role: ROLES.OWNER,
-      permissions: ROLE_PERMISSIONS.OWNER, // Assign full permissions
+      permissions: ROLE_PERMISSIONS.OWNER,
       medicalStoreId: store._id,
+      isEmailVerified: true,
+      isPhoneVerified: true,
     });
 
     /**
@@ -516,11 +525,42 @@ export const signup = async (req, res, next) => {
     store.createdBy = ownerUser._id;
     await store.save();
 
+    // Consume and delete the OTPs immediately to prevent reuse
+    await OTP.deleteMany({ destination: normalizedEmail, type: 'email', purpose: 'signup' });
+
+    // Generate tokens
     const accessToken = generateAccessToken(ownerUser);
+    const rawRefreshToken = generateRefreshToken();
+    const hashedRefreshToken = hashToken(rawRefreshToken);
+
+    // Save refresh token to DB
+    await RefreshToken.create({
+      userId: ownerUser._id,
+      tokenHash: hashedRefreshToken,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    // Set Refresh Token HTTP-only cookie
+    res.cookie('refreshToken', rawRefreshToken, getCookieOptions());
+
+    // Audit successful signup
+    await AuditLog.create({
+      medicalStoreId: store._id,
+      userId: ownerUser._id,
+      action: 'CREATE',
+      entityType: 'STORE_OWNER',
+      entityId: ownerUser._id,
+      details: { storeName, ownerEmail: normalizedEmail },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
 
     return res.status(201).json({
       success: true,
       token: accessToken,
+      refreshToken: rawRefreshToken,
       medicalStoreId: store._id,
       user: {
         id: ownerUser._id,
@@ -536,45 +576,103 @@ export const signup = async (req, res, next) => {
 
 /**
  * -----------------------
- * LOGIN (unchanged)
+ * LOGIN
  * -----------------------
+ * POST /api/v1/auth/login
  */
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and password are required',
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      await AuditLog.create({
+        action: 'LOGIN',
+        entityType: 'USER',
+        details: { email: normalizedEmail, success: false, reason: 'User not found' },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
       });
-    }
 
-    const user = await User.findOne({ email });
-
-    if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials',
+      });
+    }
+
+    if (!user.isActive) {
+      await AuditLog.create({
+        medicalStoreId: user.medicalStoreId,
+        userId: user._id,
+        action: 'LOGIN',
+        entityType: 'USER',
+        details: { email: normalizedEmail, success: false, reason: 'Account deactivated' },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+
+      return res.status(401).json({
+        success: false,
+        message: 'Your account is deactivated. Please contact support.',
       });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      await AuditLog.create({
+        medicalStoreId: user.medicalStoreId,
+        userId: user._id,
+        action: 'LOGIN',
+        entityType: 'USER',
+        details: { email: normalizedEmail, success: false, reason: 'Password mismatch' },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials',
       });
     }
 
+    // Success
     user.lastLoginAt = new Date();
     await user.save();
 
     const accessToken = generateAccessToken(user);
+    const rawRefreshToken = generateRefreshToken();
+    const hashedRefreshToken = hashToken(rawRefreshToken);
+
+    // Save refresh token to DB
+    await RefreshToken.create({
+      userId: user._id,
+      tokenHash: hashedRefreshToken,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    // Set Refresh Token HTTP-only cookie
+    res.cookie('refreshToken', rawRefreshToken, getCookieOptions());
+
+    // Audit successful login
+    await AuditLog.create({
+      medicalStoreId: user.medicalStoreId,
+      userId: user._id,
+      action: 'LOGIN',
+      entityType: 'USER',
+      entityId: user._id,
+      details: { email: normalizedEmail, success: true },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
 
     res.status(200).json({
       success: true,
       token: accessToken,
+      refreshToken: rawRefreshToken,
       user: {
         id: user._id,
         name: user.name,
@@ -589,7 +687,7 @@ export const login = async (req, res, next) => {
 
 /**
  * -----------------------
- * GET CURRENT USER (unchanged)
+ * GET CURRENT USER
  * -----------------------
  */
 export const getMe = async (req, res, next) => {
@@ -614,14 +712,347 @@ export const getMe = async (req, res, next) => {
 
 /**
  * -----------------------
- * LOGOUT (unchanged)
+ * LOGOUT
  * -----------------------
  */
-export const logout = async (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Logged out successfully',
-  });
+export const logout = async (req, res, next) => {
+  try {
+    const rawRefreshToken = req.cookies?.refreshToken || req.body.refreshToken;
+
+    if (rawRefreshToken) {
+      const tokenHash = hashToken(rawRefreshToken);
+      await RefreshToken.deleteOne({ tokenHash });
+    }
+
+    res.clearCookie('refreshToken');
+
+    // Audit logout (if user context exists)
+    if (req.user) {
+      await AuditLog.create({
+        medicalStoreId: req.user.medicalStoreId,
+        userId: req.user._id,
+        action: 'LOGOUT',
+        entityType: 'USER',
+        entityId: req.user._id,
+        details: { message: 'Logged out successfully' },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * -----------------------
+ * LOGOUT ALL DEVICES
+ * -----------------------
+ */
+export const logoutAll = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+
+    // Increment user token version to invalidate access tokens
+    await User.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
+
+    // Revoke all refresh tokens
+    await RefreshToken.deleteMany({ userId });
+
+    res.clearCookie('refreshToken');
+
+    // Audit event
+    await AuditLog.create({
+      medicalStoreId: req.user.medicalStoreId,
+      userId: req.user._id,
+      action: 'LOGOUT',
+      entityType: 'USER',
+      entityId: req.user._id,
+      details: { message: 'Logged out from all devices' },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Logged out from all devices successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * -----------------------
+ * REFRESH TOKEN (Rotation)
+ * -----------------------
+ */
+export const refreshToken = async (req, res, next) => {
+  try {
+    const rawRefreshToken = req.cookies?.refreshToken || req.body.refreshToken;
+
+    if (!rawRefreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token is required',
+      });
+    }
+
+    const tokenHash = hashToken(rawRefreshToken);
+    const storedToken = await RefreshToken.findOne({ tokenHash, isRevoked: false }).populate('userId');
+
+    // Reuse detection (hijack protection)
+    if (!storedToken) {
+      const revokedToken = await RefreshToken.findOne({ tokenHash, isRevoked: true });
+      if (revokedToken) {
+        // Token replayed! Revoke all tokens in family immediately
+        await RefreshToken.deleteMany({ userId: revokedToken.userId });
+        
+        const user = await User.findById(revokedToken.userId);
+        if (user) {
+          user.tokenVersion += 1;
+          await user.save();
+        }
+
+        await AuditLog.create({
+          userId: revokedToken.userId,
+          action: 'UPDATE',
+          entityType: 'SECURITY',
+          details: { reason: 'Refresh token reuse detected. Family revoked.' },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+
+        res.clearCookie('refreshToken');
+        return res.status(401).json({
+          success: false,
+          message: 'Suspicious session activity detected. Please login again.',
+        });
+      }
+
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired session',
+      });
+    }
+
+    // Expiration check
+    if (storedToken.expiresAt < new Date()) {
+      await RefreshToken.deleteOne({ _id: storedToken._id });
+      res.clearCookie('refreshToken');
+      return res.status(401).json({
+        success: false,
+        message: 'Session has expired. Please login again.',
+      });
+    }
+
+    const user = storedToken.userId;
+    if (!user || !user.isActive) {
+      res.clearCookie('refreshToken');
+      return res.status(401).json({
+        success: false,
+        message: 'User request failed: Inactive or deleted user',
+      });
+    }
+
+    // Rotate refresh token
+    const newAccessToken = generateAccessToken(user);
+    const newRawRefreshToken = generateRefreshToken();
+    const newHashedRefreshToken = hashToken(newRawRefreshToken);
+
+    // Save new token
+    await RefreshToken.create({
+      userId: user._id,
+      tokenHash: newHashedRefreshToken,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    // Mark current refresh token as rotated
+    storedToken.isRevoked = true;
+    storedToken.replacedByTokenHash = newHashedRefreshToken;
+    await storedToken.save();
+
+    res.cookie('refreshToken', newRawRefreshToken, getCookieOptions());
+
+    res.status(200).json({
+      success: true,
+      token: newAccessToken,
+      refreshToken: newRawRefreshToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        role: user.role,
+        medicalStoreId: user.medicalStoreId,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * -----------------------
+ * FORGOT PASSWORD
+ * -----------------------
+ */
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail });
+
+    // Always return generic success to prevent email verification probing
+    const genericResponse = {
+      success: true,
+      message: 'If this email is registered, we have sent a password reset link.',
+    };
+
+    if (!user || !user.isActive) {
+      return res.status(200).json(genericResponse);
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = hashToken(resetToken);
+
+    user.passwordResetToken = resetTokenHash;
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    const resetUrl = `${env.CORS_ORIGIN}/reset-password?token=${resetToken}`;
+
+    // Send email
+    await sendPasswordResetEmail(normalizedEmail, resetUrl);
+
+    // Log the request
+    await AuditLog.create({
+      medicalStoreId: user.medicalStoreId,
+      userId: user._id,
+      action: 'UPDATE',
+      entityType: 'USER',
+      entityId: user._id,
+      details: { email: normalizedEmail, message: 'Password reset link sent' },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    return res.status(200).json(genericResponse);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * -----------------------
+ * RESET PASSWORD
+ * -----------------------
+ */
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body;
+    const tokenHash = hashToken(token);
+
+    const user = await User.findOne({
+      passwordResetToken: tokenHash,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired password reset token.',
+      });
+    }
+
+    user.passwordHash = newPassword; // hashed automatically by pre-save
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    user.tokenVersion += 1; // invalidate current access tokens
+    await user.save();
+
+    // Revoke all refresh tokens
+    await RefreshToken.deleteMany({ userId: user._id });
+
+    // Log successful reset
+    await AuditLog.create({
+      medicalStoreId: user.medicalStoreId,
+      userId: user._id,
+      action: 'UPDATE',
+      entityType: 'USER',
+      entityId: user._id,
+      details: { message: 'Password reset successful via reset link' },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset successful. Please login with your new password.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * -----------------------
+ * CHANGE PASSWORD
+ * -----------------------
+ */
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect current password',
+      });
+    }
+
+    user.passwordHash = newPassword;
+    user.tokenVersion += 1;
+    await user.save();
+
+    await RefreshToken.deleteMany({ userId: user._id });
+    res.clearCookie('refreshToken');
+
+    await AuditLog.create({
+      medicalStoreId: user.medicalStoreId,
+      userId: user._id,
+      action: 'UPDATE',
+      entityType: 'USER',
+      entityId: user._id,
+      details: { message: 'Password changed successfully' },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password changed successfully. All other devices have been logged out.',
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
@@ -647,20 +1078,7 @@ export const createStaff = async (req, res, next) => {
       });
     }
 
-    // Premium plan check: Free plan restricted to 2 staff accounts (STAFF + MANAGER)
-    const store = await MedicalStore.findById(req.user.medicalStoreId);
-    if (!store || store.plan !== 'PREMIUM') {
-      const staffCount = await User.countDocuments({
-        medicalStoreId: req.user.medicalStoreId,
-        role: { $in: ['STAFF', 'MANAGER'] },
-      });
-      if (staffCount >= 2) {
-        return res.status(403).json({
-          success: false,
-          message: 'Upgrade to Premium plan to add more than 2 staff members.',
-        });
-      }
-    }
+
 
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }],
@@ -856,6 +1274,104 @@ export const deleteStaff = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Staff deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * -----------------------
+ * UPDATE PROFILE
+ * -----------------------
+ * PUT /api/v1/auth/profile
+ */
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, phone } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (phone && phone !== user.phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) {
+        return res.status(409).json({
+          success: false,
+          message: 'User with this phone number already exists',
+        });
+      }
+      user.phone = phone;
+    }
+
+    if (name) {
+      user.name = name;
+    }
+
+    await user.save();
+
+    const updatedUser = user.toObject();
+    delete updatedUser.passwordHash;
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Check email uniqueness (early validation)
+ * POST /api/v1/auth/check-email-uniqueness
+ */
+export const checkEmailUniqueness = async (req, res, next) => {
+  try {
+    const { email, type } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email address is required',
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (type === 'store') {
+      const existingStore = await MedicalStore.findOne({ email: normalizedEmail });
+      if (existingStore) {
+        return res.status(200).json({
+          success: true,
+          available: false,
+          message: 'This email is already registered. Please use a different email address.',
+        });
+      }
+    } else if (type === 'owner') {
+      const existingUser = await User.findOne({ email: normalizedEmail });
+      if (existingUser) {
+        return res.status(200).json({
+          success: true,
+          available: false,
+          message: 'This email is already registered. Please use a different email address.',
+        });
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid check type. Must be "store" or "owner".',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      available: true,
     });
   } catch (error) {
     next(error);

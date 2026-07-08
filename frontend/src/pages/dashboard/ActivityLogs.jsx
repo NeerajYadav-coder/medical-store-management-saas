@@ -17,16 +17,11 @@ import {
 import Button from '@components/common/Button'
 import { Skeleton } from '@components/common/Loader'
 import { cn } from '@utils/cn'
-import { useStore } from '@context/StoreContext'
-import PremiumLockOverlay from '@components/common/PremiumLockOverlay'
-import PremiumModal from '@components/common/PremiumModal'
 import { exportToPDF } from '@utils/exportPDF'
 import toast from 'react-hot-toast'
 
 export default function ActivityLogs() {
   const { user } = useAuth()
-  const { store } = useStore()
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState({
     action: '',
@@ -35,14 +30,11 @@ export default function ActivityLogs() {
     search: ''
   })
 
-  const isFree = store?.plan !== 'PREMIUM'
-
-  // Fetch logs - only when not free
+  // Fetch logs
   const { data, isLoading } = useQuery({
     queryKey: ['audit-logs', page, filters],
     queryFn: () => auditApi.getLogs({ page, limit: 20, ...filters }),
     keepPreviousData: true,
-    enabled: !isFree,
   })
 
   const logs = data?.data || []
@@ -267,170 +259,153 @@ export default function ActivityLogs() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Shop History</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">See a list of all sales, purchases, and changes made in your shop.</p>
         </div>
-        {!isFree && (
-          <div className="flex items-center gap-3">
-            <Button variant="outline" leftIcon={<Filter className="h-4 w-4" />}>
-              Filter
-            </Button>
-            <Button variant="outline" onClick={handleExport} leftIcon={<Download className="h-4 w-4" />}>
-              Export
-            </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" leftIcon={<Filter className="h-4 w-4" />}>
+            Filter
+          </Button>
+          <Button variant="outline" onClick={handleExport} leftIcon={<Download className="h-4 w-4" />}>
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters (Simplified for now) */}
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
+        <div className="relative w-full sm:flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input 
+            type="text"
+            placeholder="Search history..."
+            className="w-full pl-9 pr-4 py-2 border border-gray-305 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-505 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
+            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+          />
+        </div>
+        <select 
+          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
+          value={filters.action}
+          onChange={(e) => setFilters(prev => ({ ...prev, action: e.target.value }))}
+        >
+          <option value="">All Actions</option>
+          <option value="CREATE">Add New</option>
+          <option value="UPDATE">Change Details</option>
+          <option value="DELETE">Remove</option>
+          <option value="LOGIN">Sign In</option>
+        </select>
+        <select 
+          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
+          value={filters.entity}
+          onChange={(e) => setFilters(prev => ({ ...prev, entity: e.target.value }))}
+        >
+          <option value="">All Pages</option>
+          <option value="SALE">Sales</option>
+          <option value="PURCHASE">Purchases</option>
+          <option value="MEDICINE">Medicines</option>
+          <option value="USER">Staff / Helpers</option>
+          <option value="CUSTOMER">Customers</option>
+          <option value="SUPPLIER">Suppliers</option>
+        </select>
+      </div>
+
+      {/* Logs Table */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50 dark:bg-gray-950/75 border-b border-gray-200 dark:border-gray-700">
+              <tr>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Time</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Who Did It</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">What Happened</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {isLoading ? (
+                // Loading Skeleton
+                [...Array(5)].map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-6 w-16 rounded-full" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-48" /></td>
+                  </tr>
+                ))
+              ) : logs.length > 0 ? (
+                logs.map((log) => {
+                  const actionBadge = getActionBadge(log.action)
+                  return (
+                    <tr key={log._id} className="hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <div className="font-semibold text-gray-800 dark:text-gray-200">{formatDate(log.createdAt, 'MMM d, h:mm a')}</div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500">{formatRelativeTime(log.createdAt)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-9 w-9 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 font-bold text-sm mr-3">
+                            {log.userId?.name?.charAt(0) || '?'}
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{log.userId?.name || 'System'}</div>
+                            <div className="text-xs text-gray-400 dark:text-gray-500 font-medium px-2 py-0.5 bg-gray-100 dark:bg-gray-800 dark:bg-gray-700 rounded-full inline-block mt-0.5">{log.userId?.role || 'SYSTEM'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={cn("px-2.5 py-1 text-xs font-semibold rounded-full", actionBadge.color)}>
+                          {actionBadge.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xl">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                            {getEntityIcon(log.entityType || log.entity)}
+                          </span>
+                          <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{getFriendlyEntity(log.entityType || log.entity)}</span>
+                        </div>
+                        <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{getFriendlyDescription(log)}</div>
+                      </td>
+                    </tr>
+                  )
+                })
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <History className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                    <p className="text-lg font-medium text-gray-900 dark:text-white">No logs found</p>
+                    <p className="text-sm">Adjust filters or check back later.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {logs.length > 0 && (
+          <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t border-gray-200 dark:border-gray-750 flex items-center justify-between">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Page {pagination.page} of {pagination.pages}
+            </span>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={page === 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              >
+                Previous
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={page >= pagination.pages}
+                onClick={() => setPage(p => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         )}
       </div>
-
-      {isFree ? (
-        <PremiumLockOverlay 
-          title="History Page Locked"
-          description="Shop history is a Premium feature. Upgrade to the Premium Plan to see a history of all sales, purchases, and changes made by your helpers."
-          onUpgradeClick={() => setIsUpgradeModalOpen(true)}
-        />
-      ) : (
-        <>
-          {/* Filters (Simplified for now) */}
-          <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
-            <div className="relative w-full sm:flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input 
-                type="text"
-                placeholder="Search history..."
-                className="w-full pl-9 pr-4 py-2 border border-gray-305 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-505 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              />
-            </div>
-            <select 
-              className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
-              value={filters.action}
-              onChange={(e) => setFilters(prev => ({ ...prev, action: e.target.value }))}
-            >
-              <option value="">All Actions</option>
-              <option value="CREATE">Add New</option>
-              <option value="UPDATE">Change Details</option>
-              <option value="DELETE">Remove</option>
-              <option value="LOGIN">Sign In</option>
-            </select>
-            <select 
-              className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
-              value={filters.entity}
-              onChange={(e) => setFilters(prev => ({ ...prev, entity: e.target.value }))}
-            >
-              <option value="">All Pages</option>
-              <option value="SALE">Sales</option>
-              <option value="PURCHASE">Purchases</option>
-              <option value="MEDICINE">Medicines</option>
-              <option value="USER">Staff / Helpers</option>
-              <option value="CUSTOMER">Customers</option>
-              <option value="SUPPLIER">Suppliers</option>
-            </select>
-          </div>
-
-          {/* Logs Table */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50 dark:bg-gray-950/75 border-b border-gray-200 dark:border-gray-700">
-                  <tr>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Time</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Who Did It</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">What Happened</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {isLoading ? (
-                    // Loading Skeleton
-                    [...Array(5)].map((_, i) => (
-                      <tr key={i}>
-                        <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
-                        <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
-                        <td className="px-6 py-4"><Skeleton className="h-6 w-16 rounded-full" /></td>
-                        <td className="px-6 py-4"><Skeleton className="h-4 w-48" /></td>
-                      </tr>
-                    ))
-                  ) : logs.length > 0 ? (
-                    logs.map((log) => {
-                      const actionBadge = getActionBadge(log.action)
-                      return (
-                        <tr key={log._id} className="hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            <div className="font-semibold text-gray-800 dark:text-gray-200">{formatDate(log.createdAt, 'MMM d, h:mm a')}</div>
-                            <div className="text-xs text-gray-400 dark:text-gray-500">{formatRelativeTime(log.createdAt)}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-9 w-9 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 font-bold text-sm mr-3">
-                                {log.userId?.name?.charAt(0) || '?'}
-                              </div>
-                              <div>
-                                <div className="text-sm font-semibold text-gray-900 dark:text-white">{log.userId?.name || 'System'}</div>
-                                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium px-2 py-0.5 bg-gray-100 dark:bg-gray-800 dark:bg-gray-700 rounded-full inline-block mt-0.5">{log.userId?.role || 'SYSTEM'}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={cn("px-2.5 py-1 text-xs font-semibold rounded-full", actionBadge.color)}>
-                              {actionBadge.label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xl">
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <span className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                                {getEntityIcon(log.entityType || log.entity)}
-                              </span>
-                              <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{getFriendlyEntity(log.entityType || log.entity)}</span>
-                            </div>
-                            <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{getFriendlyDescription(log)}</div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                        <History className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-                        <p className="text-lg font-medium text-gray-900 dark:text-white">No logs found</p>
-                        <p className="text-sm">Adjust filters or check back later.</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {logs.length > 0 && (
-              <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t border-gray-200 dark:border-gray-750 flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Page {pagination.page} of {pagination.pages}
-                </span>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    disabled={page === 1}
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                  >
-                    Previous
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    disabled={page >= pagination.pages}
-                    onClick={() => setPage(p => p + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      <PremiumModal 
-        isOpen={isUpgradeModalOpen} 
-        onClose={() => setIsUpgradeModalOpen(false)} 
-      />
     </div>
   )
 }

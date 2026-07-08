@@ -125,6 +125,15 @@ export default function MedicineForm({
     }
   }, [medicine])
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const handleChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -151,8 +160,6 @@ export default function MedicineForm({
     const sellingPrice = parseFloat(formData.defaultSellingPrice)
     if (isNaN(sellingPrice) || sellingPrice <= 0) {
       newErrors.defaultSellingPrice = 'Valid selling price is required'
-    } else if (sellingPrice > mrp) {
-      newErrors.defaultSellingPrice = 'Selling price cannot exceed MRP'
     }
 
     setErrors(newErrors)
@@ -193,6 +200,7 @@ export default function MedicineForm({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close modal"
             className="p-2 hover:bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -212,6 +220,7 @@ export default function MedicineForm({
                 <Input
                   label="Medicine Name"
                   required
+                  autoFocus
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   error={errors.name}
@@ -390,10 +399,10 @@ export default function MedicineForm({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 rounded-b-2xl">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} isLoading={isLoading}>
+          <Button type="button" onClick={handleSubmit} isLoading={isLoading}>
             {medicine ? 'Update Medicine' : 'Save Medicine'}
           </Button>
         </div>

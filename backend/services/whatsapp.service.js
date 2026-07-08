@@ -6,6 +6,10 @@ import User from "../models/User.js";
 import WhatsAppMessage from "../models/WhatsAppMessage.js";
 import StockAlert from "../models/StockAlert.js";
 import mongoose from "mongoose";
+import { WhatsappService } from "../modules/whatsapp/services/whatsapp.service.js";
+import { generateInvoicePDF } from "../utils/pdfGenerator.js";
+import fs from "fs";
+import path from "path";
 
 class WhatsAppService {
   /**
@@ -28,9 +32,9 @@ class WhatsAppService {
    */
   parseDosage(dosageStr) {
     if (!dosageStr) return 1; // Default to 1 tablet/day if not specified
-    
+
     const clean = dosageStr.toLowerCase().trim();
-    
+
     // Check patterns like 1-0-1, 1-1-1, etc.
     const patternMatch = clean.match(/^([0-9\.]+)-([0-9\.]+)-([0-9\.]+)$/);
     if (patternMatch) {
@@ -39,7 +43,7 @@ class WhatsAppService {
       const evening = parseFloat(patternMatch[3]) || 0;
       return morning + afternoon + evening;
     }
-    
+
     // Check patterns like 1-0-1-1
     const patternMatch4 = clean.match(/^([0-9\.]+)-([0-9\.]+)-([0-9\.]+)-([0-9\.]+)$/);
     if (patternMatch4) {
@@ -75,7 +79,7 @@ class WhatsAppService {
   /**
    * Core Send/Simulate function
    */
-  async sendMessage(medicalStoreId, recipientName, recipientPhone, messageType, content) {
+  async sendMessage(medicalStoreId, recipientName, recipientPhone, messageType, content, mediaOptions = null) {
     try {
       const store = await MedicalStore.findById(medicalStoreId);
       if (!store) {
@@ -93,10 +97,30 @@ class WhatsAppService {
       let status = "SIMULATED";
       let errorMessage = null;
 
-      // If configuration is enabled and has keys, we trigger a real fetch call
-      if (isEnabled && config.apiKey) {
+      // Check if store's WhatsApp session is active/connected
+      const isConnected = await WhatsappService.isConnected(medicalStoreId);
+
+      if (isConnected) {
         try {
-          // Standard post request to WhatsApp Gateway (such as Twilio, Meta Cloud API, or a Webhook URL)
+          if (mediaOptions && mediaOptions.fileBuffer) {
+            await WhatsappService.sendDocument(
+              medicalStoreId,
+              formattedPhone,
+              mediaOptions.fileBuffer,
+              mediaOptions.fileName,
+              content
+            );
+          } else {
+            await WhatsappService.sendMessage(medicalStoreId, formattedPhone, content);
+          }
+          status = "SENT";
+        } catch (err) {
+          status = "FAILED";
+          errorMessage = err.message || "Failed to dispatch via WhatsApp client";
+        }
+      } else if (isEnabled && config.apiKey) {
+        // Fallback or legacy Meta/Twilio HTTP Gateway if credentials are set manually
+        try {
           const response = await fetch("https://api.whatsapp.com/v1/messages", {
             method: "POST",
             headers: {
@@ -150,14 +174,14 @@ class WhatsAppService {
   async sendDailyReport(medicalStoreId) {
     try {
       const store = await MedicalStore.findById(medicalStoreId);
-      if (!store || !store.whatsappConfig?.dailyReportEnabled || !store.whatsappConfig?.phoneNumber) {
-        return { success: false, reason: "WhatsApp daily report not enabled or phone missing" };
+      if (!store || !store.whatsappConfig?.dailyReportEnabled) {
+        return { success: false, reason: "WhatsApp daily report not enabled" };
       }
 
       const today = new Date();
       // Fetch daily sales summary
       const summary = await Sale.getDailySummary(medicalStoreId, today);
-      
+
       // Fetch alerts (Low Stock, Expiries)
       const lowStockCount = await StockAlert.countDocuments({
         medicalStoreId,
@@ -184,8 +208,8 @@ class WhatsAppService {
       });
 
       // Format report content
-      const content = 
-`📊 *${store.name} - Daily Report (${formattedDate})*
+      const content =
+        `📊 *${store.name} - Daily Report (${formattedDate})*
 
 🧾 *Total Bills:* ${summary.totalBills} transactions
 💰 *Gross Sales:* ₹${summary.totalRevenue.toLocaleString("en-IN")}
@@ -207,7 +231,11 @@ class WhatsAppService {
 _Generated automatically by Medical Store SaaS_`;
 
       const recipientName = store.ownerName || "Store Owner";
-      const recipientPhone = store.whatsappConfig.phoneNumber;
+      const recipientPhone = store.whatsappConfig.businessPhone || store.phone;
+
+      if (!recipientPhone) {
+        return { success: false, reason: "No recipient phone number available" };
+      }
 
       return await this.sendMessage(medicalStoreId, recipientName, recipientPhone, "DAILY_REPORT", content);
     } catch (error) {
@@ -219,14 +247,25 @@ _Generated automatically by Medical Store SaaS_`;
   /**
    * Send Purchase Thank You to Customer
    */
-  async sendPurchaseReceipt(saleId) {
+  async sendPurchaseReceipt(saleId, retries = 3) {
     try {
-      const sale = await Sale.findById(saleId);
-      if (!sale) throw new Error("Sale bill not found");
+      let sale = null;
+      for (let i = 0; i < retries; i++) {
+        sale = await Sale.findById(saleId);
+        if (sale) break;
+        // Wait 500ms before retrying to allow transaction commit to fully propagate
+        await new Promise(res => setTimeout(res, 500));
+      }
+      if (!sale) throw new Error("Sale bill not found after retries");
 
       const store = await MedicalStore.findById(sale.medicalStoreId);
-      if (!store || !store.whatsappConfig?.thankYouEnabled || !sale.customerPhone) {
-        return { success: false, reason: "Thank you message not enabled or no customer phone number" };
+      if (!store || !sale.customerPhone) {
+        return { success: false, reason: "Store not found or no customer phone number" };
+      }
+
+      const config = store.whatsappConfig || {};
+      if (!config.isEnabled && !config.connected) {
+        return { success: false, reason: "WhatsApp is not enabled or connected for this store" };
       }
 
       // Fetch items in the bill
@@ -238,27 +277,147 @@ _Generated automatically by Medical Store SaaS_`;
         itemsText += `- ${item.medicineName} x ${item.quantity} ${item.medicineForm || "units"}\n`;
       });
 
-      const content = 
-`🙏 *Thank you for your purchase at ${store.name}!*
+      // Calculate visit count based on database records
+      let visitCount = 1;
+      if (sale.customerPhone) {
+        visitCount = await Sale.countDocuments({
+          medicalStoreId: sale.medicalStoreId,
+          customerPhone: sale.customerPhone,
+          status: { $ne: "VOID" }
+        });
+      }
 
-🧾 *Bill Number:* #${sale.billNumber}
-💵 *Amount Paid:* ₹${sale.grandTotal.toLocaleString("en-IN")}
-💳 *Payment Mode:* ${sale.paymentMode}
+      const getOrdinal = (num) => {
+        const lastDigit = num % 10;
+        const lastTwoDigits = num % 100;
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 13) {
+          return `${num}ᵗʰ`;
+        }
+        switch (lastDigit) {
+          case 1: return `${num}ˢᵗ`;
+          case 2: return `${num}ⁿᵈ`;
+          case 3: return `${num}ʳᵈ`;
+          default: return `${num}ᵗʰ`;
+        }
+      };
 
-💊 *Medicines Purchased:*
-${itemsText}
-We wish you a speedy recovery! Let us know if you need any refills or medicines in the future.
+      const customerName = sale.customerName || "Customer";
+      const storeName = store.name;
+      let content = "";
 
-📞 *Contact Store:* ${store.phone}
-📍 *Address:* ${store.address}`;
+      if (visitCount === 1) {
+        content = 
+`Dear ${customerName},
 
-      return await this.sendMessage(
-        sale.medicalStoreId,
-        sale.customerName || "Customer",
-        sale.customerPhone,
-        "PURCHASE_RECEIPT",
-        content
-      );
+Welcome to ${storeName}! 🌸
+
+Thank you for trusting us with your healthcare needs. We're delighted to serve you.
+
+📎 Your invoice is attached with this message.
+
+नमस्कार ${customerName} जी,
+
+${storeName} में आपका हार्दिक स्वागत है। पहली बार हम पर विश्वास करने के लिए आपका धन्यवाद।
+
+📎 आपका बिल (Invoice) इस संदेश के साथ संलग्न है।
+
+आपके उत्तम स्वास्थ्य की शुभकामनाएँ।
+
+— Team ${storeName}
+💚 Your Health, Our Priority.
+💚 आपकी सेहत, हमारी प्राथमिकता।`;
+      } else if (visitCount === 2) {
+        content = 
+`Dear ${customerName},
+
+Thank you for visiting ${storeName} again. Your continued trust means a lot to us.
+
+📎 Your invoice is attached.
+
+नमस्कार ${customerName} जी,
+
+एक बार फिर ${storeName} आने और हम पर अपना विश्वास बनाए रखने के लिए आपका हार्दिक धन्यवाद। 🙏
+
+📎 आपका बिल (Invoice) इस संदेश के साथ संलग्न है।
+
+हमेशा स्वस्थ रहें, यही हमारी शुभकामना है।
+
+— Team ${storeName}
+💚 Caring Beyond Medicines.
+💚 दवाइयों से आगे, आपकी देखभाल।`;
+      } else if (visitCount === 3 || visitCount === 4) {
+        content = 
+`Dear ${customerName},
+
+Thank you for choosing ${storeName} once again. We're grateful to be a part of your healthcare journey.
+
+📎 Your invoice is attached.
+
+नमस्कार ${customerName} जी,
+
+बार-बार ${storeName} को चुनने के लिए आपका दिल से धन्यवाद। आपका विश्वास हमें बेहतर सेवा देने की प्रेरणा देता है।
+
+📎 आपका बिल (Invoice) इस संदेश के साथ संलग्न है।
+
+आपका भरोसा हमारे लिए सबसे बड़ा सम्मान है।
+
+— Team ${storeName}
+💚 Trusted Care. Genuine Medicines.
+💚 भरोसेमंद सेवा। असली दवाइयाँ।`;
+      } else {
+        const visitCountStr = getOrdinal(visitCount);
+        content = 
+`Dear ${customerName},
+
+This is your ${visitCountStr} visit to ${storeName}. Thank you for your continued trust—we're honored to serve you.
+
+📎 Your invoice is attached.
+
+नमस्कार ${customerName} जी,
+
+आज आपकी ${visitCount}वीं यात्रा ${storeName} में है। बार-बार हम पर विश्वास करने के लिए आपका हृदय से धन्यवाद। ❤️
+
+📎 आपका बिल (Invoice) इस संदेश के साथ संलग्न है।
+
+आपका विश्वास ही हमारी सबसे बड़ी पूंजी है।
+
+— Team ${storeName}
+💚 Together for Better Health.
+💚 बेहतर स्वास्थ्य की ओर, साथ मिलकर।`;
+      }
+
+      let tempPdfPath = null;
+      try {
+        const tempPdfDir = path.join(process.cwd(), "temp_invoices");
+        if (!fs.existsSync(tempPdfDir)) {
+          fs.mkdirSync(tempPdfDir, { recursive: true });
+        }
+        tempPdfPath = path.join(tempPdfDir, `Invoice_${sale.billNumber}_${Date.now()}.pdf`);
+        await generateInvoicePDF(sale, store, items, tempPdfPath);
+        
+        const pdfBuffer = fs.readFileSync(tempPdfPath);
+        const mediaOptions = {
+          fileBuffer: pdfBuffer,
+          fileName: `Invoice_${sale.billNumber}.pdf`
+        };
+
+        return await this.sendMessage(
+          sale.medicalStoreId,
+          customerName,
+          sale.customerPhone,
+          "PURCHASE_RECEIPT",
+          content,
+          mediaOptions
+        );
+      } finally {
+        if (tempPdfPath && fs.existsSync(tempPdfPath)) {
+          try {
+            fs.unlinkSync(tempPdfPath);
+          } catch (err) {
+            console.error("Failed to delete temp invoice PDF:", err);
+          }
+        }
+      }
     } catch (error) {
       console.error("Failed to send purchase thank you message:", error);
       throw error;
@@ -272,7 +431,7 @@ We wish you a speedy recovery! Let us know if you need any refills or medicines 
     try {
       const today = new Date();
       const query = { isActive: true };
-      
+
       // If store ID is provided, filter specifically for it
       if (medicalStoreId) {
         query._id = medicalStoreId;
@@ -319,8 +478,8 @@ We wish you a speedy recovery! Let us know if you need any refills or medicines 
             const customerPhone = item.saleId.customerPhone;
             const medicineName = item.medicineName;
 
-            const content = 
-`🔔 *Refill Reminder from ${store.name}*
+            const content =
+              `🔔 *Refill Reminder from ${store.name}*
 
 Hi ${customerName},
 It has been ${daysSupply} days since you purchased *${medicineName}*. Based on your dosage, your supply is likely running low in the next ${bufferDays} days.
@@ -331,7 +490,7 @@ Wishing you good health!`;
 
             try {
               await this.sendMessage(store._id, customerName, customerPhone, "REFILL_REMINDER", content);
-              
+
               // Mark the sale item as reminded
               item.refillReminderSent = true;
               await item.save();

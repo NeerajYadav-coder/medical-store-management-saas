@@ -174,7 +174,7 @@ export default function SupplierForm({
                   <select
                     value={formData.marginCategory}
                     onChange={(e) => handleChange('marginCategory', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-brand-500 bg-white dark:bg-gray-950 text-gray-900 dark:text-white text-sm"
                   >
                     {MARGIN_CATEGORIES.map(cat => (
                       <option key={cat.value} value={cat.value}>
@@ -364,7 +364,7 @@ export default function SupplierForm({
                 value={formData.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-brand-500 resize-none"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-brand-500 resize-none bg-white dark:bg-gray-950 text-gray-900 dark:text-white text-sm"
                 placeholder="Additional notes about this supplier..."
               />
             </div>

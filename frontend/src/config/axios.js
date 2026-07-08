@@ -127,13 +127,12 @@ api.interceptors.response.use(
     const status = error.response?.status
     const message = error.response?.data?.message || error.message || 'An unexpected error occurred'
 
-    // Log errors in development (skip /auth/me 401 as it's expected when not logged in)
+    // Log errors in development
     if (import.meta.env.DEV) {
-      const isAuthMeRequest = originalRequest?.url?.includes('/auth/me')
       const is401 = status === 401
       
-      // Don't log expected 401 on /auth/me
-      if (!(isAuthMeRequest && is401)) {
+      // Don't log 401 Unauthorized errors to console as they just mean the user is not logged in
+      if (!is401) {
         console.error(`[API ERROR] ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`, {
           status,
           message,

@@ -34,8 +34,6 @@ import { inventoryApi } from '@api/inventory.api'
 import saleApi from '@api/sale.api'
 import purchaseApi from '@api/purchase.api'
 import { useStore } from '@context/StoreContext'
-import PremiumLockOverlay from '@components/common/PremiumLockOverlay'
-import PremiumModal from '@components/common/PremiumModal'
 import { exportToPDF } from '@utils/exportPDF'
 import toast from 'react-hot-toast'
 
@@ -44,16 +42,12 @@ import toast from 'react-hot-toast'
  */
 export default function Reports() {
   const { store } = useStore()
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   const [dateRange, setDateRange] = useState('month')
 
-  const isFree = store?.plan !== 'PREMIUM'
-
-  // Fetch stats from backend - only when not FREE
+  // Fetch stats from backend
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard', 'stats'],
     queryFn: reportsApi.getDashboardStats,
-    enabled: !isFree,
   })
 
   // Map real data
@@ -383,10 +377,10 @@ export default function Reports() {
   ]
 
   const colorMap = {
-    brand: 'bg-brand-100 text-brand-600',
-    success: 'bg-success-100 text-success-600',
-    purple: 'bg-purple-100 text-purple-600',
-    warning: 'bg-warning-100 text-warning-600',
+    brand: 'bg-system-blue/10 text-system-blue',
+    success: 'bg-system-green/10 text-system-green',
+    purple: 'bg-system-blue/15 text-system-blue',
+    warning: 'bg-system-orange/10 text-system-orange',
   }
 
   return (
@@ -394,214 +388,197 @@ export default function Reports() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Analytics</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Track your business performance</p>
+          <h1 className="text-apple-title-1 font-semibold text-label-primary tracking-tight">Reports & Analytics</h1>
+          <p className="text-apple-subheadline text-label-secondary mt-1">Track your business performance</p>
         </div>
-        {!isFree && (
-          <div className="flex items-center gap-3">
-            <Select
-              options={[
-                { value: 'week', label: 'This Week' },
-                { value: 'month', label: 'This Month' },
-                { value: 'quarter', label: 'This Quarter' },
-                { value: 'year', label: 'This Year' },
-              ]}
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-36"
-            />
-            <Button variant="outline" size="sm" onClick={handlePrintReport} leftIcon={<Download className="h-4 w-4" />}>
-              Export PDF
-            </Button>
-            <Button size="sm" onClick={handlePrintReport} leftIcon={<FileText className="h-4 w-4" />}>
-              Generate Report
-            </Button>
-          </div>
+        <div className="flex items-center gap-3">
+          <Select
+            options={[
+              { value: 'week', label: 'This Week' },
+              { value: 'month', label: 'This Month' },
+              { value: 'quarter', label: 'This Quarter' },
+              { value: 'year', label: 'This Year' },
+            ]}
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="w-36"
+          />
+          <Button variant="outline" size="sm" onClick={handlePrintReport} leftIcon={<Download className="h-4 w-4" />}>
+            Export PDF
+          </Button>
+          <Button size="sm" onClick={handlePrintReport} leftIcon={<FileText className="h-4 w-4" />}>
+            Generate Report
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {isLoading ? (
+          Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)
+        ) : (
+          summaryStats.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <div key={stat.title} className="card p-5">
+                <div className="flex items-start justify-between">
+                  <div className={cn('h-10 w-10 rounded-xl flex items-center justify-center', colorMap[stat.color].split(' ')[0])}>
+                    <Icon className={cn('h-5 w-5', colorMap[stat.color].split(' ')[1])} />
+                  </div>
+                  <div className={cn(
+                    'flex items-center gap-1 text-apple-caption-1 font-semibold',
+                    stat.isPositive ? 'text-system-green' : 'text-system-red'
+                  )}>
+                    {stat.change}
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <p className="text-apple-title-2 font-bold text-label-primary tracking-tight text-tabular-nums">{stat.value}</p>
+                  <p className="text-apple-footnote text-label-secondary mt-1">{stat.title}</p>
+                </div>
+              </div>
+            )
+          })
         )}
       </div>
 
-      {isFree ? (
-        <PremiumLockOverlay 
-          title="Business Analytics Locked"
-          description="Reports, sales performance metrics, profit tracking, and GST reporting are only available on the Premium Plan. Upgrade now to scale your pharmacy with smart data."
-          onUpgradeClick={() => setIsUpgradeModalOpen(true)}
-        />
-      ) : (
-        <>
-          {/* Summary Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {isLoading ? (
-              Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)
-            ) : (
-              summaryStats.map((stat) => {
-                const Icon = stat.icon
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Revenue Trend */}
+        <div className="lg:col-span-2 card p-6 bg-card">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-apple-headline font-semibold text-label-primary">Revenue Trend</h3>
+              <p className="text-apple-subheadline text-label-secondary mt-0.5">Monthly revenue overview</p>
+            </div>
+            <div className="flex items-center gap-4 text-apple-footnote">
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full bg-system-blue"></span>
+                <span className="text-label-secondary font-medium">Revenue</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full bg-label-tertiary"></span>
+                <span className="text-label-secondary font-medium">Orders</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Real Dynamic CSS Bar Chart */}
+          <div className="h-64 flex items-end justify-between gap-2 px-4 mt-8">
+            {chartData.length > 0 ? (
+              chartData.map((day, index) => {
+                const heightPercent = Math.max((day.sales / maxSales) * 100, 2);
                 return (
-                  <div key={stat.title} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-                    <div className="flex items-start justify-between">
-                      <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', colorMap[stat.color].split(' ')[0])}>
-                        <Icon className={cn('h-5 w-5', colorMap[stat.color].split(' ')[1])} />
-                      </div>
-                      <div className={cn(
-                        'flex items-center gap-1 text-sm font-medium',
-                        stat.isPositive ? 'text-success-600' : 'text-danger-600'
-                      )}>
-                        {stat.change}
-                      </div>
+                  <div key={index} className="flex-1 flex flex-col items-center gap-2 group relative h-full justify-end">
+                    {/* Tooltip */}
+                    <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-secondary-background text-label-primary border border-separator-apple/20 text-[11px] py-1 px-2 rounded-xl whitespace-nowrap z-10 pointer-events-none shadow-lg font-mono">
+                      {formatCurrency(day.sales)}<br/>
+                      <span className="text-label-secondary">{new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</span>
                     </div>
-                    <div className="mt-4">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{stat.title}</p>
-                    </div>
+                    <div
+                      className="w-full max-w-[40px] bg-system-blue hover:bg-system-blue/80 rounded-t-lg transition-all duration-300"
+                      style={{ height: `${heightPercent}%` }}
+                    />
+                    <span className="text-[10px] text-label-secondary hidden sm:block font-mono">
+                      {new Date(day._id).getDate()}
+                    </span>
                   </div>
                 )
               })
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-label-secondary bg-secondary-background/30 border-2 border-dashed border-separator-apple/10 rounded-xl">
+                <BarChart3 className="h-8 w-8 mb-2 opacity-50 text-label-tertiary" />
+                <p className="text-apple-subheadline">No trend data available</p>
+              </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Revenue Trend */}
-            <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Revenue Trend</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Monthly revenue overview</p>
-                </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-brand-500"></span>
-                    <span className="text-gray-600 dark:text-gray-400">Revenue</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-gray-300"></span>
-                    <span className="text-gray-600 dark:text-gray-400">Orders</span>
-                  </div>
-                </div>
-              </div>
+      {/* Top Products Table */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-apple-headline font-semibold text-label-primary">Top Selling Products</h3>
+            <p className="text-apple-subheadline text-label-secondary mt-0.5">Based on selected period</p>
+          </div>
+          <Button variant="ghost" size="sm" rightIcon={<ArrowUpRight className="h-4 w-4" />}>
+            View All
+          </Button>
+        </div>
 
-              {/* Real Dynamic CSS Bar Chart */}
-              <div className="h-64 flex items-end justify-between gap-2 px-4 mt-8">
-                {chartData.length > 0 ? (
-                  chartData.map((day, index) => {
-                    const heightPercent = Math.max((day.sales / maxSales) * 100, 2);
-                    return (
-                      <div key={index} className="flex-1 flex flex-col items-center gap-2 group relative h-full justify-end">
-                        {/* Tooltip */}
-                        <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 pointer-events-none">
-                          {formatCurrency(day.sales)}<br/>
-                          <span className="text-gray-300">{new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</span>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-separator-apple/10">
+                <th className="text-left py-3 px-4 text-apple-footnote font-semibold text-label-secondary uppercase tracking-wider">#</th>
+                <th className="text-left py-3 px-4 text-apple-footnote font-semibold text-label-secondary uppercase tracking-wider">Product</th>
+                <th className="text-right py-3 px-4 text-apple-footnote font-semibold text-label-secondary uppercase tracking-wider">Quantity Sold</th>
+                <th className="text-right py-3 px-4 text-apple-footnote font-semibold text-label-secondary uppercase tracking-wider">Revenue</th>
+                <th className="text-right py-3 px-4 text-apple-footnote font-semibold text-label-secondary uppercase tracking-wider">Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topProducts.length > 0 ? (
+                topProducts.map((product, index) => (
+                  <tr key={product._id || index} className="border-b border-separator-apple/10 hover:bg-secondary-background/40">
+                    <td className="py-3 px-4 text-apple-subheadline text-label-secondary font-mono">{index + 1}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-xl bg-system-blue/10 flex items-center justify-center">
+                          <Package className="h-4 w-4 text-system-blue" />
                         </div>
-                        <div
-                          className="w-full max-w-[40px] bg-brand-500 hover:bg-brand-600 rounded-t-sm transition-all duration-300"
-                          style={{ height: `${heightPercent}%` }}
-                        />
-                        <span className="text-[10px] text-gray-500 dark:text-gray-400 hidden sm:block">
-                          {new Date(day._id).getDate()}
-                        </span>
+                        <span className="text-apple-subheadline font-semibold text-label-primary">{product.name} {product.dosage}</span>
                       </div>
-                    )
-                  })
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 dark:bg-gray-950 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-lg">
-                    <BarChart3 className="h-8 w-8 mb-2 opacity-50" />
-                    <p className="text-sm">No trend data available</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Top Products Table */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Top Selling Products</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Based on selected period</p>
-              </div>
-              <Button variant="ghost" size="sm" rightIcon={<ArrowUpRight className="h-4 w-4" />}>
-                View All
-              </Button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-800">
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">#</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Product</th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Quantity Sold</th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Share</th>
+                    </td>
+                    <td className="py-3 px-4 text-right text-apple-subheadline text-label-secondary text-tabular-nums">{product.totalQuantity}</td>
+                    <td className="py-3 px-4 text-right text-apple-subheadline font-semibold text-label-primary text-tabular-nums">{formatCurrency(product.totalRevenue)}</td>
+                    <td className="py-3 px-4 text-right">
+                      <span className="px-2.5 py-0.5 bg-system-blue/10 text-system-blue text-apple-footnote font-semibold rounded-full">
+                        {((product.totalRevenue / topProducts.reduce((sum, p) => sum + p.totalRevenue, 0)) * 100).toFixed(1)}%
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {topProducts.length > 0 ? (
-                    topProducts.map((product, index) => (
-                      <tr key={product._id || index} className="border-b border-gray-55 hover:bg-gray-50 dark:bg-gray-950">
-                        <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-brand-100 flex items-center justify-center">
-                              <Package className="h-4 w-4 text-brand-600" />
-                            </div>
-                            <span className="font-medium text-gray-900 dark:text-white">{product.name} {product.dosage}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-right text-sm text-gray-600 dark:text-gray-400">{product.totalQuantity}</td>
-                        <td className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">{formatCurrency(product.totalRevenue)}</td>
-                        <td className="py-3 px-4 text-right">
-                          <span className="px-2 py-1 bg-brand-50 text-brand-700 text-xs rounded-full">
-                            {((product.totalRevenue / topProducts.reduce((sum, p) => sum + p.totalRevenue, 0)) * 100).toFixed(1)}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="5" className="py-8 text-center text-gray-500 dark:text-gray-400">
-                        No sales data available yet
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="py-8 text-center text-label-secondary text-apple-subheadline">
+                    No sales data available yet
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-          {/* Quick Reports */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { title: 'Sales Report', icon: ShoppingCart, color: 'bg-brand-500', action: handleDownloadSalesReport },
-              { title: 'Inventory Report', icon: Package, color: 'bg-success-500', action: handleDownloadInventoryReport },
-              { title: 'Purchase Report', icon: TrendingUp, color: 'bg-purple-500', action: handleDownloadPurchaseReport },
-              { title: 'GST Report', icon: FileText, color: 'bg-warning-500', action: handleDownloadGSTReport },
-            ].map((report) => {
-              const Icon = report.icon
-              return (
-                <button
-                  key={report.title}
-                  onClick={report.action}
-                  className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-all group"
-                >
-                  <div className={cn('h-12 w-12 rounded-xl flex items-center justify-center text-white', report.color)}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900 dark:text-white">{report.title}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Download PDF</p>
-                  </div>
-                  <Download className="h-5 w-5 text-gray-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
-              )
-            })}
-          </div>
-        </>
-      )}
-
-      <PremiumModal 
-        isOpen={isUpgradeModalOpen} 
-        onClose={() => setIsUpgradeModalOpen(false)} 
-      />
+      {/* Quick Reports */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { title: 'Sales Report', icon: ShoppingCart, color: 'bg-system-blue/10 text-system-blue', action: handleDownloadSalesReport },
+          { title: 'Inventory Report', icon: Package, color: 'bg-system-green/10 text-system-green', action: handleDownloadInventoryReport },
+          { title: 'Purchase Report', icon: TrendingUp, color: 'bg-system-blue/15 text-system-blue', action: handleDownloadPurchaseReport },
+          { title: 'GST Report', icon: FileText, color: 'bg-system-orange/10 text-system-orange', action: handleDownloadGSTReport },
+        ].map((report) => {
+          const Icon = report.icon
+          return (
+            <button
+              key={report.title}
+              onClick={report.action}
+              className="flex items-center gap-4 p-4 bg-secondary-background/60 hover:bg-secondary-background/80 border border-separator-apple/10 rounded-2xl active-apple-press transition-apple-micro text-left group shadow-sm"
+            >
+              <div className={cn('h-12 w-12 rounded-xl flex items-center justify-center', report.color)}>
+                <Icon className="h-6 w-6" />
+              </div>
+              <div className="text-left">
+                <p className="text-apple-headline font-bold text-label-primary">{report.title}</p>
+                <p className="text-apple-caption-1 text-label-secondary mt-0.5">Download PDF</p>
+              </div>
+              <Download className="h-5 w-5 text-label-tertiary ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

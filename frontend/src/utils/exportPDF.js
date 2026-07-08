@@ -6,12 +6,25 @@
  */
 
 /**
+ * Escapes HTML characters to prevent XSS
+ */
+const escapeHtml = (unsafe) => {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
+/**
  * Formats a value for displaying in the PDF cell
  */
 const formatCell = (val, col, item) => {
   if (val === null || val === undefined) return '—';
-  if (col.format) return col.format(val, item);
-  return String(val);
+  if (col.format) return escapeHtml(col.format(val, item));
+  return escapeHtml(String(val));
 };
 
 /**
@@ -262,7 +275,8 @@ export const exportToPDF = (data, columns, options = {}) => {
         </table>
 
         <div class="footer">
-          This report is programmatically generated and authenticated by the system. Page 1 of 1
+          This report is programmatically generated and authenticated by MedStore.<br/>
+          An initiative by <a href="https://neerajyadav-coder.github.io/krishna-pharmacy/about.html" target="_blank" rel="noopener noreferrer" style="color: #6b7280; text-decoration: none; font-weight: 600;">Krishna Pharmacy</a>
         </div>
 
         <script>

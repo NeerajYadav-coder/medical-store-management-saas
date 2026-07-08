@@ -61,10 +61,7 @@ export function AuthProvider({ children }) {
       isCheckingAuthRef.current = true
       try {
         const response = await authApi.getCurrentUser()
-        // /auth/me returns { success: true, user: {...} } — no 'data' key
-        // so axios interceptor returns the full object
         const userData = response?.user || response
-        // /auth/me returns full Mongoose doc with _id
         if (userData && (userData._id || userData.id)) {
           setUser(userData)
         } else {
@@ -123,26 +120,22 @@ export function AuthProvider({ children }) {
     
     try {
       const response = await authApi.login(credentials)
-      // Login returns { success, token, user } — no 'data' key
-      // axios interceptor returns the full object since there's no 'data' key
       const token = response?.token || response?.data?.token
-      // login returns { user: { id, name, role, medicalStoreId } } — note 'id' not '_id'
       const userData = response?.user || response?.data?.user
       
-      // Save token — this is what persists the session across refreshes
       if (token) {
         localStorage.setItem('token', token)
       }
       
-      // Accept both 'id' and '_id' shapes from the server
       if (userData && (userData._id || userData.id)) {
         setUser(userData)
       }
       
       // Navigate to intended destination or dashboard
+      // STAFF role is sent to billing, OWNER role is ALWAYS sent to dashboard
       const from = userData?.role === 'STAFF'
         ? '/dashboard/billing'
-        : (location.state?.from?.pathname || ROUTES.DASHBOARD)
+        : ROUTES.DASHBOARD
       navigate(from, { replace: true })
       
       return userData
@@ -153,7 +146,7 @@ export function AuthProvider({ children }) {
     } finally {
       setIsLoggingIn(false)
     }
-  }, [navigate, location.state])
+  }, [navigate])
 
   // ==================== LOGOUT ====================
   const logout = useCallback(async () => {
@@ -162,7 +155,6 @@ export function AuthProvider({ children }) {
     try {
       await authApi.logout()
     } catch (error) {
-      // Logout anyway even if API fails
       console.error('[Auth] Logout API error:', error)
     } finally {
       localStorage.removeItem('token')
@@ -180,16 +172,19 @@ export function AuthProvider({ children }) {
     try {
       const response = await authApi.register(registrationData)
       
-      // Save token if present (some flows auto-login after signup)
-      if (response?.token) {
-        localStorage.setItem('token', response.token)
+      const token = response?.token || response?.data?.token
+      const userData = response?.user || response?.data?.user
+      
+      if (token) {
+        localStorage.setItem('token', token)
       }
       
-      // After signup, redirect to login with success message
-      navigate(ROUTES.LOGIN, {
-        replace: true,
-        state: { message: 'Account created successfully! Please login.' },
-      })
+      if (userData && (userData._id || userData.id)) {
+        setUser(userData)
+      }
+      
+      // After signup, redirect directly to dashboard
+      navigate(ROUTES.DASHBOARD, { replace: true })
       
       return response
     } catch (error) {

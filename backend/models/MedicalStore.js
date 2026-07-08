@@ -60,7 +60,7 @@ const medicalStoreSchema = new mongoose.Schema(
     plan: {
       type: String,
       enum: ["FREE", "PREMIUM"],
-      default: "FREE",
+      default: "PREMIUM",
     },
 
     whatsappConfig: {

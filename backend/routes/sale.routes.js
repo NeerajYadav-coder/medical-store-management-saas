@@ -367,6 +367,12 @@ router.post('/', auditAction('CREATE', 'SALE'), async (req, res, next) => {
       batchDocs.push(batch);
     }
 
+    // Sanitize symptoms to ensure symptomId is a valid ObjectId, otherwise set to null
+    const sanitizedSymptoms = (symptoms || []).map(s => ({
+      symptomId: mongoose.Types.ObjectId.isValid(s.symptomId) ? s.symptomId : null,
+      symptomName: s.symptomName
+    }));
+
     // ✅ STEP 2: Create sale record
     const sale = await Sale.create([{
       medicalStoreId: req.user.medicalStoreId,
@@ -377,7 +383,7 @@ router.post('/', auditAction('CREATE', 'SALE'), async (req, res, next) => {
       doctorId: doctorId || null,
       doctorName: doctorName || '',
       isPrescribed: !!isPrescribed,
-      symptoms: symptoms || [],
+      symptoms: sanitizedSymptoms,
       isRepeatCustomer: !!isRepeatCustomer,
       totalItems: items.length,
       subtotal: parseFloat(subtotal) || 0,
@@ -473,14 +479,28 @@ router.post('/', auditAction('CREATE', 'SALE'), async (req, res, next) => {
     
     // ✅ STEP 4: Update customer stats if linked
     if (customerId) {
-      await Customer.findByIdAndUpdate(
-        customerId,
-        {
-          $inc: { totalPurchases: 1, totalSpent: parseFloat(grandTotal) || 0 },
-          $set: { lastVisit: new Date() },
-        },
-        { session }
-      );
+      const customer = await Customer.findById(customerId).session(session);
+      if (customer) {
+        customer.totalPurchases += 1;
+        customer.totalSpent += (parseFloat(grandTotal) || 0);
+        customer.totalProfitGenerated += (parseFloat(netProfit) || 0);
+        customer.avgOrderValue = customer.totalSpent / customer.totalPurchases;
+        customer.lastVisitDate = new Date();
+        
+        // Mark as repeat buyer after 4th purchase
+        if (customer.totalPurchases >= 4 && !customer.isRepeatBuyer) {
+          customer.isRepeatBuyer = true;
+        }
+        
+        // Auto-upgrade loyalty category based on spending
+        if (customer.totalSpent >= 50000) {
+          customer.loyaltyCategory = 'VIP';
+        } else if (customer.totalSpent >= 10000) {
+          customer.loyaltyCategory = 'REGULAR';
+        }
+        
+        await customer.save({ session });
+      }
     }
     
     // Update doctor stats if linked
@@ -497,9 +517,12 @@ router.post('/', auditAction('CREATE', 'SALE'), async (req, res, next) => {
     await session.commitTransaction();
     
     // Trigger WhatsApp Purchase Thank You asynchronously (non-blocking)
-    whatsappService.sendPurchaseReceipt(sale[0]._id).catch((err) => {
-      console.error('Failed to automatically send WhatsApp receipt:', err);
-    });
+    const saleId = Array.isArray(sale) ? sale[0]._id : sale._id;
+    if (saleId) {
+      whatsappService.sendPurchaseReceipt(saleId.toString()).catch((err) => {
+        console.error('Failed to automatically send WhatsApp receipt:', err);
+      });
+    }
     
     res.status(201).json({
       success: true,
@@ -556,6 +579,48 @@ router.post('/:id/void', hasPermission(PERMISSIONS.DELETE_SALE), auditAction('UP
           $inc: {
             quantitySold: -item.quantity,
             quantityRemaining: item.quantity,
+          },
+        },
+        { session }
+      );
+      
+      // Revert Medicine aggregate stats
+      await Medicine.findByIdAndUpdate(
+        item.medicineId,
+        {
+          $inc: {
+            totalUnitsSold: -item.quantity,
+            totalRevenue: -item.totalAmount,
+            totalProfit: -item.profitAmount,
+          },
+        },
+        { session }
+      );
+    }
+    
+    // Revert Customer stats if linked
+    if (sale.customerId) {
+      await Customer.findByIdAndUpdate(
+        sale.customerId,
+        {
+          $inc: {
+            totalPurchases: -1,
+            totalSpent: -sale.grandTotal,
+            totalProfitGenerated: -sale.netProfit,
+          },
+        },
+        { session }
+      );
+    }
+
+    // Revert Doctor stats if linked
+    if (sale.doctorId) {
+      await Doctor.findByIdAndUpdate(
+        sale.doctorId,
+        {
+          $inc: {
+            totalPrescriptions: -1,
+            totalRevenue: -sale.grandTotal,
           },
         },
         { session }

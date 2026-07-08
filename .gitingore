@@ -1,9 +1,0 @@
-# Node.js dependencies
-node_modules/
-
-# Env files (secrets)
-backend/.env
-frontend/.env
-
-# Logs
-*.log
