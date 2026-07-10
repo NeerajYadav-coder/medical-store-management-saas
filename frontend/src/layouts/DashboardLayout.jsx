@@ -8,7 +8,7 @@
  * - Breadcrumbs and page structure
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -113,26 +113,28 @@ export default function DashboardLayout() {
 
   const isBillingPage = location.pathname === ROUTES.BILLING || location.pathname === '/dashboard/billing'
 
-  // Swipe-to-close handling
-  const [touchStartX, setTouchStartX] = useState(null)
-  const [touchEndX, setTouchEndX] = useState(null)
+  // Swipe-to-close handling with useRef to prevent stale closures
+  const touchStartX = useRef(null)
+  const touchEndX = useRef(null)
 
   const handleTouchStart = (e) => {
-    setTouchEndX(null)
-    setTouchStartX(e.targetTouches[0].clientX)
+    touchEndX.current = null
+    touchStartX.current = e.targetTouches[0].clientX
   }
 
   const handleTouchMove = (e) => {
-    setTouchEndX(e.targetTouches[0].clientX)
+    touchEndX.current = e.targetTouches[0].clientX
   }
 
   const handleTouchEnd = () => {
-    if (!touchStartX || !touchEndX) return
-    const distance = touchStartX - touchEndX
+    if (touchStartX.current === null || touchEndX.current === null) return
+    const distance = touchStartX.current - touchEndX.current
     const minSwipeDistance = 50
-    if (distance > minSwipeDistance && isSidebarOpen && isMobile) {
+    if (distance > minSwipeDistance) {
       closeSidebar()
     }
+    touchStartX.current = null
+    touchEndX.current = null
   }
 
   if (isBillingPage) {
@@ -158,12 +160,15 @@ export default function DashboardLayout() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        style={{
+          transform: isMobile ? (isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+          transition: 'transform 0.3s ease-in-out'
+        }}
         className={cn(
           'sidebar',
           isSidebarCollapsed ? 'sidebar-collapsed' : 'w-72',
           'flex flex-col shadow-xl md:shadow-none',
-          'md:relative md:translate-x-0',
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          'md:relative md:translate-x-0'
         )}
       >
         {/* Logo */}
@@ -186,7 +191,14 @@ export default function DashboardLayout() {
             )}
           </Link>
           <button
-            onClick={() => closeSidebar()}
+            onClick={(e) => {
+              e.preventDefault();
+              closeSidebar();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault(); // Prevents ghost clicks on mobile devices
+              closeSidebar();
+            }}
             type="button"
             className="md:hidden p-2.5 rounded-xl bg-gray-150 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-foreground relative z-[60] cursor-pointer shadow-sm flex items-center justify-center border border-border/50"
             aria-label="Close Sidebar"
