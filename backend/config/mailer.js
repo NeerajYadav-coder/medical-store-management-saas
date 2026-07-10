@@ -12,6 +12,10 @@
 
 import nodemailer from 'nodemailer';
 
+// Gmail App Passwords are shown with spaces (e.g. "vxeb ybff rfjn naxx")
+// but Nodemailer requires them without spaces. Strip them here to be safe.
+const smtpPass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
+
 /**
  * Nodemailer transporter configured via environment variables.
  * Uses STARTTLS on port 587 — the Gmail-recommended secure method.
@@ -22,11 +26,15 @@ const transporter = nodemailer.createTransport({
   secure: false,                        // false = STARTTLS (port 587), true = TLS (port 465)
   auth: {
     user: process.env.SMTP_USER,        // Gmail address
-    pass: process.env.SMTP_PASS,        // Gmail App Password (16-char, spaces allowed)
+    pass: smtpPass,                     // Gmail App Password (spaces stripped)
   },
-  // Explicit TLS options — enforce minimum TLS version and reject unsigned certs
+  // Connection timeout settings — important for Railway's network
+  connectionTimeout: 10000, // 10 seconds to establish connection
+  greetingTimeout: 10000,   // 10 seconds for SMTP greeting
+  socketTimeout: 15000,     // 15 seconds for socket inactivity
   tls: {
-    rejectUnauthorized: true,
+    // Allow Railway's outbound TLS (some providers have intermediate cert issues)
+    rejectUnauthorized: false,
     minVersion: 'TLSv1.2',
   },
 });

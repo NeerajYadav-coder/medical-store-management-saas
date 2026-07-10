@@ -123,6 +123,9 @@ export const sendOtp = async (req, res, next) => {
     }
 
     if (!sendResult.success) {
+      // Clean up the saved OTP so the user can retry immediately
+      // (without this, the 60-second cooldown blocks the next attempt)
+      await OTP.deleteOne({ destination, type, purpose, isVerified: false });
       return res.status(500).json({
         success: false,
         message: 'Failed to send OTP. Please try again.',

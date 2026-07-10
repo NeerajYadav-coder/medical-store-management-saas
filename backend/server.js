@@ -150,9 +150,20 @@ app.use(mongoSanitize);
 app.use(sanitizeBody);
 
 // Enable CORS
+const allowedOrigins = env.CORS_ORIGIN ? env.CORS_ORIGIN.split(',').map(o => o.trim()) : ['http://localhost:3000'];
+
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'));
+      }
+    },
     credentials: true,
   })
 );
