@@ -161,8 +161,14 @@ export default function DashboardLayout() {
             )}
           </Link>
           <button
-            onClick={closeSidebar}
-            className="md:hidden p-2 rounded-xl hover:bg-secondary text-muted-foreground"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeSidebar();
+            }}
+            type="button"
+            className="md:hidden p-2.5 rounded-xl bg-gray-150 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-foreground relative z-[60] cursor-pointer shadow-sm flex items-center justify-center border border-border/50"
+            aria-label="Close Sidebar"
           >
             <X className="h-5 w-5" />
           </button>
