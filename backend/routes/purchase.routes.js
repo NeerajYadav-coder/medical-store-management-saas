@@ -435,11 +435,11 @@ router.post('/parse-invoice', async (req, res, next) => {
         ]);
 
 
-    // Qwen is superior for complex dense tables and multi-lingual OCR
-    // Llama is good for general tasks. We will try Qwen first, then Llama.
+    // Vision-capable models on Groq (verified via API capabilities check)
+    // qwen/qwen3.6-27b was removed — it does NOT support image inputs (returns 400)
     const VISION_MODELS = [
-      'qwen/qwen3.6-27b',
-      'meta-llama/llama-4-scout-17b-16e-instruct'
+      'meta-llama/llama-4-scout-17b-16e-instruct',  // Primary: fast, great OCR
+      'meta-llama/llama-4-maverick-17b-128e-instruct', // Fallback: larger context
     ];
 
     const promptText = `You are an elite AI system with over 10 years of domain expertise in Indian Pharmacy operations and Medical Billing.
