@@ -124,6 +124,9 @@ const __dirname = path.dirname(__filename);
 // Initialize express app
 const app = express();
 
+// Trust proxy for rate-limiting when behind reverse proxies (like Railway/Render/Nginx)
+app.set('trust proxy', 1);
+
 /**
  * -----------------------
  * Global Security & Utility Middleware

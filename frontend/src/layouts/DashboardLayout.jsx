@@ -160,15 +160,12 @@ export default function DashboardLayout() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{
-          transform: isMobile ? (isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
-          transition: 'transform 0.3s ease-in-out'
-        }}
         className={cn(
           'sidebar',
           isSidebarCollapsed ? 'sidebar-collapsed' : 'w-72',
           'flex flex-col shadow-xl md:shadow-none',
-          'md:relative md:translate-x-0'
+          'md:relative md:translate-x-0',
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Logo */}
@@ -191,19 +188,25 @@ export default function DashboardLayout() {
             )}
           </Link>
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              closeSidebar();
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault(); // Prevents ghost clicks on mobile devices
-              closeSidebar();
-            }}
             type="button"
-            className="md:hidden p-2.5 rounded-xl bg-gray-150 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-foreground relative z-[60] cursor-pointer shadow-sm flex items-center justify-center border border-border/50"
+            className="md:hidden p-2.5 rounded-xl bg-gray-150 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-foreground relative z-[60] cursor-pointer shadow-sm flex items-center justify-center border border-border/50 overflow-hidden"
             aria-label="Close Sidebar"
           >
-            <X className="h-5 w-5" />
+            {/* Invisible full-cover hit-box to prevent SVG from swallowing touch events on Android Chrome */}
+            <div 
+              className="absolute inset-0 z-10 w-full h-full bg-transparent" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeSidebar();
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeSidebar();
+              }}
+            />
+            <X className="h-5 w-5 relative z-0 pointer-events-none" />
           </button>
         </div>
 
