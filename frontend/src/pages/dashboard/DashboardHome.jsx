@@ -33,6 +33,7 @@ import { formatCurrency, formatCompactCurrency } from '@utils/formatCurrency'
 import { formatDate, formatRelativeTime, getDaysUntil } from '@utils/formatDate'
 import { useAuth } from '@context/AuthContext'
 import { useStore } from '@context/StoreContext'
+import { getImageUrl } from '@/utils/image'
 import { reportsApi } from '@api/reports.api'
 import { ROUTES } from '@config/routes.config'
 import Button from '@components/common/Button'
@@ -47,43 +48,61 @@ export default function DashboardHome() {
   const { user, hasPermission } = useAuth()
   const { storeName } = useStore()
   const navigate = useNavigate()
-  const [dateRange, setDateRange] = useState('today')
-
-  // Fetch dashboard stats (Unified Request)
-  const { data: stats, isLoading: isLoadingStats, isFetching, refetch } = useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: reportsApi.getDashboardStats,
-    staleTime: 60 * 1000, // 1 minute
-  })
-
-  // Get greeting based on time
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Good morning'
-    if (hour < 17) return 'Good afternoon'
-    return 'Good evening'
-  }
-  
-  // Map real data to UI props
-  const trends = stats?.trends || []
-  
-  // Chart calculation
-  let chartData = []
-  if (dateRange === '7d') {
-    chartData = trends.slice(-7)
-  } else if (dateRange === '30d') {
-    chartData = trends.slice(-30)
-  } else {
-    chartData = trends
-  }
-  const maxSales = Math.max(...chartData.map(d => d.sales), 1)
-
-  // Weekly stats
-  const thisWeekSales = trends.slice(-7).reduce((sum, d) => sum + (d.sales || 0), 0)
-  const lastWeekSales = trends.slice(-14, -7).reduce((sum, d) => sum + (d.sales || 0), 0)
-  const weeklyGrowth = lastWeekSales ? ((thisWeekSales - lastWeekSales) / lastWeekSales) * 100 : 0
-
-  const dashboardData = {
+  const [dateRange, setDateRange] = useState('7d')
+ 
+   // Fetch dashboard stats (Unified Request)
+   const { data: stats, isLoading: isLoadingStats, isFetching, refetch } = useQuery({
+     queryKey: ['dashboard', 'stats', dateRange],
+     queryFn: () => reportsApi.getDashboardStats({ range: dateRange }),
+     staleTime: 60 * 1000, // 1 minute
+   })
+ 
+   // Get greeting based on time
+   const getGreeting = () => {
+     const hour = new Date().getHours()
+     if (hour < 12) return 'Good morning'
+     if (hour < 17) return 'Good afternoon'
+     return 'Good evening'
+   }
+   
+   // Map real data to UI props
+   const trends = stats?.trends || []
+   
+   // Helper to fill missing dates with 0 sales for a continuous timeline
+   const getTimelineData = (trendsList, daysCount) => {
+     const result = []
+     const dateMap = new Map(trendsList?.map(t => [t._id, t.sales]) || [])
+     
+     for (let i = daysCount - 1; i >= 0; i--) {
+       const d = new Date()
+       d.setDate(d.getDate() - i)
+       const dateStr = d.toISOString().split('T')[0]
+       result.push({
+         _id: dateStr,
+         sales: dateMap.get(dateStr) || 0
+       })
+     }
+     return result
+   }
+ 
+   // Chart calculation
+   let chartData = []
+   if (dateRange === '7d') {
+     chartData = getTimelineData(trends, 7)
+   } else if (dateRange === '30d') {
+     chartData = getTimelineData(trends, 30)
+   } else {
+     chartData = getTimelineData(trends, 90)
+   }
+   const maxSales = Math.max(...chartData.map(d => d.sales), 1)
+ 
+   // Weekly stats calculated on complete 7-day windows of trends
+   const filledTrends90 = getTimelineData(trends, 90)
+   const thisWeekSales = filledTrends90.slice(-7).reduce((sum, d) => sum + (d.sales || 0), 0)
+   const lastWeekSales = filledTrends90.slice(-14, -7).reduce((sum, d) => sum + (d.sales || 0), 0)
+   const weeklyGrowth = lastWeekSales ? ((thisWeekSales - lastWeekSales) / lastWeekSales) * 100 : 0
+ 
+   const dashboardData = {
     todaySales: stats?.daily?.sales || 0,
     todayTransactions: stats?.daily?.bills || 0,
     lowStockCount: stats?.alerts?.lowStock || 0,
@@ -109,13 +128,26 @@ export default function DashboardHome() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-apple-title-1 font-semibold text-label-primary tracking-tight">
-            {getGreeting()}, {user?.name?.split(' ')[0]}! 👋
-          </h1>
-          <p className="text-apple-subheadline text-label-secondary mt-1">
-            Here's what's happening at {storeName} today.
-          </p>
+        <div className="flex items-center gap-4">
+          {user?.profilePhoto ? (
+            <img 
+              src={getImageUrl(user.profilePhoto)} 
+              alt={user.name} 
+              className="h-14 w-14 rounded-full object-cover border-2 border-system-blue/20 shadow-sm flex-shrink-0"
+            />
+          ) : (
+            <div className="h-14 w-14 rounded-full bg-system-blue/10 flex items-center justify-center text-system-blue text-xl font-semibold flex-shrink-0">
+              {user?.name?.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div>
+            <h1 className="text-apple-title-1 font-semibold text-label-primary tracking-tight">
+              {getGreeting()}, {user?.name?.split(' ')[0]}! 👋
+            </h1>
+            <p className="text-apple-subheadline text-label-secondary mt-0.5">
+              Here's what's happening at {storeName} today.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -209,7 +241,7 @@ export default function DashboardHome() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
               <div>
                 <h3 className="card-title">Sales Overview</h3>
-                <p className="card-description">Revenue trend for the last 7 days</p>
+                <p className="card-description">Revenue trend for the last {dateRange === '7d' ? '7' : dateRange === '30d' ? '30' : '90'} days</p>
               </div>
               <div className="flex items-center gap-1 bg-secondary-background p-1 rounded-xl border border-separator-apple/10">
                 {['7d', '30d', '90d'].map((range) => (
@@ -223,7 +255,7 @@ export default function DashboardHome() {
                     )}
                     onClick={() => setDateRange(range)}
                   >
-                    {range}
+                    {range.toUpperCase()}
                   </button>
                 ))}
               </div>

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { auditApi } from '@api/audit.api'
 import { formatDate, formatRelativeTime } from '@utils/formatDate'
 import { useAuth } from '@context/AuthContext'
+import { useStore } from '@context/StoreContext'
 import { 
   History, 
   Search, 
@@ -18,11 +19,14 @@ import Button from '@components/common/Button'
 import { Skeleton } from '@components/common/Loader'
 import { cn } from '@utils/cn'
 import { exportToPDF } from '@utils/exportPDF'
+import { getImageUrl } from '@utils/image'
 import toast from 'react-hot-toast'
 
 export default function ActivityLogs() {
   const { user } = useAuth()
+  const { store, storeName, storeOwner } = useStore()
   const [page, setPage] = useState(1)
+  const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({
     action: '',
     entity: '',
@@ -48,6 +52,84 @@ export default function ActivityLogs() {
     }).format(amount)
   }
 
+  const getFriendlyDescriptionText = (log) => {
+    const body = log.details?.body || {}
+    const action = log.action
+    const entity = log.entityType || log.entity
+
+    if (action === 'LOGIN') {
+      return 'Logged in to the app.'
+    }
+
+    switch (entity) {
+      case 'SALE':
+        if (action === 'CREATE') {
+          return `Sold medicines to ${body.customerName || 'Walk-in Customer'} for ${formatCurrency(body.grandTotal || 0)}.`
+        }
+        if (action === 'DELETE') {
+          return 'Canceled and deleted a sale bill.'
+        }
+        return 'Changed details of a sale bill.'
+
+      case 'PURCHASE':
+        if (action === 'CREATE') {
+          return `Bought stock bill #${body.supplierBillNumber || ''} from supplier ${body.supplierName || 'Unknown Supplier'} for ${formatCurrency(body.grandTotal || 0)}.`
+        }
+        return 'Changed details of a purchase bill.'
+
+      case 'MEDICINE':
+        if (action === 'CREATE') {
+          return `Added new medicine ${body.name || 'Unknown'} (${body.dosage || 'N/A'}) to inventory.`
+        }
+        if (action === 'UPDATE') {
+          return `Changed details or stock level for medicine ${body.name || 'Unknown'}.`
+        }
+        if (action === 'DELETE') {
+          return 'Deleted medicine from the shop.'
+        }
+        return 'Changed medicine details.'
+
+      case 'USER':
+        if (action === 'CREATE') {
+          return `Added new helper ${body.name || 'Unknown'} as role ${body.role || 'STAFF'}.`
+        }
+        if (action === 'UPDATE') {
+          return `Changed details for helper ${body.name || 'Unknown'}.`
+        }
+        if (action === 'DELETE') {
+          return 'Removed helper from the shop.'
+        }
+        return 'Changed helper details.'
+
+      case 'SUPPLIER':
+        if (action === 'CREATE') {
+          return `Added new supplier ${body.name || 'Unknown'}.`
+        }
+        if (action === 'UPDATE') {
+          return `Changed details for supplier ${body.name || 'Unknown'}.`
+        }
+        if (action === 'DELETE') {
+          return 'Deleted supplier from the shop.'
+        }
+        return 'Changed supplier details.'
+
+      case 'CUSTOMER':
+        if (action === 'CREATE') {
+          return `Added new customer ${body.name || 'Walk-in Customer'} (${body.phone || 'N/A'}).`
+        }
+        if (action === 'UPDATE') {
+          return `Changed details for customer ${body.name || 'Unknown'}.`
+        }
+        if (action === 'DELETE') {
+          return 'Deleted customer from the shop.'
+        }
+        return 'Changed customer details.'
+
+      default:
+        return `${action.toLowerCase()}d ${entity?.toLowerCase() || 'item'}`
+    }
+  }
+
   const handleExport = async () => {
     const toastId = toast.loading('Preparing Activity Logs PDF...')
     try {
@@ -70,22 +152,23 @@ export default function ActivityLogs() {
         allLogs,
         [
           { label: 'Timestamp', key: 'createdAt', align: 'center', format: (val) => val ? new Date(val).toLocaleString('en-IN') : '—' },
-          { label: 'User Name', key: 'userId.name', align: 'left', format: (val) => val || 'System' },
-          { label: 'User Role', key: 'userId.role', align: 'center', format: (val) => val || 'SYSTEM' },
-          { label: 'Action', key: 'action', align: 'center' },
-          { label: 'Entity', key: 'entity', align: 'center' },
-          { label: 'Method', key: 'details.method', align: 'center', format: (val) => val || '—' },
-          { label: 'Details', key: 'details.url', align: 'left', format: (val) => val || '—' }
+          { label: 'Who Did It', key: 'userId.name', align: 'left', format: (val, row) => `${val || 'System'} (${row.userId?.role || 'SYSTEM'})` },
+          { label: 'Action', key: 'action', align: 'center', format: (val) => getActionBadge(val).label },
+          { label: 'Entity Type', key: 'entity', align: 'center', format: (val, row) => getFriendlyEntity(row.entityType || val) },
+          { label: 'Activity Details', key: 'id', align: 'left', format: (val, row) => getFriendlyDescriptionText(row) }
         ],
         {
-          title: 'System Activity Logs',
-          subtitle: `Comprehensive Audit Trail Ledger · Filtered Logs`,
+          title: 'Shop History Audit Report',
+          subtitle: `Activity log statements filtered by current search/selection criteria`,
           summaryCards: [
             { label: 'Total Operations', value: allLogs.length.toString() },
             { label: 'Data Creations', value: createCount.toString() },
             { label: 'Data Updates', value: updateCount.toString() },
             { label: 'Data Deletions', value: deleteCount.toString() }
-          ]
+          ],
+          storeName,
+          storeOwner,
+          storeLogo: store?.logo ? getImageUrl(store.logo) : ''
         }
       )
       toast.success(`Successfully generated Activity Logs PDF.`, { id: toastId })
@@ -260,7 +343,11 @@ export default function ActivityLogs() {
           <p className="text-gray-500 dark:text-gray-400 mt-1">See a list of all sales, purchases, and changes made in your shop.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" leftIcon={<Filter className="h-4 w-4" />}>
+          <Button 
+            variant={showFilters ? "primary" : "outline"} 
+            onClick={() => setShowFilters(!showFilters)}
+            leftIcon={<Filter className="h-4 w-4" />}
+          >
             Filter
           </Button>
           <Button variant="outline" onClick={handleExport} leftIcon={<Download className="h-4 w-4" />}>
@@ -269,42 +356,44 @@ export default function ActivityLogs() {
         </div>
       </div>
 
-      {/* Filters (Simplified for now) */}
-      <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
-        <div className="relative w-full sm:flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input 
-            type="text"
-            placeholder="Search history..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-305 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-505 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-          />
+      {/* Filters */}
+      {showFilters && (
+        <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
+          <div className="relative w-full sm:flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input 
+              type="text"
+              placeholder="Search history..."
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+            />
+          </div>
+          <select 
+            className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
+            value={filters.action}
+            onChange={(e) => setFilters(prev => ({ ...prev, action: e.target.value }))}
+          >
+            <option value="">All Actions</option>
+            <option value="CREATE">Add New</option>
+            <option value="UPDATE">Change Details</option>
+            <option value="DELETE">Remove</option>
+            <option value="LOGIN">Sign In</option>
+          </select>
+          <select 
+            className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
+            value={filters.entity}
+            onChange={(e) => setFilters(prev => ({ ...prev, entity: e.target.value }))}
+          >
+            <option value="">All Pages</option>
+            <option value="SALE">Sales</option>
+            <option value="PURCHASE">Purchases</option>
+            <option value="MEDICINE">Medicines</option>
+            <option value="USER">Staff / Helpers</option>
+            <option value="CUSTOMER">Customers</option>
+            <option value="SUPPLIER">Suppliers</option>
+          </select>
         </div>
-        <select 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
-          value={filters.action}
-          onChange={(e) => setFilters(prev => ({ ...prev, action: e.target.value }))}
-        >
-          <option value="">All Actions</option>
-          <option value="CREATE">Add New</option>
-          <option value="UPDATE">Change Details</option>
-          <option value="DELETE">Remove</option>
-          <option value="LOGIN">Sign In</option>
-        </select>
-        <select 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
-          value={filters.entity}
-          onChange={(e) => setFilters(prev => ({ ...prev, entity: e.target.value }))}
-        >
-          <option value="">All Pages</option>
-          <option value="SALE">Sales</option>
-          <option value="PURCHASE">Purchases</option>
-          <option value="MEDICINE">Medicines</option>
-          <option value="USER">Staff / Helpers</option>
-          <option value="CUSTOMER">Customers</option>
-          <option value="SUPPLIER">Suppliers</option>
-        </select>
-      </div>
+      )}
 
       {/* Logs Table */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
@@ -340,8 +429,12 @@ export default function ActivityLogs() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="h-9 w-9 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 font-bold text-sm mr-3">
-                            {log.userId?.name?.charAt(0) || '?'}
+                          <div className="h-9 w-9 rounded-full overflow-hidden bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 font-bold text-sm mr-3 flex-shrink-0">
+                            {log.userId?.profilePhoto ? (
+                              <img src={getImageUrl(log.userId.profilePhoto)} alt={log.userId?.name} className="h-full w-full object-cover" />
+                            ) : (
+                              log.userId?.name?.charAt(0) || '?'
+                            )}
                           </div>
                           <div>
                             <div className="text-sm font-semibold text-gray-900 dark:text-white">{log.userId?.name || 'System'}</div>

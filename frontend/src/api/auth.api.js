@@ -32,6 +32,13 @@ export const authApi = {
   },
 
   /**
+   * Logout all devices
+   */
+  logoutAll: async () => {
+    return await api.post('/auth/logout-all')
+  },
+
+  /**
    * Get current user
    */
   getCurrentUser: async () => {
@@ -106,7 +113,12 @@ export const authApi = {
    * Update profile
    */
   updateProfile: async (profileData) => {
-    return await api.put('/auth/profile', profileData)
+    const isFormData = profileData instanceof FormData;
+    return await api.put('/auth/profile', profileData, {
+      headers: {
+        'Content-Type': isFormData ? undefined : 'application/json'
+      }
+    })
   },
 
   /**
@@ -148,6 +160,13 @@ export const authApi = {
    */
   checkEmailUniqueness: async (email, type) => {
     return await api.post('/auth/check-email-uniqueness', { email, type })
+  },
+
+  /**
+   * Submit contact support ticket
+   */
+  submitSupportTicket: async (ticketData) => {
+    return await api.post('/auth/contact', ticketData)
   },
 }
 

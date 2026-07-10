@@ -71,6 +71,7 @@ export function StoreProvider({ children }) {
     storePhone: store?.phone,
     storeEmail: store?.email,
     storeAddress: store?.address,
+    storeOwner: store?.ownerName || '',
 
     // Settings
     currency: 'INR',

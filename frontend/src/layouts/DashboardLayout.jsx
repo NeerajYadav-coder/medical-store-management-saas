@@ -35,6 +35,7 @@ import {
   Building2,
   FileText,
 } from 'lucide-react'
+import { getImageUrl } from '@/utils/image'
 import { cn } from '@/utils/cn'
 import { useAuth } from '@context/AuthContext'
 import { useUI, useSidebar, useTheme } from '@context/UIContext'
@@ -145,7 +146,7 @@ export default function DashboardLayout() {
           <Link to={user?.role === 'STAFF' ? ROUTES.BILLING : ROUTES.DASHBOARD} className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-primary/10 overflow-hidden flex items-center justify-center flex-shrink-0 text-primary">
               {store?.logo ? (
-                <img src={store.logo} alt="Store Logo" className="h-full w-full object-cover" />
+                <img src={getImageUrl(store.logo)} alt="Store Logo" className="h-full w-full object-cover" />
               ) : (
                 <svg className="h-5 w-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
@@ -216,8 +217,12 @@ export default function DashboardLayout() {
         {/* User Profile */}
         <div className="p-4 border-t border-border/50">
           <div className="flex flex-col md:flex-row items-center justify-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold shrink-0">
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold shrink-0 overflow-hidden">
+              {user?.profilePhoto ? (
+                <img src={getImageUrl(user.profilePhoto)} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                user?.name?.charAt(0)?.toUpperCase() || 'U'
+              )}
             </div>
             {!isSidebarCollapsed && (
               <div className="flex-1 min-w-0">
@@ -353,8 +358,12 @@ export default function DashboardLayout() {
                 }}
                 className="flex items-center gap-2 p-2 rounded-xl hover:bg-secondary transition-colors"
               >
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-semibold">
-                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-semibold overflow-hidden">
+                  {user?.profilePhoto ? (
+                    <img src={getImageUrl(user.profilePhoto)} alt={user.name} className="h-full w-full object-cover" />
+                  ) : (
+                    user?.name?.charAt(0)?.toUpperCase() || 'U'
+                  )}
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -382,12 +391,13 @@ export default function DashboardLayout() {
                         <Store className="h-4 w-4" />
                         Store Settings
                       </Link>
-                      <button
+                      <Link
+                        to="/dashboard/help"
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-700 w-full text-left"
                       >
                         <HelpCircle className="h-4 w-4" />
                         Help & Support
-                      </button>
+                      </Link>
                     </div>
                   )}
                   <div className={cn("pt-1", user?.role !== 'STAFF' && "border-t border-gray-100 dark:border-gray-800")}>

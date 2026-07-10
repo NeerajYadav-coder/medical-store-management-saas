@@ -98,6 +98,19 @@ export default function MedicineForm({
 
   const [errors, setErrors] = useState({})
 
+  // Adjust default reorderLevel based on form factor selection
+  useEffect(() => {
+    if (['SYRUP', 'DROPS', 'INJECTION'].includes(formData.form)) {
+      if (Number(formData.reorderLevel) === 10) {
+        setFormData(prev => ({ ...prev, reorderLevel: 3 }))
+      }
+    } else {
+      if (Number(formData.reorderLevel) === 3) {
+        setFormData(prev => ({ ...prev, reorderLevel: 10 }))
+      }
+    }
+  }, [formData.form])
+
   // Load existing medicine data for edit mode
   useEffect(() => {
     if (medicine) {

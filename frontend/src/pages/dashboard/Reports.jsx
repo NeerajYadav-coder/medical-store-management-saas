@@ -35,19 +35,55 @@ import saleApi from '@api/sale.api'
 import purchaseApi from '@api/purchase.api'
 import { useStore } from '@context/StoreContext'
 import { exportToPDF } from '@utils/exportPDF'
+import { getImageUrl } from '@utils/image'
 import toast from 'react-hot-toast'
+import { Skeleton } from '@components/common/Loader'
+import Modal from '@components/common/Modal'
+import medicineApi from '@api/medicine.api'
 
 /**
  * Reports Page
  */
 export default function Reports() {
-  const { store } = useStore()
+  const { store, storeName, storeOwner } = useStore()
   const [dateRange, setDateRange] = useState('month')
+  const [showTopProductsModal, setShowTopProductsModal] = useState(false)
+  const [allTopProducts, setAllTopProducts] = useState([])
+  const [isLoadingTopProducts, setIsLoadingTopProducts] = useState(false)
+
+  const handleViewAllTopProducts = async () => {
+    setShowTopProductsModal(true)
+    setIsLoadingTopProducts(true)
+    try {
+      const response = await medicineApi.getTopSelling(50)
+      if (response) {
+        const dataArray = Array.isArray(response) ? response : response.data || []
+        const mapped = dataArray.map(m => ({
+          _id: m._id,
+          name: m.name,
+          dosage: m.dosage,
+          form: m.form,
+          totalQuantity: m.totalUnitsSold ?? m.totalQuantity ?? 0,
+          totalRevenue: m.totalRevenue ?? 0,
+          totalProfit: m.totalProfit ?? 0,
+        }))
+        setAllTopProducts(mapped)
+      } else {
+        setAllTopProducts(stats?.topMedicines || [])
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to load top selling products')
+      setAllTopProducts(stats?.topMedicines || [])
+    } finally {
+      setIsLoadingTopProducts(false)
+    }
+  }
 
   // Fetch stats from backend
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: reportsApi.getDashboardStats,
+    queryKey: ['dashboard', 'stats', dateRange],
+    queryFn: () => reportsApi.getDashboardStats({ range: dateRange }),
   })
 
   // Map real data
@@ -56,15 +92,7 @@ export default function Reports() {
   const monthlyProfit = stats?.monthly?.profit || 0;
   const avgOrderValue = monthlyBills > 0 ? monthlySales / monthlyBills : 0;
   
-  const trends = stats?.trends || [];
-  let chartData = [];
-  if (dateRange === 'week') {
-    chartData = trends.slice(-7);
-  } else if (dateRange === 'month') {
-    chartData = trends.slice(-30);
-  } else {
-    chartData = trends;
-  }
+  const chartData = stats?.trends || [];
   const maxSales = Math.max(...chartData.map(d => d.sales), 1);
 
   const topProducts = stats?.topMedicines || [];
@@ -77,6 +105,7 @@ export default function Reports() {
 
     const printWindow = window.open('', '_blank');
     const title = `Business_Report_${dateRange.toUpperCase()}_${new Date().toISOString().split('T')[0]}`;
+    const storeLogoPrint = store?.logo ? getImageUrl(store.logo) : '';
     
     printWindow.document.write(`
       <html>
@@ -85,6 +114,7 @@ export default function Reports() {
           <style>
             body { font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 40px; color: #111827; }
             .header { text-align: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 30px; }
+            .store-logo { height: 60px; max-width: 150px; object-fit: contain; margin-bottom: 8px; }
             .store-name { font-size: 24px; font-weight: 800; margin: 0; color: #4f46e5; }
             .report-title { font-size: 18px; font-weight: 600; margin: 5px 0 0 0; color: #374151; }
             .meta { font-size: 12px; color: #6b7280; margin-top: 10px; }
@@ -109,7 +139,9 @@ export default function Reports() {
         </head>
         <body>
           <div class="header">
-            <h1 class="store-name">PHARMACY PERFORMANCE REPORT</h1>
+            ${storeLogoPrint ? `<img class="store-logo" src="${storeLogoPrint}" alt="Store Logo" />` : ''}
+            <h1 class="store-name">${storeName}</h1>
+            ${storeOwner ? `<p class="store-owner" style="margin: 4px 0 0 0; font-size: 13px; color: #4b5563; font-weight: 600;">Proprietor: ${storeOwner}</p>` : ''}
             <p class="report-title">Business Analytics Summary — ${dateRange.toUpperCase()}</p>
             <p class="meta">Generated on: ${new Date().toLocaleString()}</p>
           </div>
@@ -161,7 +193,7 @@ export default function Reports() {
           </div>
 
           <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #9ca3af;">
-            End of Report · Generated Securely by Medical Store Platform
+            End of Report · Generated Securely for ${storeName} ${storeOwner ? `(Proprietor: ${storeOwner})` : ''}
           </div>
           
           <script>
@@ -178,9 +210,19 @@ export default function Reports() {
     const toastId = toast.loading('Preparing Sales PDF Report...');
     try {
       const response = await saleApi.getAll({ limit: 1000 });
-      const sales = response?.data || [];
+      let sales = response?.data || [];
+      
+      // Filter sales by selected date range
+      const cutoff = new Date();
+      if (dateRange === 'week') cutoff.setDate(cutoff.getDate() - 7);
+      else if (dateRange === 'month') cutoff.setDate(cutoff.getDate() - 30);
+      else if (dateRange === 'quarter') cutoff.setDate(cutoff.getDate() - 90);
+      else if (dateRange === 'year') cutoff.setDate(cutoff.getDate() - 365);
+      
+      sales = sales.filter(s => new Date(s.billDate || s.createdAt) >= cutoff);
+
       if (!sales.length) {
-        toast.error('No sales records to export', { id: toastId });
+        toast.error('No sales records to export for this period', { id: toastId });
         return;
       }
       
@@ -197,14 +239,17 @@ export default function Reports() {
           { label: 'Grand Total', key: 'grandTotal', align: 'right', format: (val) => `₹${val.toLocaleString('en-IN')}` }
         ],
         {
-          title: 'Sales Register Report',
-          subtitle: `Completed Sales Transactions Ledgers`,
+          title: `Sales Register Report (${dateRange.toUpperCase()})`,
+          subtitle: `Completed Sales Transactions Ledgers — Last ${dateRange === 'week' ? '7' : dateRange === 'quarter' ? '90' : dateRange === 'year' ? '365' : '30'} Days`,
           summaryCards: [
             { label: 'Total Invoices', value: sales.length.toString() },
             { label: 'Total Revenue Collected', value: `₹${sales.reduce((sum, s) => sum + (s.grandTotal || 0), 0).toLocaleString('en-IN')}` },
             { label: 'Total Discounts Allowed', value: `₹${sales.reduce((sum, s) => sum + (s.discountAmount || 0), 0).toLocaleString('en-IN')}` },
             { label: 'Total Tax Collected', value: `₹${sales.reduce((sum, s) => sum + (s.totalGst || 0), 0).toLocaleString('en-IN')}` }
-          ]
+          ],
+          storeName,
+          storeOwner,
+          storeLogo: store?.logo ? getImageUrl(store.logo) : ''
         }
       );
       toast.success(`Successfully generated Sales PDF report.`, { id: toastId });
@@ -243,7 +288,10 @@ export default function Reports() {
             { label: 'Total Products', value: medicines.length.toString() },
             { label: 'Out of Stock', value: medicines.filter(m => (m.currentStock || 0) === 0).length.toString() },
             { label: 'Low Stock Items', value: medicines.filter(m => (m.currentStock || 0) <= (m.reorderLevel || 10)).length.toString() }
-          ]
+          ],
+          storeName,
+          storeOwner,
+          storeLogo: store?.logo ? getImageUrl(store.logo) : ''
         }
       );
       toast.success(`Successfully generated Inventory PDF report.`, { id: toastId });
@@ -281,7 +329,10 @@ export default function Reports() {
             { label: 'Total Invoices', value: purchases.length.toString() },
             { label: 'Total Procurement Cost', value: `₹${purchases.reduce((sum, p) => sum + (p.totalAmount || 0), 0).toLocaleString('en-IN')}` },
             { label: 'Outstanding Payments', value: purchases.filter(p => p.paymentStatus !== 'PAID').length.toString() }
-          ]
+          ],
+          storeName,
+          storeOwner,
+          storeLogo: store?.logo ? getImageUrl(store.logo) : ''
         }
       );
       toast.success(`Successfully generated Purchase PDF report.`, { id: toastId });
@@ -331,7 +382,10 @@ export default function Reports() {
             { label: 'Taxable Value Gross', value: `₹${gstRows.reduce((sum, r) => sum + (r.subtotal || 0), 0).toLocaleString('en-IN')}` },
             { label: 'Total SGST Tax Collected', value: `₹${gstRows.reduce((sum, r) => sum + (r.sgst || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` },
             { label: 'Total CGST Tax Collected', value: `₹${gstRows.reduce((sum, r) => sum + (r.cgst || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` }
-          ]
+          ],
+          storeName,
+          storeOwner,
+          storeLogo: store?.logo ? getImageUrl(store.logo) : ''
         }
       );
       toast.success(`Successfully generated GST PDF report.`, { id: toastId });
@@ -341,11 +395,13 @@ export default function Reports() {
     }
   };
 
+  const changeLabel = dateRange === 'week' ? 'This Week' : dateRange === 'quarter' ? 'This Quarter' : dateRange === 'year' ? 'This Year' : 'This Month';
+
   const summaryStats = [
     {
       title: 'Total Revenue',
       value: formatCurrency(monthlySales),
-      change: 'This Month',
+      change: changeLabel,
       isPositive: true,
       icon: IndianRupee,
       color: 'brand',
@@ -353,7 +409,7 @@ export default function Reports() {
     {
       title: 'Total Transactions',
       value: monthlyBills.toString(),
-      change: 'This Month',
+      change: changeLabel,
       isPositive: true,
       icon: ShoppingCart,
       color: 'success',
@@ -361,7 +417,7 @@ export default function Reports() {
     {
       title: 'Avg. Order Value',
       value: formatCurrency(avgOrderValue),
-      change: 'This Month',
+      change: changeLabel,
       isPositive: true,
       icon: TrendingUp,
       color: 'purple',
@@ -369,7 +425,7 @@ export default function Reports() {
     {
       title: 'Total Profit',
       value: formatCurrency(monthlyProfit),
-      change: 'This Month',
+      change: changeLabel,
       isPositive: monthlyProfit >= 0,
       icon: IndianRupee,
       color: 'warning',
@@ -403,7 +459,7 @@ export default function Reports() {
             onChange={(e) => setDateRange(e.target.value)}
             className="w-36"
           />
-          <Button variant="outline" size="sm" onClick={handlePrintReport} leftIcon={<Download className="h-4 w-4" />}>
+          <Button variant="outline" size="sm" onClick={handleDownloadSalesReport} leftIcon={<Download className="h-4 w-4" />}>
             Export PDF
           </Button>
           <Button size="sm" onClick={handlePrintReport} leftIcon={<FileText className="h-4 w-4" />}>
@@ -468,19 +524,27 @@ export default function Reports() {
             {chartData.length > 0 ? (
               chartData.map((day, index) => {
                 const heightPercent = Math.max((day.sales / maxSales) * 100, 2);
+                const isMonthly = day._id && day._id.split('-').length === 2;
+                const formattedDate = isMonthly
+                  ? new Date(day._id + '-02').toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+                  : new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const labelText = isMonthly
+                  ? new Date(day._id + '-02').toLocaleDateString('en-US', { month: 'short' })
+                  : new Date(day._id).getDate();
+
                 return (
                   <div key={index} className="flex-1 flex flex-col items-center gap-2 group relative h-full justify-end">
                     {/* Tooltip */}
                     <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-secondary-background text-label-primary border border-separator-apple/20 text-[11px] py-1 px-2 rounded-xl whitespace-nowrap z-10 pointer-events-none shadow-lg font-mono">
                       {formatCurrency(day.sales)}<br/>
-                      <span className="text-label-secondary">{new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</span>
+                      <span className="text-label-secondary">{formattedDate}</span>
                     </div>
                     <div
                       className="w-full max-w-[40px] bg-system-blue hover:bg-system-blue/80 rounded-t-lg transition-all duration-300"
                       style={{ height: `${heightPercent}%` }}
                     />
                     <span className="text-[10px] text-label-secondary hidden sm:block font-mono">
-                      {new Date(day._id).getDate()}
+                      {labelText}
                     </span>
                   </div>
                 )
@@ -502,7 +566,7 @@ export default function Reports() {
             <h3 className="text-apple-headline font-semibold text-label-primary">Top Selling Products</h3>
             <p className="text-apple-subheadline text-label-secondary mt-0.5">Based on selected period</p>
           </div>
-          <Button variant="ghost" size="sm" rightIcon={<ArrowUpRight className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm" rightIcon={<ArrowUpRight className="h-4 w-4" />} onClick={handleViewAllTopProducts}>
             View All
           </Button>
         </div>
@@ -579,6 +643,63 @@ export default function Reports() {
           )
         })}
       </div>
+
+      {/* Top Products Modal */}
+      <Modal
+        isOpen={showTopProductsModal}
+        onClose={() => setShowTopProductsModal(false)}
+        title="Top Selling Products"
+        size="2xl"
+      >
+        <div className="overflow-x-auto max-h-[60vh] p-1">
+          {isLoadingTopProducts ? (
+            <div className="flex flex-col gap-3 py-10">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-separator-apple/10">
+                  <th className="text-left py-3 px-4 text-apple-footnote font-semibold text-label-secondary uppercase tracking-wider">#</th>
+                  <th className="text-left py-3 px-4 text-apple-footnote font-semibold text-label-secondary uppercase tracking-wider">Product</th>
+                  <th className="text-right py-3 px-4 text-apple-footnote font-semibold text-label-secondary uppercase tracking-wider">Quantity Sold</th>
+                  <th className="text-right py-3 px-4 text-apple-footnote font-semibold text-label-secondary uppercase tracking-wider">Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allTopProducts.length > 0 ? (
+                  allTopProducts.map((product, index) => (
+                    <tr key={product._id || index} className="border-b border-separator-apple/10 hover:bg-secondary-background/40">
+                      <td className="py-3 px-4 text-apple-subheadline text-label-secondary font-mono">{index + 1}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-xl bg-system-blue/10 flex items-center justify-center">
+                            <Package className="h-4 w-4 text-system-blue" />
+                          </div>
+                          <div>
+                            <span className="text-apple-subheadline font-semibold text-label-primary block">{product.name} {product.dosage}</span>
+                            {product.form && <span className="text-[10px] text-label-secondary uppercase font-medium">{product.form}</span>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right text-apple-subheadline text-label-secondary text-tabular-nums">{product.totalQuantity}</td>
+                      <td className="py-3 px-4 text-right text-apple-subheadline font-semibold text-label-primary text-tabular-nums">{formatCurrency(product.totalRevenue)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="text-center py-10 text-label-secondary">
+                      No top selling products data available.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

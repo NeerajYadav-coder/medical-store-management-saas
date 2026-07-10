@@ -249,8 +249,8 @@ export function AuthProvider({ children }) {
     signupError,
 
     // Clear errors
-    clearLoginError: () => setLoginError(null),
-    clearSignupError: () => setSignupError(null),
+    clearLoginError: useCallback(() => setLoginError(null), []),
+    clearSignupError: useCallback(() => setSignupError(null), []),
   }
 
   return (

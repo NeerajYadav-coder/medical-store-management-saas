@@ -14,6 +14,11 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
 
+  // Policy & Support routes
+  PRIVACY: '/privacy',
+  TERMS: '/terms',
+  SUPPORT: '/support',
+
   // Dashboard routes
   DASHBOARD: '/dashboard',
   
@@ -61,6 +66,7 @@ export const ROUTES = {
   // Settings routes
   SETTINGS_STORE: '/dashboard/settings/store',
   SETTINGS_USER: '/dashboard/settings/user',
+  HELP_SUPPORT: '/dashboard/help',
 
   // Error routes
   FORBIDDEN: '/403',
@@ -125,6 +131,10 @@ export const ROUTE_META = {
     title: 'Account Settings',
     breadcrumb: ['Dashboard', 'Settings', 'Account'],
   },
+  [ROUTES.HELP_SUPPORT]: {
+    title: 'Help & Support',
+    breadcrumb: ['Dashboard', 'Help & Support'],
+  },
 }
 
 
@@ -157,7 +167,7 @@ export const SIDEBAR_NAV_ITEMS = [
     label: 'Inventory',
     icon: 'Package',
     permission: PERMISSIONS.VIEW_INVENTORY,
-    badge: true,
+    badge: false,
   },
   {
     path: ROUTES.PURCHASE,

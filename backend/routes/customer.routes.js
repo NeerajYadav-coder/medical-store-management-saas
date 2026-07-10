@@ -5,6 +5,8 @@
 
 import express from 'express';
 import Customer from '../models/Customer.js';
+import Sale from '../models/Sale.js';
+import SaleItem from '../models/SaleItem.js';
 import { protect } from '../middleware/auth.middleware.js';
 import { ownerOnly } from '../middleware/role.middleware.js';
 import { auditAction } from '../middleware/audit.middleware.js';
@@ -124,6 +126,61 @@ router.get('/phone/:phone', async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: customer,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get customer purchase history and summarized purchased items
+router.get('/:id/history', async (req, res, next) => {
+  try {
+    const medicalStoreId = req.user.medicalStoreId;
+    const customerId = req.params.id;
+
+    // Verify customer exists
+    const customer = await Customer.findOne({ _id: customerId, medicalStoreId });
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found',
+      });
+    }
+
+    // Get all sales
+    const sales = await Sale.find({ customerId, medicalStoreId })
+      .sort({ billDate: -1 })
+      .lean();
+
+    const saleIds = sales.map(s => s._id);
+    
+    // Get summarized purchased items
+    let itemsSummary = [];
+    if (saleIds.length > 0) {
+      itemsSummary = await SaleItem.aggregate([
+        { $match: { saleId: { $in: saleIds } } },
+        {
+          $group: {
+            _id: "$medicineId",
+            name: { $first: "$medicineName" },
+            dosage: { $first: "$medicineDosage" },
+            form: { $first: "$medicineForm" },
+            totalQuantity: { $sum: "$quantity" },
+            lastPurchased: { $max: "$createdAt" },
+            avgPrice: { $avg: "$sellingPrice" }
+          }
+        },
+        { $sort: { totalQuantity: -1 } }
+      ]);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        customer,
+        sales,
+        itemsSummary
+      }
     });
   } catch (error) {
     next(error);

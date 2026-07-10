@@ -40,6 +40,7 @@ import { useDebouncedSearch } from '@hooks/useDebounce'
 import { useAuth } from '@context/AuthContext'
 import { useStore } from '@context/StoreContext'
 import { exportToPDF } from '@utils/exportPDF'
+import { getImageUrl } from '@utils/image'
 import toast from 'react-hot-toast'
 import MedicineForm from '@components/inventory/MedicineForm'
 
@@ -93,7 +94,7 @@ export default function Inventory() {
   const canManageInventory = hasPermission('MANAGE_INVENTORY')
 
   // State
-  const { store } = useStore()
+  const { store, storeName, storeOwner } = useStore()
   const [page, setPage] = useState(1)
   const [selectedMedicines, setSelectedMedicines] = useState([])
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, item: null })
@@ -440,7 +441,10 @@ export default function Inventory() {
             { label: 'Low Stock Items', value: stats.lowStock.toString() },
             { label: 'Out of Stock', value: stats.outOfStock.toString() },
             { label: 'Expiring Soon', value: stats.expiringSoon.toString() }
-          ]
+          ],
+          storeName,
+          storeOwner,
+          storeLogo: store?.logo ? getImageUrl(store.logo) : ''
         }
       )
       toast.success(`Successfully generated PDF report.`, { id: toastId })
@@ -468,7 +472,10 @@ export default function Inventory() {
         summaryCards: [
           { label: 'Selected Medicines', value: selectedData.length.toString() },
           { label: 'Low Stock Checked', value: selectedData.filter(m => (m.currentStock ?? 0) <= (m.reorderLevel ?? 10)).length.toString() }
-        ]
+        ],
+        storeName,
+        storeOwner,
+        storeLogo: store?.logo ? getImageUrl(store.logo) : ''
       }
     )
     toast.success(`Successfully generated PDF report for selected medicines.`)

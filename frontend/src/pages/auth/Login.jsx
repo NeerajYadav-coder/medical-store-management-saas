@@ -60,27 +60,27 @@ export default function Login() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in max-w-md w-full mx-auto">
       {/* Header */}
-      <div className="text-center lg:text-left">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+      <div className="text-center lg:text-left space-y-2">
+        <h2 className="text-apple-title-1 font-bold text-label-primary tracking-tight">Welcome back</h2>
+        <p className="text-apple-caption-1 text-label-secondary">
           Sign in to your account to continue
         </p>
       </div>
 
       {/* Success message */}
       {successMessage && (
-        <div className="flex items-center gap-2 p-4 rounded-lg bg-success-50 border border-success-200 text-success-700">
+        <div className="flex items-center gap-2 p-4 rounded-xl bg-system-green/10 border border-system-green/20 text-system-green">
           <CheckCircle className="h-5 w-5 flex-shrink-0" />
-          <p className="text-sm">{successMessage}</p>
+          <p className="text-apple-caption-1 font-medium">{successMessage}</p>
         </div>
       )}
 
       {/* Error message */}
       {loginError && (
-        <div className="p-4 rounded-lg bg-danger-50 border border-danger-200 text-danger-700">
-          <p className="text-sm">{loginError.message || 'Invalid email or password'}</p>
+        <div className="p-4 rounded-xl bg-system-red/10 border border-system-red/20 text-system-red">
+          <p className="text-apple-caption-1 font-medium">{loginError.message || 'Invalid email or password'}</p>
         </div>
       )}
 
@@ -92,7 +92,7 @@ export default function Login() {
           type="email"
           placeholder="you@example.com"
           autoComplete="email"
-          leftIcon={<Mail className="h-5 w-5" />}
+          leftIcon={<Mail className="h-5 w-5 text-label-tertiary" />}
           error={errors.email?.message}
           {...register('email')}
         />
@@ -100,12 +100,12 @@ export default function Login() {
         {/* Password */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-apple-caption-1 font-semibold text-label-primary">
               Password
             </label>
             <Link
               to={ROUTES.FORGOT_PASSWORD}
-              className="text-sm font-medium text-brand-600 hover:text-brand-700"
+              className="text-apple-caption-1 font-semibold text-system-blue hover:underline"
             >
               Forgot password?
             </Link>
@@ -123,9 +123,9 @@ export default function Login() {
           <input
             id="remember-me"
             type="checkbox"
-            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500"
+            className="h-4 w-4 rounded border-separator-apple/20 bg-secondary-background text-system-blue focus:ring-system-blue/30"
           />
-          <label htmlFor="remember-me" className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+          <label htmlFor="remember-me" className="ml-2 text-apple-caption-1 text-label-secondary">
             Remember me for 30 days
           </label>
         </div>
@@ -133,22 +133,22 @@ export default function Login() {
         {/* Submit button */}
         <Button
           type="submit"
-          className="w-full"
+          className="w-full bg-system-blue hover:bg-system-blue/90 text-white rounded-xl transition-apple-micro active-apple-press shadow-sm"
           size="lg"
           isLoading={isLoggingIn}
-          rightIcon={!isLoggingIn && <ArrowRight className="h-5 w-5" />}
+          rightIcon={!isLoggingIn && <ArrowRight className="h-4.5 w-4.5 ml-1" />}
         >
           {isLoggingIn ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>
 
       {/* Divider */}
-      <div className="relative">
+      <div className="relative pt-2">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200 dark:border-gray-700" />
+          <div className="w-full border-t border-separator-apple/10" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-gray-50 dark:bg-gray-950 px-4 text-gray-500 dark:text-gray-400">Or continue with</span>
+          <span className="bg-system-background px-4 text-apple-caption-2 uppercase tracking-widest font-bold text-label-tertiary">Or continue with</span>
         </div>
       </div>
 
@@ -156,33 +156,21 @@ export default function Login() {
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
-          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:bg-gray-950 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-separator-apple/10 rounded-xl text-apple-caption-1 font-semibold text-label-primary bg-secondary-background hover:bg-secondary-background/70 transition-apple-micro active-apple-press shadow-sm"
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
+          <svg className="h-4.5 w-4.5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
           </svg>
           Google
         </button>
         <button
           type="button"
-          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:bg-gray-950 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-separator-apple/10 rounded-xl text-apple-caption-1 font-semibold text-label-primary bg-secondary-background hover:bg-secondary-background/70 transition-apple-micro active-apple-press shadow-sm"
         >
-          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="h-4.5 w-4.5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
           </svg>
           GitHub
@@ -190,22 +178,22 @@ export default function Login() {
       </div>
 
       {/* Register link */}
-      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+      <p className="text-center text-apple-caption-1 text-label-secondary pt-2">
         Don't have an account?{' '}
         <Link
           to={ROUTES.REGISTER}
-          className="font-semibold text-brand-600 hover:text-brand-700"
+          className="font-semibold text-system-blue hover:underline"
         >
           Create account
         </Link>
       </p>
 
       {/* Demo credentials */}
-      <div className="mt-6 p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+      <div className="mt-6 p-4 rounded-xl bg-secondary-background border border-separator-apple/10 flex flex-col gap-2">
+        <p className="text-[11px] font-bold text-label-tertiary uppercase tracking-wider">
           Test Credentials (Owner)
         </p>
-        <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+        <div className="space-y-1 text-apple-caption-2 text-label-secondary">
           <p><span className="font-medium">Email:</span> neeraj01@ydvvi.com</p>
           <p><span className="font-medium">Password:</span> SecurePass2026!</p>
         </div>

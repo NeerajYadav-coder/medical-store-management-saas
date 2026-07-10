@@ -123,6 +123,19 @@ export default function Purchase() {
     gstRate: 12
   })
   const [medicineSearch, setMedicineSearch] = useState('')
+  
+  // Adjust newMedicine.reorderLevel based on form factor selection
+  useEffect(() => {
+    if (['SYRUP', 'DROPS', 'INJECTION'].includes(newMedicine.form)) {
+      if (Number(newMedicine.reorderLevel) === 10) {
+        setNewMedicine(prev => ({ ...prev, reorderLevel: 3 }))
+      }
+    } else {
+      if (Number(newMedicine.reorderLevel) === 3) {
+        setNewMedicine(prev => ({ ...prev, reorderLevel: 10 }))
+      }
+    }
+  }, [newMedicine.form])
   const [medicineResults, setMedicineResults] = useState([])
 
   const searchInputRef = useRef(null)

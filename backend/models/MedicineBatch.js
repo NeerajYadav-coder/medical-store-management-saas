@@ -168,7 +168,7 @@ medicineBatchSchema.index({ medicalStoreId: 1, expiryDate: 1, quantityRemaining:
 medicineBatchSchema.index({ medicalStoreId: 1, supplierId: 1 });
 
 // Pre-save validations and calculations
-medicineBatchSchema.pre('save', function() {
+medicineBatchSchema.pre('save', async function() {
   // Quantity remaining cannot exceed received
   const effectiveReceived = this.quantityReceived + this.freeQuantity + this.quantityReturned;
   const effectiveUsed = this.quantitySold + this.quantityDamaged;
@@ -199,10 +199,23 @@ medicineBatchSchema.pre('save', function() {
     const daysToExpiry = Math.ceil((this.expiryDate - new Date()) / (1000 * 60 * 60 * 24));
     if (daysToExpiry <= 30) {
       this.status = 'NEAR_EXPIRY';
-    } else if (this.quantityRemaining <= 10) {
-      this.status = 'LOW_STOCK';
     } else {
-      this.status = 'ACTIVE';
+      let dynamicReorderLevel = 10;
+      try {
+        const Medicine = mongoose.model('Medicine');
+        const med = await Medicine.findById(this.medicineId);
+        if (med) {
+          dynamicReorderLevel = med.reorderLevel ?? 10;
+        }
+      } catch (err) {
+        // Fallback to 10
+      }
+      
+      if (this.quantityRemaining <= dynamicReorderLevel) {
+        this.status = 'LOW_STOCK';
+      } else {
+        this.status = 'ACTIVE';
+      }
     }
   }
 });

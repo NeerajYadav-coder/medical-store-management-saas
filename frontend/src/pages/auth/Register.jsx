@@ -289,7 +289,6 @@ export default function Register() {
 
     // Capture ALL form values
     const currentValues = getValues()
-    console.log('[Register] Saving form values:', currentValues)
     
     // Update formData state
     setFormData(currentValues)
@@ -306,15 +305,11 @@ export default function Register() {
     }
   }
 
-  // Debug: Log formData when it changes
-  useEffect(() => {
-    console.log('[Register] formData updated:', formData)
-  }, [formData])
+
 
   // Send email OTP
   const sendEmailOtp = async () => {
     const email = formData.ownerEmail
-    console.log('[Register] Sending email OTP to:', email)
     
     if (!email) {
       setError('Email not found. Please go back and enter your details.')
@@ -324,14 +319,11 @@ export default function Register() {
     setSendingOtp((prev) => ({ ...prev, email: true }))
     setError('')
     try {
-      console.log('[Register] Sending email OTP to:', email)
       const response = await authApi.sendOTP('email', email, 'signup')
-      console.log('[Register] Email OTP response:', response)
       
       // DEV MODE: Store the OTP for easy testing
       if (response.devOtp) {
         setDevOtp(prev => ({ ...prev, email: response.devOtp }))
-        console.log('[DEV MODE] Email OTP:', response.devOtp)
       }
       
       setEmailOtpSent(true)
@@ -394,7 +386,6 @@ export default function Register() {
   // Auto-send OTPs when entering verification step (only if formData has values)
   useEffect(() => {
     if (currentStep === 2 && formData.ownerEmail) {
-      console.log('[Register] Step 3 entered. FormData:', formData)
       if (!emailOtpSent && !sendingOtp.email) {
         sendEmailOtp()
       }
@@ -402,12 +393,12 @@ export default function Register() {
   }, [currentStep, formData.ownerEmail])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in max-w-md w-full mx-auto">
       {/* Header */}
-      <div className="text-center lg:text-left">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create your account</h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Get started with MedStore in 3 easy steps
+      <div className="text-center lg:text-left space-y-2">
+        <h2 className="text-apple-title-1 font-bold text-label-primary tracking-tight">Create your account</h2>
+        <p className="text-apple-caption-1 text-label-secondary">
+          Get started with MedStore in 3 easy steps.
         </p>
       </div>
 
@@ -421,15 +412,15 @@ export default function Register() {
           return (
             <div key={step.id} className="flex items-center">
               {/* Step circle */}
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center gap-2">
                 <div
                   className={cn(
-                    'h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium transition-all',
+                    'h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300',
                     isCompleted
-                      ? 'bg-success-500 text-white'
+                      ? 'bg-system-green text-white shadow-sm'
                       : isCurrent
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-gray-200 text-gray-500 dark:text-gray-400'
+                      ? 'bg-system-blue text-white shadow-sm ring-4 ring-system-blue/20'
+                      : 'bg-secondary-background border border-separator-apple/10 text-label-tertiary'
                   )}
                 >
                   {isCompleted ? (
@@ -438,10 +429,10 @@ export default function Register() {
                     <Icon className="h-5 w-5" />
                   )}
                 </div>
-                <div className="mt-2 text-center hidden sm:block">
+                <div className="text-center hidden sm:block">
                   <p className={cn(
-                    'text-xs font-medium',
-                    isCurrent ? 'text-brand-600' : 'text-gray-500 dark:text-gray-400'
+                    'text-[11px] font-bold tracking-widest uppercase',
+                    isCurrent ? 'text-system-blue' : isCompleted ? 'text-system-green' : 'text-label-tertiary'
                   )}>
                     {step.title}
                   </p>
@@ -452,8 +443,8 @@ export default function Register() {
               {index < STEPS.length - 1 && (
                 <div
                   className={cn(
-                    'h-0.5 w-12 sm:w-20 mx-2',
-                    isCompleted ? 'bg-success-500' : 'bg-gray-200'
+                    'h-0.5 w-10 sm:w-16 mx-3 transition-colors duration-300',
+                    isCompleted ? 'bg-system-green' : 'bg-separator-apple/10'
                   )}
                 />
               )}
@@ -470,10 +461,10 @@ export default function Register() {
       />
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Step 1: Store Details */}
         {currentStep === 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in">
             <Input
               label="Store Name"
               placeholder="ABC Medical Store"
@@ -533,7 +524,7 @@ export default function Register() {
 
         {/* Step 2: Owner Details */}
         {currentStep === 1 && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in">
             <Input
               label="Owner Name"
               placeholder="John Doe"
@@ -581,23 +572,23 @@ export default function Register() {
             </div>
 
             {/* Password requirements */}
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Password requirements:</p>
-              <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+            <div className="p-4 rounded-xl bg-secondary-background border border-separator-apple/10">
+              <p className="text-apple-caption-2 font-bold text-label-secondary uppercase tracking-wider mb-2">Password Requirements</p>
+              <ul className="text-apple-caption-1 text-label-secondary space-y-1.5">
                 <li className="flex items-center gap-2">
-                  <Check className={cn('h-3 w-3', watch('password')?.length >= 8 ? 'text-success-500' : 'text-gray-300')} />
+                  <Check className={cn('h-3.5 w-3.5', watch('password')?.length >= 8 ? 'text-system-green' : 'text-separator-apple')} />
                   At least 8 characters
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className={cn('h-3 w-3', /[A-Z]/.test(watch('password') || '') ? 'text-success-500' : 'text-gray-300')} />
+                  <Check className={cn('h-3.5 w-3.5', /[A-Z]/.test(watch('password') || '') ? 'text-system-green' : 'text-separator-apple')} />
                   One uppercase letter
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className={cn('h-3 w-3', /[a-z]/.test(watch('password') || '') ? 'text-success-500' : 'text-gray-300')} />
+                  <Check className={cn('h-3.5 w-3.5', /[a-z]/.test(watch('password') || '') ? 'text-system-green' : 'text-separator-apple')} />
                   One lowercase letter
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className={cn('h-3 w-3', /[0-9]/.test(watch('password') || '') ? 'text-success-500' : 'text-gray-300')} />
+                  <Check className={cn('h-3.5 w-3.5', /[0-9]/.test(watch('password') || '') ? 'text-system-green' : 'text-separator-apple')} />
                   One number
                 </li>
               </ul>
@@ -607,47 +598,47 @@ export default function Register() {
 
         {/* Step 3: Verification */}
         {currentStep === 2 && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fade-in">
             {/* Email OTP */}
-            <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 space-y-4">
+            <div className="p-5 rounded-xl border border-separator-apple/10 bg-secondary-background shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     'h-10 w-10 rounded-full flex items-center justify-center',
-                    emailVerified ? 'bg-success-100' : 'bg-brand-100'
+                    emailVerified ? 'bg-system-green/10 text-system-green' : 'bg-system-blue/10 text-system-blue'
                   )}>
                     {emailVerified ? (
-                      <Check className="h-5 w-5 text-success-600" />
+                      <Check className="h-5 w-5" />
                     ) : (
-                      <Mail className="h-5 w-5 text-brand-600" />
+                      <Mail className="h-5 w-5" />
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Email Verification</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{formData.ownerEmail}</p>
+                    <p className="font-semibold text-label-primary text-apple-caption-1">Email Verification</p>
+                    <p className="text-apple-caption-2 text-label-secondary">{formData.ownerEmail}</p>
                   </div>
                 </div>
                 {emailVerified && (
-                  <span className="text-sm font-medium text-success-600">Verified</span>
+                  <span className="text-apple-caption-2 font-bold text-system-green bg-system-green/10 px-2 py-0.5 rounded-full">Verified</span>
                 )}
               </div>
 
               {!emailVerified && (
                 <>
                   {emailOtpSent ? (
-                    <div className="space-y-3">
+                    <div className="space-y-3 pt-2">
                        <OTPInput
                         length={6}
                         onChange={(otp) => setValue('emailOtp', otp)}
                         error={errors.emailOtp?.message}
                       />
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mt-2">
                         <button
                            type="button"
                           onClick={() => verifyEmailOtp(getValues('emailOtp'))}
                           disabled={verifyingOtp.email || getValues('emailOtp')?.length !== 6}
-                          className="text-sm font-medium text-brand-600 hover:text-brand-700 disabled:opacity-50"
+                          className="text-apple-caption-1 font-bold text-system-blue hover:underline disabled:opacity-50"
                         >
                           {verifyingOtp.email ? 'Verifying...' : 'Verify OTP'}
                         </button>
@@ -655,7 +646,7 @@ export default function Register() {
                           type="button"
                           onClick={sendEmailOtp}
                           disabled={resendTimer.email > 0 || sendingOtp.email}
-                          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                          className="text-apple-caption-1 text-label-secondary hover:text-label-primary disabled:opacity-50"
                         >
                           {resendTimer.email > 0 ? `Resend in ${resendTimer.email}s` : 'Resend OTP'}
                         </button>
@@ -664,10 +655,9 @@ export default function Register() {
                   ) : (
                     <Button
                       type="button"
-                      variant="outline"
                       onClick={sendEmailOtp}
                       isLoading={sendingOtp.email}
-                      className="w-full"
+                      className="w-full bg-secondary-background border border-separator-apple/10 text-label-primary hover:bg-secondary-background/80 mt-2 transition-apple-micro"
                     >
                       Send OTP to Email
                     </Button>
@@ -683,11 +673,10 @@ export default function Register() {
           {currentStep > 0 ? (
             <Button
               type="button"
-              variant="secondary"
               onClick={goToPrevStep}
-              leftIcon={<ArrowLeft className="h-4 w-4" />}
+              className="bg-secondary-background text-label-primary border border-separator-apple/10 hover:bg-secondary-background/80 rounded-xl px-5 transition-apple-micro active-apple-press"
             >
-              Back
+              <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
             </Button>
           ) : (
             <div />
@@ -698,15 +687,16 @@ export default function Register() {
               type="button"
               onClick={goToNextStep}
               isLoading={checkingEmail}
-              rightIcon={<ArrowRight className="h-4 w-4" />}
+              className="bg-system-blue text-white rounded-xl px-6 transition-apple-micro active-apple-press hover:bg-system-blue/90"
             >
-              Continue
+              Continue <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
           ) : (
             <Button
               type="submit"
               isLoading={isSubmitting}
               disabled={!emailVerified}
+              className="bg-system-blue text-white rounded-xl px-6 transition-apple-micro active-apple-press hover:bg-system-blue/90 disabled:bg-separator-apple/50 disabled:text-label-tertiary"
             >
               Create Account
             </Button>
@@ -715,36 +705,43 @@ export default function Register() {
       </form>
 
       {/* Login link */}
-      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+      <p className="text-center text-apple-caption-1 text-label-secondary pt-4">
         Already have an account?{' '}
         <Link
           to={ROUTES.LOGIN}
-          className="font-semibold text-brand-600 hover:text-brand-700"
+          className="font-semibold text-system-blue hover:underline"
         >
           Sign in
         </Link>
       </p>
 
+      {/* Privacy & Terms Links */}
+      <div className="flex justify-center gap-2 text-apple-caption-2 text-label-tertiary pt-2 border-t border-separator-apple/5">
+        <Link to={ROUTES.PRIVACY} className="hover:text-label-secondary transition-colors">Privacy</Link>
+        <span>·</span>
+        <Link to={ROUTES.TERMS} className="hover:text-label-secondary transition-colors">Terms</Link>
+      </div>
+
       {/* Reusable Email Exists Modal */}
       {showEmailExistsModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 dark:border-gray-800 transform scale-100 transition-all duration-200">
+        <div className="fixed inset-0 bg-system-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-secondary-background border border-separator-apple/10 rounded-2xl max-w-sm w-full p-6 shadow-elevated transform scale-100 transition-all duration-200">
             <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500 dark:text-red-400 mb-4">
+              <div className="w-12 h-12 rounded-full bg-system-red/10 flex items-center justify-center text-system-red mb-4">
                 <AlertCircle className="w-6 h-6" />
               </div>
               
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-apple-title-3 font-bold text-label-primary mb-2">
                 Email Already Registered
               </h3>
               
-              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-6">
-                This email is already registered. Please use a different email address.
+              <p className="text-apple-caption-1 text-label-secondary leading-relaxed mb-6">
+                This email is already registered to a MedStore account. Please use a different email address or sign in.
               </p>
               
               <Button
                 type="button"
-                className="w-full justify-center"
+                className="w-full justify-center bg-system-blue text-white rounded-xl"
                 onClick={() => setShowEmailExistsModal(false)}
               >
                 Okay, got it

@@ -47,35 +47,56 @@ export async function runRollupForStore(storeId, targetDate = null) {
     const activeMedicineIds = activeSaleItems.map(item => item._id);
 
     // 2. Fetch stock totals and sales for the target day
-    for (const medicineId of activeMedicineIds) {
-      // Calculate units sold that day
-      const dailySales = await SaleItem.aggregate([
-        {
-          $match: {
-            medicalStoreId: new mongoose.Types.ObjectId(storeId),
-            medicineId: new mongoose.Types.ObjectId(medicineId),
-            createdAt: { $gte: dateToProcess, $lt: nextDay }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            totalSold: { $sum: '$quantity' },
-            totalReturned: { $sum: '$quantityReturned' }
-          }
+    // Calculate units sold that day for ALL active medicines in one query
+    const dailySalesMap = new Map();
+    const allDailySales = await SaleItem.aggregate([
+      {
+        $match: {
+          medicalStoreId: new mongoose.Types.ObjectId(storeId),
+          medicineId: { $in: activeMedicineIds },
+          createdAt: { $gte: dateToProcess, $lt: nextDay }
         }
-      ]);
+      },
+      {
+        $group: {
+          _id: '$medicineId',
+          totalSold: { $sum: '$quantity' },
+          totalReturned: { $sum: '$quantityReturned' }
+        }
+      }
+    ]);
 
-      const unitsSold = dailySales.length > 0 ? dailySales[0].totalSold : 0;
-      const unitsReturned = dailySales.length > 0 ? dailySales[0].totalReturned : 0;
-
-      // Calculate stock on hand
-      const batches = await MedicineBatch.find({
-        medicalStoreId: storeId,
-        medicineId: medicineId,
-        isActive: true
+    for (const sale of allDailySales) {
+      dailySalesMap.set(sale._id.toString(), {
+        totalSold: sale.totalSold,
+        totalReturned: sale.totalReturned
       });
+    }
 
+    // Get all batches for active medicines in one query
+    const allBatches = await MedicineBatch.find({
+      medicalStoreId: storeId,
+      medicineId: { $in: activeMedicineIds },
+      isActive: true
+    });
+
+    const batchesMap = new Map();
+    for (const batch of allBatches) {
+      const medId = batch.medicineId.toString();
+      if (!batchesMap.has(medId)) {
+        batchesMap.set(medId, []);
+      }
+      batchesMap.get(medId).push(batch);
+    }
+
+    // Now loop to upsert snapshots
+    for (const medicineId of activeMedicineIds) {
+      const medIdStr = medicineId.toString();
+      const salesData = dailySalesMap.get(medIdStr) || { totalSold: 0, totalReturned: 0 };
+      const unitsSold = salesData.totalSold;
+      const unitsReturned = salesData.totalReturned;
+
+      const batches = batchesMap.get(medIdStr) || [];
       const stockOnHandEnd = batches.reduce((total, batch) => total + batch.quantityRemaining, 0);
       const wasStockedOut = stockOnHandEnd === 0;
 

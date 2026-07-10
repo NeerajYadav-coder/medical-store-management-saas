@@ -14,6 +14,8 @@ import supplierApi from '../../api/supplier.api';
 import toast from 'react-hot-toast';
 import { cn } from '../../lib/utils';
 import { exportToPDF } from '../../utils/exportPDF';
+import { useStore } from '../../context/StoreContext';
+import { getImageUrl } from '../../utils/image';
 
 // Stats card component
 const StatCard = ({ icon: Icon, label, value, subValue, color }) => (
@@ -28,6 +30,7 @@ const StatCard = ({ icon: Icon, label, value, subValue, color }) => (
 );
 
 export default function SuppliersPage() {
+  const { store, storeName, storeOwner } = useStore();
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -185,7 +188,10 @@ export default function SuppliersPage() {
             { label: 'High Margin Count', value: stats.highMargin.toString() },
             { label: 'Total Purchase Vol', value: `₹${stats.totalPurchases.toLocaleString('en-IN')}` },
             { label: 'Total Credit Due', value: `₹${stats.totalCredit.toLocaleString('en-IN')}` }
-          ]
+          ],
+          storeName,
+          storeOwner,
+          storeLogo: store?.logo ? getImageUrl(store.logo) : ''
         }
       );
       toast.success(`Successfully generated PDF report.`);

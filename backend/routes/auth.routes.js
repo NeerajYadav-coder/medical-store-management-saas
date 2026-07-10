@@ -76,6 +76,7 @@ import {
   deleteStaff,
   updateProfile,
   checkEmailUniqueness,
+  submitSupportTicket,
 } from '../controllers/auth.controller.js';
 import {
   sendOtp,
@@ -86,6 +87,7 @@ import { protect } from '../middleware/auth.middleware.js';
 import { ownerOnly } from '../middleware/role.middleware.js';
 import { auditAction } from '../middleware/audit.middleware.js';
 import { sanitizeBody } from '../middleware/sanitize.middleware.js';
+import { uploadProfilePhoto } from '../middleware/upload.middleware.js';
 import {
   validate,
   loginSchema,
@@ -129,6 +131,9 @@ router.post('/refresh', refreshToken);
 router.post('/forgot-password', passwordResetLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', passwordResetLimiter, validate(resetPasswordSchema), resetPassword);
 
+// Contact Support / Ticket Submission
+router.post('/contact', submitSupportTicket);
+
 /**
  * -----------------------
  * Protected Routes
@@ -137,7 +142,7 @@ router.post('/reset-password', passwordResetLimiter, validate(resetPasswordSchem
 
 // Get current logged-in user profile
 router.get('/me', protect, getMe);
-router.put('/profile', protect, sanitizeBody, auditAction('UPDATE', 'USER'), updateProfile);
+router.put('/profile', protect, uploadProfilePhoto.single('profilePhoto'), sanitizeBody, auditAction('UPDATE', 'USER'), updateProfile);
 
 // Change Password
 router.post('/change-password', protect, passwordResetLimiter, changePassword);
