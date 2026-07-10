@@ -115,6 +115,12 @@ import connectDB from './config/db.js';
 
 import errorHandler from './middleware/error.middleware.js';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Initialize express app
 const app = express();
 
@@ -133,6 +139,9 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Parse cookies
 app.use(cookieParser());
+
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize);

@@ -108,9 +108,9 @@
 //  */
 
 import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = 10;
 
 const userSchema = new mongoose.Schema(
   {
@@ -135,6 +135,10 @@ const userSchema = new mongoose.Schema(
     passwordHash: {
       type: String,
       required: [true, 'Password is required'],
+    },
+    profilePhoto: {
+      type: String, // Base64 encoded image
+      default: null,
     },
     role: {
       type: String,

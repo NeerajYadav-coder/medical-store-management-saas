@@ -28,8 +28,27 @@ export const getDashboardSnapshot = async (req, res, next) => {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
     
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    // Determine custom range limits if requested
+    let useSlidingWindow = false;
+    let startDateLimit;
+    let daysLimit = 30;
+    
+    if (req.query.range) {
+      useSlidingWindow = true;
+      if (req.query.range === 'week' || req.query.range === '7d') daysLimit = 7;
+      else if (req.query.range === 'month' || req.query.range === '30d') daysLimit = 30;
+      else if (req.query.range === 'quarter' || req.query.range === '90d') daysLimit = 90;
+      else if (req.query.range === 'year' || req.query.range === '365d') daysLimit = 365;
+      
+      startDateLimit = new Date();
+      startDateLimit.setDate(startDateLimit.getDate() - daysLimit);
+    }
+
+    const statsStartDate = useSlidingWindow ? startDateLimit : startOfMonth;
+    const statsEndDate = useSlidingWindow ? new Date() : endOfMonth;
 
     // 1. Daily Stats (Optimized)
     const dailyStats = await Sale.aggregate([
@@ -55,7 +74,7 @@ export const getDashboardSnapshot = async (req, res, next) => {
       { 
         $match: { 
           medicalStoreId, 
-          createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+          createdAt: { $gte: statsStartDate, $lte: statsEndDate },
           status: { $ne: 'VOID' } 
         } 
       },
@@ -69,18 +88,24 @@ export const getDashboardSnapshot = async (req, res, next) => {
       }
     ]);
 
-    // 3. 30-Day Sales & Profit Trend (For Chart)
+    // 3. Sales & Profit Trend (For Chart)
+    const trendStartDate = useSlidingWindow ? startDateLimit : ninetyDaysAgo;
+    let dateFormat = "%Y-%m-%d";
+    if (req.query.range === 'year') {
+      dateFormat = "%Y-%m";
+    }
+
     const salesTrend = await Sale.aggregate([
       {
         $match: {
           medicalStoreId,
-          createdAt: { $gte: thirtyDaysAgo },
+          createdAt: { $gte: trendStartDate },
           status: { $ne: 'VOID' }
         }
       },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          _id: { $dateToString: { format: dateFormat, date: "$createdAt" } },
           sales: { $sum: "$grandTotal" },
           profit: { $sum: "$netProfit" },
           bills: { $sum: 1 }
@@ -140,8 +165,7 @@ export const getDashboardSnapshot = async (req, res, next) => {
 
     // 6. Dead Stock Analysis (Items > 90 days old with no sales recently)
     // Simplified heuristic: Old batches with significant stock
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
     
     const deadStockCount = await MedicineBatch.countDocuments({
       medicalStoreId,

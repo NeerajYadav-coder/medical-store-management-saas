@@ -217,6 +217,13 @@ medicineSchema.pre('save', function() {
     this.isPrescriptionRequired = true;
   }
 
+  // 2.5. Default reorder level for Syrups, Drops, Injections to 3
+  if (['SYRUP', 'DROPS', 'INJECTION'].includes(this.form)) {
+    if (this.isNew || this.isModified('form') || this.reorderLevel === 10) {
+      this.reorderLevel = 3;
+    }
+  }
+
   // 3. Generate tags
   if (this.isModified('name') || this.isModified('genericName') || this.isNew) {
     const tags = new Set();
