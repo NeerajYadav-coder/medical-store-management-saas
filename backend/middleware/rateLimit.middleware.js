@@ -30,15 +30,18 @@ export const signupLimiter = rateLimit({
 
 /**
  * Limit OTP requests to prevent spam
- * Keys on the destination (email/phone) not IP — prevents Railway's shared 
- * proxy IP from falsely rate-limiting all users simultaneously.
+ * Keys on destination (email/phone) — avoids Railway IPv6 keyGenerator crash.
  */
 export const otpLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 10, // Limit each destination to 10 OTP requests per 10 minutes
+  max: 10,
   keyGenerator: (req) => {
-    // Use the destination (email/phone) as the key if available, fallback to IP
-    return (req.body && req.body.destination) ? req.body.destination : req.ip;
+    // Key purely on destination — never fall back to req.ip (causes ERR_ERL_KEY_GEN_IPV6 on Railway)
+    return (req.body && req.body.destination) ? req.body.destination : 'global';
+  },
+  skip: (req) => {
+    // Skip rate limiting if no destination in body (let the controller handle validation)
+    return !(req.body && req.body.destination);
   },
   message: {
     success: false,

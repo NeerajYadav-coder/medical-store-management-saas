@@ -21,12 +21,13 @@ const smtpPass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
  * Uses STARTTLS on port 587 — the Gmail-recommended secure method.
  */
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,         // smtp.gmail.com
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: Number(process.env.SMTP_PORT) || 465,
-  secure: Number(process.env.SMTP_PORT) === 465 || !process.env.SMTP_PORT, // true for port 465 (SSL)
+  secure: Number(process.env.SMTP_PORT) === 465 || !process.env.SMTP_PORT,
+  family: 4,  // Force IPv4 — Railway cannot reach Gmail over IPv6 (ENETUNREACH)
   auth: {
     user: process.env.SMTP_USER,
-    pass: smtpPass,                     // Gmail App Password (spaces stripped)
+    pass: smtpPass,
   },
   connectionTimeout: 10000,
   greetingTimeout: 10000,
