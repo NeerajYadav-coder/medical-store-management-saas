@@ -113,6 +113,28 @@ export default function DashboardLayout() {
 
   const isBillingPage = location.pathname === ROUTES.BILLING || location.pathname === '/dashboard/billing'
 
+  // Swipe-to-close handling
+  const [touchStartX, setTouchStartX] = useState(null)
+  const [touchEndX, setTouchEndX] = useState(null)
+
+  const handleTouchStart = (e) => {
+    setTouchEndX(null)
+    setTouchStartX(e.targetTouches[0].clientX)
+  }
+
+  const handleTouchMove = (e) => {
+    setTouchEndX(e.targetTouches[0].clientX)
+  }
+
+  const handleTouchEnd = () => {
+    if (!touchStartX || !touchEndX) return
+    const distance = touchStartX - touchEndX
+    const minSwipeDistance = 50
+    if (distance > minSwipeDistance && isSidebarOpen && isMobile) {
+      closeSidebar()
+    }
+  }
+
   if (isBillingPage) {
     return (
       <div className="h-screen w-screen bg-gray-150 dark:bg-gray-950">
@@ -126,17 +148,20 @@ export default function DashboardLayout() {
       {/* Sidebar Overlay (Mobile) */}
       {isSidebarOpen && isMobile && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity"
           onClick={closeSidebar}
         />
       )}
 
       {/* Sidebar */}
       <aside
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         className={cn(
           'sidebar',
           isSidebarCollapsed ? 'sidebar-collapsed' : 'w-72',
-          'flex flex-col shadow-sm md:shadow-none',
+          'flex flex-col shadow-xl md:shadow-none',
           'md:relative md:translate-x-0',
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -161,11 +186,7 @@ export default function DashboardLayout() {
             )}
           </Link>
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              closeSidebar();
-            }}
+            onClick={() => closeSidebar()}
             type="button"
             className="md:hidden p-2.5 rounded-xl bg-gray-150 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-foreground relative z-[60] cursor-pointer shadow-sm flex items-center justify-center border border-border/50"
             aria-label="Close Sidebar"
