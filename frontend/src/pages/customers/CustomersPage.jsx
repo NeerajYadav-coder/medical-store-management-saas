@@ -13,6 +13,8 @@ import toast from 'react-hot-toast';
 import { cn } from '../../lib/utils';
 import { exportToPDF } from '../../utils/exportPDF';
 import CustomerModal from './CustomerModal';
+import { useStore } from '../../context/StoreContext';
+import { getImageUrl } from '../../utils/image';
 
 // Loyalty badge component
 const LoyaltyBadge = ({ category, size = 'md' }) => {
@@ -142,6 +144,7 @@ const CustomerRow = ({ customer, onClick }) => {
 };
 
 export default function CustomersPage() {
+  const { store, storeName, storeOwner } = useStore();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -292,7 +295,10 @@ export default function CustomersPage() {
             { label: 'VIP Category', value: vipCount.toString() },
             { label: 'Repeat Buyers', value: repeatCount.toString() },
             { label: 'Gross Revenue Spent', value: `₹${totalSpentAll.toLocaleString('en-IN')}` }
-          ]
+          ],
+          storeName,
+          storeOwner,
+          storeLogo: store?.logo ? getImageUrl(store.logo) : ''
         }
       );
       toast.success(`Successfully generated PDF report.`);

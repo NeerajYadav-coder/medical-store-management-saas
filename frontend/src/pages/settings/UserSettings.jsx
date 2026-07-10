@@ -29,6 +29,7 @@ import { authApi } from '@api/auth.api'
 import Button from '@components/common/Button'
 import { Input, PasswordInput, Select } from '@components/common/Input'
 import { Modal } from '@components/common/Modal'
+import { getImageUrl } from '@/utils/image'
 
 /**
  * User Settings Page
@@ -40,6 +41,12 @@ export default function UserSettings() {
   const [isEditing, setIsEditing] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [profilePhotoStr, setProfilePhotoStr] = useState(null)
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null)
+  const [removePhoto, setRemovePhoto] = useState(false)
+  
+  const [passForm, setPassForm] = useState({ current: '', new: '', confirm: '' })
+  const [isChangingPass, setIsChangingPass] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -57,16 +64,49 @@ export default function UserSettings() {
         email: user.email || '',
         phone: user.phone || '',
       })
+      if (user.profilePhoto) {
+        setProfilePhotoStr(user.profilePhoto)
+      } else {
+        setProfilePhotoStr(null)
+      }
+      setProfilePhotoFile(null)
+      setRemovePhoto(false)
     }
   }, [user, reset])
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Image size must be less than 2MB')
+        return
+      }
+      setProfilePhotoFile(file)
+      setRemovePhoto(false)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setProfilePhotoStr(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const onSubmit = async (data) => {
     setIsUpdating(true)
     try {
-      await authApi.updateProfile({
-        name: data.name,
-        phone: data.phone,
-      })
+      // Use FormData to support multipart/form-data for the file upload
+      const formData = new FormData()
+      if (data.name !== user?.name) formData.append('name', data.name)
+      if (data.phone !== user?.phone) formData.append('phone', data.phone)
+      if (data.email !== user?.email) formData.append('email', data.email)
+      
+      if (profilePhotoFile) {
+        formData.append('profilePhoto', profilePhotoFile)
+      } else if (removePhoto) {
+        formData.append('removePhoto', 'true')
+      }
+
+      await authApi.updateProfile(formData)
       await refetchUser()
       toast.success('Profile updated successfully')
       reset(data)
@@ -75,6 +115,35 @@ export default function UserSettings() {
       toast.error(error.response?.data?.message || error.message || 'Failed to update profile')
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault()
+    if (passForm.new !== passForm.confirm) {
+      toast.error('New passwords do not match')
+      return
+    }
+    setIsChangingPass(true)
+    try {
+      await authApi.changePassword(passForm.current, passForm.new)
+      toast.success('Password changed successfully')
+      setShowPasswordModal(false)
+      setPassForm({ current: '', new: '', confirm: '' })
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to change password')
+    } finally {
+      setIsChangingPass(false)
+    }
+  }
+
+  const handleLogoutAll = async () => {
+    if (!window.confirm('Are you sure you want to sign out from all other devices?')) return
+    try {
+      await authApi.logoutAll()
+      toast.success('Signed out from all other devices successfully')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to sign out other devices')
     }
   }
 
@@ -124,21 +193,39 @@ export default function UserSettings() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profile Photo</h3>
             <div className="flex items-center gap-6">
               <div className="relative">
-                <div className="h-24 w-24 rounded-full bg-brand-600 flex items-center justify-center text-white text-3xl font-bold">
-                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
-                <button
-                  type="button"
-                  className="absolute bottom-0 right-0 h-8 w-8 bg-white dark:bg-gray-900 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-                  disabled={!isEditing}
-                >
+                {profilePhotoStr ? (
+                  <img src={getImageUrl(profilePhotoStr)} alt="Profile" className="h-24 w-24 rounded-full object-cover border-4 border-white dark:border-gray-900 shadow-sm" />
+                ) : (
+                  <div className="h-24 w-24 rounded-full bg-brand-600 flex items-center justify-center text-white text-3xl font-bold">
+                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                )}
+                <label className={cn(
+                  "absolute bottom-0 right-0 h-8 w-8 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors",
+                  !isEditing && "opacity-50 cursor-not-allowed pointer-events-none"
+                )}>
                   <Camera className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                </button>
+                  <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} disabled={!isEditing} />
+                </label>
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="font-medium text-gray-900 dark:text-white">{user?.name}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{user?.role}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
+                
+                {isEditing && profilePhotoStr && (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setProfilePhotoStr(null)
+                      setProfilePhotoFile(null)
+                      setRemovePhoto(true)
+                    }}
+                    className="mt-3 text-sm font-medium text-danger-600 hover:text-danger-700 transition-colors"
+                  >
+                    Remove Photo
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -168,9 +255,15 @@ export default function UserSettings() {
                 type="email"
                 placeholder="you@example.com"
                 leftIcon={<Mail className="h-5 w-5" />}
-                disabled
-                hint="Email cannot be changed"
-                {...register('email')}
+                disabled={!isEditing}
+                error={errors.email?.message}
+                {...register('email', { 
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Invalid email address"
+                  }
+                })}
               />
             </div>
           </div>
@@ -200,7 +293,7 @@ export default function UserSettings() {
                 <Button
                   type="submit"
                   isLoading={isUpdating}
-                  disabled={!isDirty}
+                  disabled={!isDirty && !profilePhotoFile && !removePhoto}
                   leftIcon={<Save className="h-4 w-4" />}
                 >
                   Save Changes
@@ -240,7 +333,7 @@ export default function UserSettings() {
                 <p className="text-gray-600 dark:text-gray-400">Add extra security to your account</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Not enabled</p>
               </div>
-              <Button variant="outline" leftIcon={<Shield className="h-4 w-4" />}>
+              <Button variant="outline" leftIcon={<Shield className="h-4 w-4" />} onClick={() => toast.info('2FA integration coming soon!')}>
                 Enable 2FA
               </Button>
             </div>
@@ -267,7 +360,8 @@ export default function UserSettings() {
             </div>
             <Button
               variant="ghost"
-              className="w-full mt-4 text-danger-600 hover:bg-danger-50"
+              onClick={handleLogoutAll}
+              className="w-full mt-4 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20"
               leftIcon={<LogOut className="h-4 w-4" />}
             >
               Sign out all other devices
@@ -336,24 +430,30 @@ export default function UserSettings() {
             <Button variant="secondary" onClick={() => setShowPasswordModal(false)}>
               Cancel
             </Button>
-            <Button>Update Password</Button>
+            <Button onClick={handlePasswordChange} isLoading={isChangingPass}>Update Password</Button>
           </>
         }
       >
-        <form className="space-y-4">
+        <form onSubmit={handlePasswordChange} className="space-y-4">
           <PasswordInput
             label="Current Password"
             placeholder="Enter current password"
+            value={passForm.current}
+            onChange={(e) => setPassForm(p => ({ ...p, current: e.target.value }))}
             required
           />
           <PasswordInput
             label="New Password"
             placeholder="Enter new password"
+            value={passForm.new}
+            onChange={(e) => setPassForm(p => ({ ...p, new: e.target.value }))}
             required
           />
           <PasswordInput
             label="Confirm New Password"
             placeholder="Confirm new password"
+            value={passForm.confirm}
+            onChange={(e) => setPassForm(p => ({ ...p, confirm: e.target.value }))}
             required
           />
         </form>

@@ -64,10 +64,6 @@ export default function AuthLayout() {
         <div className="relative z-10 space-y-1.5">
           <div className="flex items-center gap-3 text-apple-caption-2 text-white/30">
             <span>© 2026 MedStore SaaS</span>
-            <span>·</span>
-            <a href="#" className="hover:text-white/50 transition-colors">Privacy</a>
-            <span>·</span>
-            <a href="#" className="hover:text-white/50 transition-colors">Terms</a>
           </div>
           <div className="text-apple-caption-2 text-white/30">
             Designed by{' '}

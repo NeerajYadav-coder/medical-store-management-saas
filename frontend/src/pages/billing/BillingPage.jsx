@@ -22,6 +22,7 @@ import symptomApi from '../../api/symptom.api';
 import saleApi from '../../api/sale.api';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
+import { getImageUrl } from '../../utils/image';
 import { initDB, saveBulk, getAllItems, saveItem, deleteItem, getItem } from '../../utils/db';
 import toast from 'react-hot-toast';
 
@@ -35,7 +36,7 @@ const PAYMENT_MODES = [
 
 export default function BillingPage() {
   const { user, logout } = useAuth();
-  const { store, storeName, storeAddress, storePhone, drugLicense, gstNumber } = useStore();
+  const { store, storeName, storeAddress, storePhone, drugLicense, gstNumber, storeOwner } = useStore();
   const searchInputRef = useRef(null);
   const customerInputRef = useRef(null);
   const doctorInputRef = useRef(null);
@@ -65,6 +66,8 @@ export default function BillingPage() {
   const [searchResults, setSearchResults] = useState([]);
   const [cartItems, setCartItems] = useState([]);
   const [customer, setCustomer] = useState(null);
+  const [customerHistory, setCustomerHistory] = useState({ sales: [], itemsSummary: [] });
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [doctor, setDoctor] = useState(null);
   const [symptoms, setSymptoms] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -119,6 +122,48 @@ export default function BillingPage() {
       searchInputRef.current?.focus();
     }, 400);
   }, []);
+
+  // Fetch customer purchase history
+  useEffect(() => {
+    if (customer?.customerId && !customer.customerId.startsWith('temp_')) {
+      const fetchHistory = async () => {
+        setLoadingHistory(true);
+        try {
+          const res = await customerApi.getPurchaseHistory(customer.customerId);
+          if (res?.success) {
+            setCustomerHistory(res.data);
+          } else {
+            setCustomerHistory({ sales: [], itemsSummary: [] });
+          }
+        } catch (error) {
+          console.error('Error fetching customer history:', error);
+          setCustomerHistory({ sales: [], itemsSummary: [] });
+        } finally {
+          setLoadingHistory(false);
+        }
+      };
+      fetchHistory();
+    } else {
+      setCustomerHistory({ sales: [], itemsSummary: [] });
+    }
+  }, [customer]);
+
+  const handleQuickAddFromHistory = (medicineId) => {
+    const parentMedicine = localMedicines.find(m => m._id === medicineId);
+    if (!parentMedicine) {
+      toast.error('Medicine not found in local catalog');
+      return;
+    }
+    // Find active batch with stock
+    const activeBatch = parentMedicine.batches?.find(
+      b => b.quantityRemaining > 0 && new Date(b.expiryDate) > new Date()
+    );
+    if (!activeBatch) {
+      toast.error('This medicine is currently out of stock or expired');
+      return;
+    }
+    addToCartFromLocal(parentMedicine, activeBatch);
+  };
 
   // Sync offline sales queue
   const syncOfflineSales = async () => {
@@ -700,6 +745,8 @@ export default function BillingPage() {
     const storePhonePrint = escapeHtml(storePhone || '');
     const dlNumberPrint = escapeHtml(drugLicense || '');
     const gstNumberPrint = escapeHtml(gstNumber || '');
+    const storeOwnerPrint = escapeHtml(storeOwner || '');
+    const storeLogoPrint = store?.logo ? getImageUrl(store.logo) : '';
 
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
@@ -736,7 +783,9 @@ export default function BillingPage() {
         </head>
         <body>
           <div class="text-center">
+            ${storeLogoPrint ? `<img src="${storeLogoPrint}" alt="Logo" style="height: 40px; max-width: 120px; object-fit: contain; margin-bottom: 4px;" /><br/>` : ''}
             <h1 class="store-name">${storeNamePrint}</h1>
+            ${storeOwnerPrint ? `<p style="margin: 2px 0; font-size: 10px; font-weight: bold;">Proprietor: ${storeOwnerPrint}</p>` : ''}
             <p style="margin: 2px 0;">${storeAddressPrint}</p>
             ${storePhonePrint ? `<p style="margin: 2px 0;">Phone: ${storePhonePrint}</p>` : ''}
             ${dlNumberPrint ? `<p style="margin: 2px 0;">DL: ${dlNumberPrint}</p>` : ''}
@@ -1169,6 +1218,33 @@ export default function BillingPage() {
               onBeforeSelect={() => customerInputRef.current?.focus()}
             />
           </div>
+
+          {customer && customerHistory?.itemsSummary?.length > 0 && (
+            <div className="card p-4 animate-fade-in bg-secondary-background border border-separator-apple/10">
+              <div className="flex items-center justify-between mb-3 border-b border-separator-apple/5 pb-2">
+                <span className="text-apple-subheadline font-bold text-label-primary flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-system-blue" /> Frequently Purchased by {customer.customerName}
+                </span>
+                <span className="text-[10px] bg-system-blue/10 text-system-blue px-2 py-0.5 rounded-full font-semibold">Click '+' to quickly add</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {customerHistory.itemsSummary.slice(0, 8).map((item) => (
+                  <button
+                    key={item._id}
+                    type="button"
+                    onClick={() => handleQuickAddFromHistory(item._id)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-separator-apple/10 hover:border-system-blue/30 hover:bg-system-blue/5 text-left transition-apple-micro active-apple-press cursor-pointer group"
+                  >
+                    <span className="h-5 w-5 rounded-lg bg-system-blue/10 flex items-center justify-center text-system-blue group-hover:bg-system-blue group-hover:text-white transition-colors text-xs font-bold font-mono">+</span>
+                    <div>
+                      <span className="text-apple-subheadline font-semibold text-label-primary">{item.name} {item.dosage}</span>
+                      <span className="text-[9px] text-label-secondary uppercase font-semibold block">{item.form || 'Item'} · Bought: {item.totalQuantity}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="card p-4">
             <SymptomSelector

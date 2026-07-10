@@ -100,6 +100,10 @@ export default function StoreSettings() {
   // This prevents the false "Disconnected" flash when returning to Settings page
   useEffect(() => {
     const loadWaStatus = async () => {
+      if (user?.role === 'STAFF') {
+        setIsLoadingWaStatus(false)
+        return
+      }
       try {
         setIsLoadingWaStatus(true)
         const res = await whatsappApi.getStatus()
@@ -130,7 +134,7 @@ export default function StoreSettings() {
       }
     }
     loadWaStatus()
-  }, []) // run once on mount
+  }, [user?.role]) // run once on mount or when user role updates
 
   // SSE + logs: only open the SSE stream when on the WhatsApp tab
   useEffect(() => {

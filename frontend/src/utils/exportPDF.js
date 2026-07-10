@@ -41,7 +41,10 @@ export const exportToPDF = (data, columns, options = {}) => {
   const {
     title = 'Data Report',
     subtitle = 'Active Records',
-    summaryCards = []
+    summaryCards = [],
+    storeName = 'Medical Store',
+    storeOwner = '',
+    storeLogo = ''
   } = options;
 
   const printWindow = window.open('', '_blank');
@@ -249,10 +252,14 @@ export const exportToPDF = (data, columns, options = {}) => {
       </head>
       <body>
         <div class="header-container">
-          <div class="logo-area">
-            <h1 class="store-name">MEDICAL PHARMACY SYSTEM</h1>
-            <h2 class="doc-title">${title}</h2>
-            <p class="doc-subtitle">${subtitle}</p>
+          <div class="logo-area" style="display: flex; align-items: center; gap: 15px;">
+            ${storeLogo ? `<img src="${storeLogo}" alt="Logo" style="height: 50px; width: 50px; object-fit: cover; border-radius: 8px;" />` : ''}
+            <div>
+              <h1 class="store-name">${escapeHtml(storeName)}</h1>
+              ${storeOwner ? `<p class="store-owner" style="margin: 2px 0 0 0; font-size: 13px; color: #4b5563; font-weight: 600;">Proprietor: ${escapeHtml(storeOwner)}</p>` : ''}
+              <h2 class="doc-title" style="margin-top: 5px;">${title}</h2>
+              <p class="doc-subtitle">${subtitle}</p>
+            </div>
           </div>
           <div class="meta-area">
             <p style="margin: 0;">Date: ${new Date().toLocaleDateString('en-IN')}</p>
@@ -275,8 +282,8 @@ export const exportToPDF = (data, columns, options = {}) => {
         </table>
 
         <div class="footer">
-          This report is programmatically generated and authenticated by MedStore.<br/>
-          An initiative by <a href="https://neerajyadav-coder.github.io/krishna-pharmacy/about.html" target="_blank" rel="noopener noreferrer" style="color: #6b7280; text-decoration: none; font-weight: 600;">Krishna Pharmacy</a>
+          This report is programmatically generated and authenticated by ${escapeHtml(storeName)}.<br/>
+          ${storeOwner ? `Managed by: ${escapeHtml(storeOwner)} · ` : ''}An initiative by <a href="https://neerajyadav-coder.github.io/krishna-pharmacy/about.html" target="_blank" rel="noopener noreferrer" style="color: #6b7280; text-decoration: none; font-weight: 600;">Krishna Pharmacy</a>
         </div>
 
         <script>

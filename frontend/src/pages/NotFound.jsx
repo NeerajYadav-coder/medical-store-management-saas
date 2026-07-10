@@ -50,8 +50,8 @@ export default function NotFound() {
         {/* Help text */}
         <p className="mt-8 text-sm text-gray-400">
           Need help? Contact{' '}
-          <a href="mailto:support@medstore.com" className="text-brand-600 hover:underline">
-            support@medstore.com
+          <a href="mailto:support.krishnapharmacy@gmail.com" className="text-system-blue hover:underline">
+            support.krishnapharmacy@gmail.com
           </a>
         </p>
       </div>

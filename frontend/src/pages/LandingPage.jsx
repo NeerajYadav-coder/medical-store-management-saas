@@ -24,6 +24,19 @@ export default function LandingPage() {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [showSplash, setShowSplash] = useState(() => {
+    return !sessionStorage.getItem('medstore_splash_shown')
+  })
+  const [isSplashFadingOut, setIsSplashFadingOut] = useState(false)
+
+  const handleDismissSplash = () => {
+    sessionStorage.setItem('medstore_splash_shown', 'true')
+    setIsSplashFadingOut(true)
+    navigate(ROUTES.LOGIN)
+    setTimeout(() => {
+      setShowSplash(false)
+    }, 700)
+  }
   
   const errorTimeoutRef = useRef(null)
   const successTimeoutRef = useRef(null)
@@ -39,12 +52,12 @@ export default function LandingPage() {
 
   // Sync login modal state with route /login
   useEffect(() => {
-    if (location.pathname === ROUTES.LOGIN) {
+    if (location.pathname === ROUTES.LOGIN && !showSplash) {
       setShowLoginModal(true)
     } else {
       setShowLoginModal(false)
     }
-  }, [location.pathname])
+  }, [location.pathname, showSplash])
 
   // Login Notification Handling
   useEffect(() => {
@@ -138,8 +151,184 @@ export default function LandingPage() {
     setValue('password', 'Demo@123')
   }
 
+  const renderSplash = () => {
+    if (!showSplash) return null;
+    return (
+      <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#060814] text-white font-sans overflow-hidden select-none transition-all duration-700 ease-in-out ${isSplashFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        {/* Sanskrit & animation styles */}
+        <style>{`
+          @keyframes orbit-outer {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+          @keyframes orbit-inner {
+            from { transform: rotate(360deg); }
+            to   { transform: rotate(0deg); }
+          }
+          @keyframes emblem-breathe {
+            0%, 100% { opacity: 0.85; }
+            50%      { opacity: 1; }
+          }
+          @keyframes fadeUp {
+            from {
+              opacity: 0;
+              transform: translateY(14px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          @keyframes fadeInSimple {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+          }
+
+          .orbit-ring-outer { animation: orbit-outer 45s linear infinite; }
+          .orbit-ring-inner { animation: orbit-inner 32s linear infinite; }
+          .emblem-glow      { animation: emblem-breathe 9s ease-in-out infinite; }
+
+          .animate-fade-up {
+            opacity: 0;
+            animation: fadeUp 550ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+          }
+          .delay-emblem { animation-delay: 0ms; }
+          .delay-shloka { animation-delay: 300ms; }
+          .delay-divider { animation-delay: 450ms; }
+          .delay-english { animation-delay: 600ms; }
+          .delay-hindi { animation-delay: 750ms; }
+          .delay-tagline { animation-delay: 900ms; }
+          .delay-button { animation-delay: 1050ms; }
+          .delay-footer { animation-delay: 1200ms; }
+
+          .sanskrit-text {
+            font-family: 'Noto Serif Devanagari', 'Georgia', serif;
+            text-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+          }
+
+          .btn-enter-platform {
+            transition: transform 180ms ease-out, background-color 180ms ease-out, box-shadow 180ms ease-out;
+          }
+          .btn-enter-platform:hover {
+            transform: scale(1.02);
+            background-image: linear-gradient(to right, #fbbf24, #f59e0b) !important;
+          }
+          .btn-enter-platform:active {
+            transform: scale(0.98);
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .orbit-ring-outer,
+            .orbit-ring-inner,
+            .emblem-glow {
+              animation: none !important;
+              transform: none !important;
+              opacity: 1 !important;
+            }
+            .animate-fade-up {
+              transform: none !important;
+              animation-name: fadeInSimple !important;
+              animation-duration: 400ms !important;
+            }
+            .btn-enter-platform:hover,
+            .btn-enter-platform:active {
+              transform: none !important;
+            }
+          }
+        `}</style>
+
+        {/* Glowing aura circles in background */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-amber-500/20 via-indigo-600/25 to-teal-500/15 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[90px] pointer-events-none" />
+
+        {/* Outer frame */}
+        <div className="max-w-2xl w-full px-6 text-center z-10 flex flex-col items-center gap-8">
+          {/* Spiritual-Scientific Union Badge */}
+          <div className="relative h-28 w-28 flex items-center justify-center animate-fade-up delay-emblem">
+            {/* Scientific Orbiting rings */}
+            {/* Outer Ring */}
+            <svg className="absolute inset-0 w-full h-full opacity-35 text-indigo-400 orbit-ring-outer" viewBox="0 0 100 100">
+              <ellipse cx="50" cy="50" rx="46" ry="16" fill="none" stroke="currentColor" strokeWidth="1" transform="rotate(45 50 50)" />
+            </svg>
+            {/* Inner Ring */}
+            <svg className="absolute inset-0 w-full h-full opacity-35 text-indigo-400 orbit-ring-inner" viewBox="0 0 100 100">
+              <ellipse cx="50" cy="50" rx="40" ry="13" fill="none" stroke="currentColor" strokeWidth="1" transform="rotate(135 50 50)" />
+            </svg>
+            
+            {/* Glowing Golden Ring */}
+            <div className="absolute inset-2 rounded-full border border-amber-500/35 bg-amber-500/5 shadow-[0_0_30px_rgba(245,158,11,0.2)] flex items-center justify-center emblem-glow">
+              {/* Mortar & Pestle SVG Icon */}
+              <svg className="h-12 w-12 text-amber-400" viewBox="0 0 64 64" fill="currentColor">
+                {/* Mortar Body with soft transparency inside */}
+                <path d="M14,26 C14,43 21,50 32,50 C43,50 50,43 50,26 L14,26 Z" opacity="0.15" />
+                <path d="M12,24 L52,24 C53.1,24 54,24.9 54,26 C54,27.1 53.1,28 52,28 L50,28 C50,45 40,52 32,52 C24,52 14,45 14,28 L12,28 C10.9,28 10,27.1 10,26 C10,24.9 10.9,24 12,24 Z" />
+                {/* Base pedestal of mortar */}
+                <path d="M22,52 L42,52 L44,56 C44.5,57 43.8,58 42.8,58 L21.2,58 C20.2,58 19.5,57 20,56 L22,52 Z" />
+                {/* Pestle */}
+                <path d="M44,10 L52,18 C52.8,18.8 52.8,20.2 52,21 L35,38 C34.2,38.8 32.8,38.8 32,38 L24,30 C23.2,29.2 23.2,27.8 24,27 L41,10 C41.8,9.2 43.2,9.2 44,10 Z" fill="url(#pestleGrad)" />
+                <defs>
+                  <linearGradient id="pestleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#d97706" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+          </div>
+
+          {/* Slogans Container */}
+          <div className="space-y-6">
+            {/* Sanskrit text */}
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-300 sanskrit-text leading-relaxed animate-fade-up delay-shloka">
+              स्वस्थस्य स्वास्थ्यरक्षणम्। <br /> आतुरस्य विकारप्रशमनम्॥
+            </h2>
+            
+            {/* Divider */}
+            <div className="flex items-center justify-center gap-3 animate-fade-up delay-divider">
+              <div className="w-16 h-[1px] bg-gradient-to-r from-transparent to-amber-500/50" />
+              <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              <div className="w-16 h-[1px] bg-gradient-to-l from-transparent to-amber-500/50" />
+            </div>
+
+            {/* English Slogan */}
+            <p className="text-xl sm:text-2xl font-semibold text-slate-200 tracking-tight leading-relaxed max-w-xl mx-auto animate-fade-up delay-english">
+              "Preserve the health of the healthy and <br className="xs:hidden" /> relieve the suffering of the sick."
+            </p>
+
+            {/* Hindi Translation */}
+            <p className="text-sm sm:text-base text-amber-200/90 max-w-lg mx-auto leading-relaxed italic animate-fade-up delay-hindi">
+              "स्वस्थ व्यक्ति के स्वास्थ्य की रक्षा करना और रोगी के रोग का शमन करना ही चिकित्सा का उद्देश्य है।"
+            </p>
+
+            {/* Sub-text explaining philosophy */}
+            <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed animate-fade-up delay-tagline">
+              Ayurveda's timeless foundation: uniting clinical precision with compassionate care to guard wellness and conquer disease.
+            </p>
+          </div>
+
+          {/* Action Button */}
+          <div className="pt-4 animate-fade-up delay-button">
+            <button
+              onClick={handleDismissSplash}
+              className="group relative flex items-center justify-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.25)] btn-enter-platform cursor-pointer"
+            >
+              <span>Enter Platform</span>
+              <ArrowRight className="h-4.5 w-4.5 transition-transform duration-300 group-hover:translate-x-1" />
+            </button>
+          </div>
+        </div>
+        
+        {/* Subtle Footer */}
+        <div className="absolute bottom-6 text-center text-[10px] text-slate-600 tracking-widest uppercase font-semibold animate-fade-up delay-footer">
+          Powered by Krishna Pharmacy
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-system-background text-label-primary font-sans relative overflow-x-hidden antialiased">
+      {renderSplash()}
       
       {/* 🔮 CUSTOM CSS FOR MOCKUPS AND INTERACTION */}
       <style>{`
@@ -215,7 +404,7 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-3">
             <Link to={ROUTES.REGISTER}>
               <Button size="sm" className="bg-system-blue hover:bg-system-blue/90 text-white rounded-full font-semibold px-4 text-apple-caption-1 py-1.5 transition-apple-micro active-apple-press">
-                Start Free Trial
+                Start Free
               </Button>
             </Link>
           </div>
@@ -265,7 +454,7 @@ export default function LandingPage() {
               onClick={() => setShowMobileMenu(false)}
             >
               <Button className="w-full bg-system-blue text-white rounded-xl py-3 font-semibold text-apple-subheadline">
-                Start Free Trial
+                Start Free
               </Button>
             </Link>
           </div>
@@ -348,22 +537,6 @@ export default function LandingPage() {
               </Button>
             </form>
 
-            {/* Demo Button */}
-            <div className="p-3.5 bg-secondary-background border border-separator-apple/10 rounded-xl flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-label-secondary uppercase tracking-wider">Demo Access</span>
-                <button 
-                  onClick={fillDemoCredentials}
-                  className="text-apple-caption-2 font-bold text-system-blue hover:underline cursor-pointer"
-                >
-                  Autofill Credentials
-                </button>
-              </div>
-              <p className="text-apple-caption-2 text-label-secondary leading-tight">
-                Use the credentials preset or click autofill to view the demo workspace directly.
-              </p>
-            </div>
-
             <div className="text-center text-apple-caption-1 text-label-secondary">
               New to MedStore?{' '}
               <Link to={ROUTES.REGISTER} className="text-system-blue font-semibold hover:underline">
@@ -374,55 +547,38 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* 🔴 3. SECTION 1 — HERO */}
-      <section className="min-h-screen flex flex-col items-center justify-center text-center px-6 relative pt-20 pb-12 bg-gradient-to-b from-system-background via-system-background to-secondary-background/25">
-        <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
-          {/* Version badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-background border border-separator-apple/10 text-apple-caption-2 font-bold text-label-secondary shadow-sm">
-            <Sparkles className="h-3 w-3 text-system-orange animate-pulse" />
-            V2.0 REDESIGNED FOR PHARMACIES
+      {/* 🔴 3. SECTION 1 & 2 — HERO & PRODUCT REVEAL */}
+      <section className="pt-32 pb-16 px-6 relative bg-gradient-to-b from-system-background via-system-background to-secondary-background/25 overflow-hidden">
+        <div className="max-w-5xl mx-auto flex flex-col items-center gap-12">
+          
+          {/* Text Content */}
+          <div className="flex flex-col items-center text-center gap-6 max-w-3xl">
+
+            {/* Headline */}
+            <h1 className="text-[40px] sm:text-[56px] font-bold tracking-tight text-label-primary leading-[1.1]">
+              Your pharmacy. <br className="sm:hidden" />Finally organized.
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-apple-title-3 text-label-secondary leading-relaxed">
+              One clean, secure platform to manage batch-wise stock, automated expiries, split billing, and compliance.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex items-center gap-4 mt-2">
+              <Link to={ROUTES.REGISTER}>
+                <Button size="lg" className="bg-system-blue hover:bg-system-blue/90 text-white rounded-full font-semibold px-6 shadow-sm transition-apple-micro active-apple-press">
+                  Start Free
+                </Button>
+              </Link>
+              <a href="#features" className="text-apple-body font-semibold text-system-blue hover:underline flex items-center gap-1.5">
+                See features <ChevronDown className="h-4.5 w-4.5 mt-0.5" />
+              </a>
+            </div>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-[40px] sm:text-[56px] font-bold tracking-tight text-label-primary leading-[1.1] max-w-3xl">
-            Your pharmacy. <br className="sm:hidden" />Finally organized.
-          </h1>
-
-          {/* Subheadline */}
-          <p className="text-apple-title-3 text-label-secondary max-w-2xl leading-relaxed">
-            One clean, secure platform to manage batch-wise stock, automated expiries, split billing, and compliance.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex items-center gap-4 mt-4">
-            <Link to={ROUTES.REGISTER}>
-              <Button size="lg" className="bg-system-blue hover:bg-system-blue/90 text-white rounded-full font-semibold px-6 shadow-sm transition-apple-micro active-apple-press">
-                Start Free Trial
-              </Button>
-            </Link>
-            <a href="#features" className="text-apple-body font-semibold text-system-blue hover:underline flex items-center gap-1.5">
-              See features <ChevronDown className="h-4.5 w-4.5 mt-0.5" />
-            </a>
-          </div>
-        </div>
-
-        {/* Scroll affordance chevron */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center text-label-tertiary">
-          <span className="text-[11px] font-bold uppercase tracking-widest mb-1.5 opacity-60">Scroll to explore</span>
-          <ChevronDown className="h-5 w-5 animate-bounce" />
-        </div>
-      </section>
-
-      {/* 🔴 4. SECTION 2 — PRODUCT VISUAL REVEAL */}
-      <section className="py-16 sm:py-24 max-w-5xl mx-auto px-6 text-center">
-        <div className="reveal-on-scroll flex flex-col gap-8">
-          <div>
-            <h2 className="text-apple-caption-1 font-bold text-system-blue uppercase tracking-widest">Minimalist Interface</h2>
-            <p className="text-apple-title-2 font-bold text-label-primary mt-2">Zero learning curve. Focus on what matters.</p>
-          </div>
-
-          {/* Browser Container mockup */}
-          <div className="bg-secondary-background border border-separator-apple/10 rounded-2xl overflow-hidden shadow-elevated w-full">
+          {/* Browser Container mockup (Anchoring the hero) */}
+          <div className="reveal-on-scroll bg-secondary-background border border-separator-apple/10 rounded-2xl overflow-hidden shadow-2xl w-full max-w-5xl">
             {/* Browser top titlebar */}
             <div className="bg-system-background/60 border-b border-separator-apple/10 px-4 py-3 flex items-center justify-between">
               {/* Left red yellow green dots */}
@@ -490,7 +646,6 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -662,30 +817,39 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 🔴 9. SECTION 7 — SIMPLE PRICING TEASER */}
+      {/* 🔴 9. SECTION 7 — COMPLETELY FREE OFFERING */}
       <section id="pricing" className="py-24 max-w-5xl mx-auto px-6 text-center">
-        <div className="reveal-on-scroll flex flex-col items-center gap-12">
+        <div className="reveal-on-scroll flex flex-col items-center gap-8">
           <div className="flex flex-col gap-2">
-            <span className="text-apple-caption-1 font-bold text-system-blue uppercase tracking-widest">Straightforward Pricing</span>
-            <h2 className="text-apple-title-2 font-bold text-label-primary">One simple rate for all pharmacies.</h2>
+            <span className="text-apple-caption-1 font-bold text-system-green uppercase tracking-widest">100% Free Access</span>
+            <h2 className="text-apple-title-2 font-bold text-label-primary">Empowering every pharmacy.</h2>
           </div>
 
-          <div className="border border-separator-apple/15 rounded-2xl p-8 max-w-sm w-full bg-secondary-background/20 backdrop-blur-sm shadow-sm flex flex-col gap-6">
-            <div className="space-y-1">
-              <span className="text-apple-caption-2 font-bold text-label-secondary uppercase tracking-widest">MedStore Unlimited</span>
-              <div className="text-[40px] font-black text-label-primary leading-none mt-2 font-mono">
-                ₹999<span className="text-apple-subheadline font-normal text-label-secondary">/month</span>
+          <div className="border border-separator-apple/15 rounded-2xl p-8 max-w-2xl w-full bg-secondary-background/20 backdrop-blur-sm shadow-sm flex flex-col gap-6 text-left">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <h3 className="text-[28px] font-bold text-label-primary leading-tight">Zero setup costs. <br className="hidden sm:block" />No subscription fees.</h3>
+                <p className="text-apple-caption-1 text-label-secondary leading-relaxed max-w-md">
+                  MedStore is currently completely free for all pharmacies. You get unlimited access to batch tracking, AI invoice parsing, and POS billing—no credit card required.
+                </p>
               </div>
-              <p className="text-apple-caption-1 text-label-secondary mt-1">Billed monthly. Cancel anytime.</p>
+              <div className="flex-shrink-0">
+                <div className="text-[48px] font-black text-system-green leading-none font-mono">
+                  ₹0
+                </div>
+              </div>
             </div>
+            
             <hr className="border-separator-apple/10" />
-            <div className="space-y-2.5 text-left">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 'Unlimited medicines and batches',
                 'Fast keyboard billing POS',
                 'AI invoice document parser',
                 'WhatsApp integration alerts',
-                'Schedule H/H1 compliance logging'
+                'Schedule H/H1 compliance logging',
+                'Daily offline backups'
               ].map((benefit, idx) => (
                 <div key={idx} className="flex items-center gap-2.5 text-apple-caption-1 text-label-secondary">
                   <Check className="h-4 w-4 text-system-green" />
@@ -693,11 +857,14 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-            <Link to={ROUTES.REGISTER}>
-              <Button className="w-full bg-system-blue hover:bg-system-blue/90 text-white rounded-xl py-3 font-semibold text-apple-caption-1 mt-2 transition-apple-micro active-apple-press">
-                Start 14-Day Free Trial
-              </Button>
-            </Link>
+            
+            <div className="mt-4 flex justify-center sm:justify-start">
+              <Link to={ROUTES.REGISTER}>
+                <Button className="bg-label-primary hover:bg-label-primary/90 !text-system-background rounded-xl py-3 px-8 font-semibold text-apple-caption-1 transition-apple-micro active-apple-press">
+                  Create Your Free Account
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -737,9 +904,9 @@ export default function LandingPage() {
             </a>
           </div>
           <div className="flex gap-6 text-apple-caption-2 font-semibold text-label-secondary">
-            <a href="#" className="hover:text-label-primary transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-apple-underline hover:text-label-primary transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-label-primary transition-colors">Contact Support</a>
+            <Link to={ROUTES.PRIVACY} className="hover:text-label-primary transition-colors">Privacy Policy</Link>
+            <Link to={ROUTES.TERMS} className="hover:text-apple-underline hover:text-label-primary transition-colors">Terms of Service</Link>
+            <Link to={ROUTES.SUPPORT} className="hover:text-label-primary transition-colors">Contact Support</Link>
           </div>
         </div>
       </footer>

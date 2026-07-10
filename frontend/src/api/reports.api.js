@@ -13,8 +13,8 @@ export const reportsApi = {
   /**
    * Get dashboard stats
    */
-  getDashboardStats: async () => {
-    return await api.get('/dashboard')
+  getDashboardStats: async (params = {}) => {
+    return await api.get('/dashboard', { params })
   },
 
   /**

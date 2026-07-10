@@ -19,7 +19,12 @@ import DashboardLayout from '@layouts/DashboardLayout'
 // Auth Pages
 // Login is now handled by LandingPage
 import Register from '@pages/auth/Register'
+import ForgotPassword from '@pages/auth/ForgotPassword'
+import ResetPassword from '@pages/auth/ResetPassword'
 import LandingPage from '@pages/LandingPage'
+import PrivacyPolicy from '@pages/PrivacyPolicy'
+import TermsOfService from '@pages/TermsOfService'
+import ContactSupport from '@pages/ContactSupport'
 
 // Dashboard Pages
 import DashboardHome from '@pages/dashboard/DashboardHome'
@@ -38,6 +43,7 @@ import SuppliersPage from '@pages/suppliers/SuppliersPage'
 // Settings Pages
 import StoreSettings from '@pages/settings/StoreSettings'
 import UserSettings from '@pages/settings/UserSettings'
+import HelpSupport from '@pages/settings/HelpSupport'
 
 // Error Pages
 import NotFound from '@pages/NotFound'
@@ -126,7 +132,7 @@ export default function App() {
         } 
       />
 
-      {/* Public Routes (Register) - Using AuthLayout */}
+      {/* Public Routes (Register, Forgot Password, Reset Password) - Using AuthLayout */}
       <Route
         element={
           <PublicRoute>
@@ -135,7 +141,14 @@ export default function App() {
         }
       >
         <Route path={ROUTES.REGISTER} element={<Register />} />
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+        <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
       </Route>
+
+      {/* Policy & Support Routes */}
+      <Route path={ROUTES.PRIVACY} element={<PrivacyPolicy />} />
+      <Route path={ROUTES.TERMS} element={<TermsOfService />} />
+      <Route path={ROUTES.SUPPORT} element={<ContactSupport />} />
 
       {/* Protected Routes (Dashboard) */}
       <Route
@@ -167,6 +180,7 @@ export default function App() {
           <Route path="store" element={<OwnerRoute><StoreSettings /></OwnerRoute>} />
           <Route path="user" element={<UserSettings />} />
         </Route>
+        <Route path="help" element={<HelpSupport />} />
       </Route>
 
       {/* 404 */}
