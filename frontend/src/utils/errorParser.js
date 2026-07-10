@@ -20,10 +20,13 @@ export const getFriendlyErrorMessage = (error) => {
     lowerMsg.includes('too many requests') || 
     lowerMsg.includes('rate limit') || 
     lowerMsg.includes('too many attempts') || 
+    lowerMsg.includes('too many otp') ||
+    lowerMsg.includes('please wait') ||
+    lowerMsg.includes('wait 60 seconds') ||
     error.status === 429 ||
     error.response?.status === 429
   ) {
-    return 'Too many attempts detected. Please wait a few minutes before trying again.'
+    return 'Too many attempts detected. Please wait a minute before trying again.'
   }
 
   // 2. Network failures & connection issues

@@ -30,10 +30,16 @@ export const signupLimiter = rateLimit({
 
 /**
  * Limit OTP requests to prevent spam
+ * Keys on the destination (email/phone) not IP — prevents Railway's shared 
+ * proxy IP from falsely rate-limiting all users simultaneously.
  */
 export const otpLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 50, // Limit each IP to 50 OTP transactions per 10 minutes
+  max: 10, // Limit each destination to 10 OTP requests per 10 minutes
+  keyGenerator: (req) => {
+    // Use the destination (email/phone) as the key if available, fallback to IP
+    return (req.body && req.body.destination) ? req.body.destination : req.ip;
+  },
   message: {
     success: false,
     message: 'Too many OTP requests. Please try again after 10 minutes.',
