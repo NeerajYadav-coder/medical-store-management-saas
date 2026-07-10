@@ -229,7 +229,6 @@ app.use(errorHandler);
 
 import { startScheduler } from './utils/scheduler.js';
 import { WhatsappService } from './modules/whatsapp/services/whatsapp.service.js';
-import transporter from './config/mailer.js';
 import { startNightlyJob } from './services/rollupJob.js';
 
 /**
@@ -239,17 +238,6 @@ import { startNightlyJob } from './services/rollupJob.js';
  */
 const startServer = async () => {
   await connectDB();
-  
-  // Validate SMTP configuration at startup — fail fast if credentials are wrong
-  try {
-    await transporter.verify();
-    console.log('[Email] ✅ SMTP transporter verified — ready to send emails');
-  } catch (smtpError) {
-    console.error('[Email] ❌ SMTP verification failed:', smtpError.message);
-    console.error('[Email]    Check SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in your .env');
-    // Non-fatal: log the error but do not crash the server.
-    // Email is a supporting feature; the app should still boot.
-  }
   
   // Start the background scheduler
   startScheduler();
