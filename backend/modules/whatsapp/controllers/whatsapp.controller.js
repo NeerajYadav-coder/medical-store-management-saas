@@ -232,7 +232,7 @@ export const getLogs = async (req, res, next) => {
 /**
  * GET /status-sse
  */
-export const getStatusSse = (req, res) => {
+export const getStatusSse = async (req, res) => {
   const storeId = req.user.medicalStoreId.toString();
 
   res.setHeader("Content-Type", "text/event-stream");
@@ -244,6 +244,25 @@ export const getStatusSse = (req, res) => {
 
   // Connection ACK ping
   res.write("event: ping\ndata: connected\n\n");
+
+  // Send current connection status immediately so the UI does not wait
+  try {
+    const status = await WhatsappService.getStatus(req.user.medicalStoreId);
+    let state = "Disconnected";
+    if (status.connected) {
+      state = status.status === "CONNECTED" ? "Connected" : "Connecting";
+    }
+
+    const payload = {
+      state,
+      phone: status.phoneNumber || "",
+      name: status.displayName || "",
+      connectedAt: status.connectedAt || null,
+    };
+    res.write(`event: status\ndata: ${JSON.stringify(payload)}\n\n`);
+  } catch (err) {
+    console.error("[SSE] Failed to send initial status update:", err);
+  }
 
   req.on("close", () => {
     unregisterClient(storeId, res);

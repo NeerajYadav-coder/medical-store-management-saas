@@ -98,6 +98,18 @@ export default function LandingPage() {
     }
   }, [clearLoginError])
 
+  // Prevent background scroll when Splash or Login Modal is open
+  useEffect(() => {
+    if (showSplash || showLoginModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showSplash, showLoginModal])
+
   // Scroll Intersection Observer for animations
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -242,9 +254,9 @@ export default function LandingPage() {
         <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[90px] pointer-events-none" />
 
         {/* Outer frame */}
-        <div className="max-w-2xl w-full px-6 text-center z-10 flex flex-col items-center gap-8">
+        <div className="max-w-2xl w-full px-6 text-center z-10 flex flex-col items-center gap-3 sm:gap-6">
           {/* Spiritual-Scientific Union Badge */}
-          <div className="relative h-28 w-28 flex items-center justify-center animate-fade-up delay-emblem">
+          <div className="relative h-16 w-16 sm:h-24 sm:w-24 flex items-center justify-center animate-fade-up delay-emblem">
             {/* Scientific Orbiting rings */}
             {/* Outer Ring */}
             <svg className="absolute inset-0 w-full h-full opacity-35 text-indigo-400 orbit-ring-outer" viewBox="0 0 100 100">
@@ -258,7 +270,7 @@ export default function LandingPage() {
             {/* Glowing Golden Ring */}
             <div className="absolute inset-2 rounded-full border border-amber-500/35 bg-amber-500/5 shadow-[0_0_30px_rgba(245,158,11,0.2)] flex items-center justify-center emblem-glow">
               {/* Mortar & Pestle SVG Icon */}
-              <svg className="h-12 w-12 text-amber-400" viewBox="0 0 64 64" fill="currentColor">
+              <svg className="h-6 w-6 sm:h-10 sm:w-10 text-amber-400" viewBox="0 0 64 64" fill="currentColor">
                 {/* Mortar Body with soft transparency inside */}
                 <path d="M14,26 C14,43 21,50 32,50 C43,50 50,43 50,26 L14,26 Z" opacity="0.15" />
                 <path d="M12,24 L52,24 C53.1,24 54,24.9 54,26 C54,27.1 53.1,28 52,28 L50,28 C50,45 40,52 32,52 C24,52 14,45 14,28 L12,28 C10.9,28 10,27.1 10,26 C10,24.9 10.9,24 12,24 Z" />
@@ -277,40 +289,40 @@ export default function LandingPage() {
           </div>
 
           {/* Slogans Container */}
-          <div className="space-y-6">
+          <div className="space-y-3 sm:space-y-4">
             {/* Sanskrit text */}
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-300 sanskrit-text leading-relaxed animate-fade-up delay-shloka">
+            <h2 className="text-base sm:text-2xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-300 sanskrit-text leading-relaxed animate-fade-up delay-shloka">
               स्वस्थस्य स्वास्थ्यरक्षणम्। <br /> आतुरस्य विकारप्रशमनम्॥
             </h2>
             
             {/* Divider */}
-            <div className="flex items-center justify-center gap-3 animate-fade-up delay-divider">
-              <div className="w-16 h-[1px] bg-gradient-to-r from-transparent to-amber-500/50" />
-              <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-              <div className="w-16 h-[1px] bg-gradient-to-l from-transparent to-amber-500/50" />
+            <div className="flex items-center justify-center gap-2 animate-fade-up delay-divider">
+              <div className="w-8 sm:w-16 h-[1px] bg-gradient-to-r from-transparent to-amber-500/50" />
+              <div className="h-1 w-1 rounded-full bg-amber-500" />
+              <div className="w-8 sm:w-16 h-[1px] bg-gradient-to-l from-transparent to-amber-500/50" />
             </div>
 
             {/* English Slogan */}
-            <p className="text-xl sm:text-2xl font-semibold text-slate-200 tracking-tight leading-relaxed max-w-xl mx-auto animate-fade-up delay-english">
+            <p className="text-xs sm:text-base font-semibold text-slate-200 tracking-tight leading-relaxed max-w-xl mx-auto animate-fade-up delay-english">
               "Preserve the health of the healthy and <br className="xs:hidden" /> relieve the suffering of the sick."
             </p>
 
             {/* Hindi Translation */}
-            <p className="text-sm sm:text-base text-amber-200/90 max-w-lg mx-auto leading-relaxed italic animate-fade-up delay-hindi">
+            <p className="text-[10px] sm:text-xs text-amber-200/90 max-w-lg mx-auto leading-relaxed italic animate-fade-up delay-hindi">
               "स्वस्थ व्यक्ति के स्वास्थ्य की रक्षा करना और रोगी के रोग का शमन करना ही चिकित्सा का उद्देश्य है।"
             </p>
 
             {/* Sub-text explaining philosophy */}
-            <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed animate-fade-up delay-tagline">
+            <p className="hidden md:block text-xs text-slate-400 max-w-md mx-auto leading-relaxed animate-fade-up delay-tagline">
               Ayurveda's timeless foundation: uniting clinical precision with compassionate care to guard wellness and conquer disease.
             </p>
           </div>
 
           {/* Action Button */}
-          <div className="pt-4 animate-fade-up delay-button">
+          <div className="pt-2 animate-fade-up delay-button">
             <button
               onClick={handleDismissSplash}
-              className="group relative flex items-center justify-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.25)] btn-enter-platform cursor-pointer"
+              className="group relative flex items-center justify-center gap-2 px-5 py-2.5 sm:px-8 sm:py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.25)] btn-enter-platform cursor-pointer"
             >
               <span>Enter Platform</span>
               <ArrowRight className="h-4.5 w-4.5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -471,7 +483,7 @@ export default function LandingPage() {
           />
 
           {/* Modal Container */}
-          <div className="bg-system-background border border-separator-apple/10 shadow-elevated rounded-2xl max-w-md w-full p-8 relative z-10 flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-system-background border border-separator-apple/10 shadow-elevated rounded-2xl max-w-md w-full p-5 sm:p-8 relative z-10 flex flex-col gap-4 sm:gap-6 animate-in fade-in zoom-in-95 duration-300 mx-4 max-h-[90vh] overflow-y-auto scrollbar-hide">
             {/* Close Button */}
             <button 
               onClick={closeLogin}

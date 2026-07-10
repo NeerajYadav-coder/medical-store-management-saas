@@ -262,23 +262,13 @@ export class BaileysProvider extends WhatsAppProvider {
             return;
           }
 
-          // Genuine network drop: retry up to MAX_NETWORK_RETRIES times
+          // Genuine network drop: retry indefinitely with exponential backoff to ensure connection consistency
           const attempt = (networkRetryCount.get(storeIdStr) || 0) + 1;
           networkRetryCount.set(storeIdStr, attempt);
 
-          if (attempt > MAX_NETWORK_RETRIES) {
-            console.error(`[Baileys] Store ${storeIdStr} exceeded max retries. Marking disconnected.`);
-            networkRetryCount.delete(storeIdStr);
-            sendSSEUpdate(storeIdStr, "status", { state: "Disconnected" });
-            try {
-              await WhatsAppSession.findOneAndUpdate({ storeId }, { connected: false }, { upsert: true });
-            } catch (_) {}
-            return;
-          }
-
-          const delays = [5000, 15000, 30000];
+          const delays = [5000, 15000, 30000, 60000, 120000, 300000];
           const delay = delays[Math.min(attempt - 1, delays.length - 1)];
-          console.log(`[Baileys] Network drop. Retry #${attempt}/${MAX_NETWORK_RETRIES} in ${delay}ms...`);
+          console.log(`[Baileys] Network drop. Retry #${attempt} in ${delay}ms...`);
           sendSSEUpdate(storeIdStr, "status", { state: "Connection_Lost" });
 
           setTimeout(() => {
