@@ -1,26 +1,28 @@
 /**
  * utils/sendEmail.js
  *
- * Primary: Brevo HTTP API (HTTPS port 443 — NEVER BLOCKED by Railway).
- * Railway's free tier blocks ALL SMTP ports (25, 465, 587), so Nodemailer
- * will always time out. We must use an HTTP-based email provider.
+ * Primary: Mailjet HTTP API v3.1 (HTTPS port 443 — NEVER BLOCKED by Railway).
+ * Railway's free tier blocks ALL SMTP ports (25, 465, 587).
+ * We use Mailjet because it has zero IP restrictions and a generous free tier.
  *
  * Required Railway env vars:
- *   BREVO_API_KEY = xkeysib-...  (Get this from Brevo -> SMTP & API -> API Keys tab)
- *   SMTP_USER = your-brevo-account-email@gmail.com
+ *   MAILJET_API_KEY = (Public API Key)
+ *   MAILJET_SECRET_KEY = (Private API Key)
+ *   SMTP_USER = support.krishnapharmacy@gmail.com (Must be verified in Mailjet)
  */
 
 import { generateOtpEmail } from '../templates/otp.template.js';
 import { generateResetPasswordEmail } from '../templates/resetPassword.template.js';
 
 export async function sendEmail({ to, subject, text, html, replyTo }) {
-  // ── Dev / no-config fallback ─────────────────────────────────────────────────
-  const apiKey = process.env.BREVO_API_KEY || process.env.SMTP_PASS; // fallback just in case
+  const apiKey = process.env.MAILJET_API_KEY;
+  const apiSecret = process.env.MAILJET_SECRET_KEY;
   const senderEmail = process.env.SMTP_USER || 'support@krishnapharmacy.com';
 
-  if (!apiKey || apiKey === 'YOUR_BREVO_API_KEY') {
+  // ── Dev / no-config fallback ─────────────────────────────────────────────────
+  if (!apiKey || !apiSecret) {
     console.log('\n========================================');
-    console.log('📧 EMAIL (no BREVO_API_KEY configured — console only)');
+    console.log('📧 EMAIL (no MAILJET_API_KEY configured — console only)');
     console.log('----------------------------------------');
     console.log(`To:      ${to}`);
     console.log(`Subject: ${subject}`);
@@ -29,39 +31,53 @@ export async function sendEmail({ to, subject, text, html, replyTo }) {
     return { success: true, messageId: `console_${Date.now()}`, mode: 'console' };
   }
 
-  // ── Real send via Brevo HTTP API (Bypasses Railway SMTP block) ───────────────
+  // ── Real send via Mailjet HTTP API (Bypasses Railway SMTP block) ─────────────
   try {
+    const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+
     const payload = {
-      sender: {
-        name: 'Krishna Pharmacy',
-        email: senderEmail,
-      },
-      to: [{ email: to }],
-      subject: subject,
-      ...(html && { htmlContent: html }),
-      ...(text && { textContent: text }),
-      ...(replyTo && { replyTo: { email: replyTo } }),
+      Messages: [
+        {
+          From: {
+            Email: senderEmail,
+            Name: "Krishna Pharmacy"
+          },
+          To: [
+            {
+              Email: to
+            }
+          ],
+          Subject: subject,
+          ...(text && { TextPart: text }),
+          ...(html && { HTMLPart: html }),
+          ...(replyTo && { ReplyTo: { Email: replyTo } })
+        }
+      ]
     };
 
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    const response = await fetch('https://api.mailjet.com/v3.1/send', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'api-key': apiKey,
+        'Authorization': `Basic ${auth}`
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
 
     const data = await response.json();
 
-    if (!response.ok) {
-      console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${JSON.stringify(data)}`);
-      return { success: false, error: data.message || JSON.stringify(data) };
+    if (!response.ok || !data.Messages || data.Messages[0].Status !== 'success') {
+      const errorMessage = data.ErrorMessage || (data.Messages && data.Messages[0] && data.Messages[0].Errors) 
+        ? JSON.stringify(data.Messages[0].Errors) 
+        : 'Unknown Mailjet error';
+        
+      console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${errorMessage}`);
+      return { success: false, error: errorMessage };
     }
 
-    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | ID: ${data.messageId}`);
-    return { success: true, messageId: data.messageId };
+    const messageId = data.Messages[0].To[0].MessageUUID;
+    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | ID: ${messageId}`);
+    return { success: true, messageId };
 
   } catch (error) {
     console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${error.message}`);
