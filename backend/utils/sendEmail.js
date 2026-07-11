@@ -67,9 +67,12 @@ export async function sendEmail({ to, subject, text, html, replyTo }) {
     const data = await response.json();
 
     if (!response.ok || !data.Messages || data.Messages[0].Status !== 'success') {
-      const errorMessage = data.ErrorMessage || (data.Messages && data.Messages[0] && data.Messages[0].Errors) 
-        ? JSON.stringify(data.Messages[0].Errors) 
-        : 'Unknown Mailjet error';
+      let errorMessage = 'Unknown Mailjet error';
+      if (data.ErrorMessage) {
+        errorMessage = data.ErrorMessage;
+      } else if (data.Messages && data.Messages[0] && data.Messages[0].Errors) {
+        errorMessage = JSON.stringify(data.Messages[0].Errors);
+      }
         
       console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${errorMessage}`);
       return { success: false, error: errorMessage };
