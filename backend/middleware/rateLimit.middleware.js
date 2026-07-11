@@ -1,11 +1,11 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 /**
  * Limit login requests to prevent brute force
  */
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit each IP to 50 requests per windowMs
+  max: 50,
   message: {
     success: false,
     message: 'Too many login attempts. Please try again after 15 minutes.',
@@ -19,7 +19,7 @@ export const loginLimiter = rateLimit({
  */
 export const signupLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 100, // Limit each IP to 100 store signups per hour
+  max: 100,
   message: {
     success: false,
     message: 'Too many store creation attempts. Please try again after an hour.',
@@ -29,19 +29,21 @@ export const signupLimiter = rateLimit({
 });
 
 /**
- * Limit OTP requests to prevent spam
- * Keys on destination (email/phone) — avoids Railway IPv6 keyGenerator crash.
+ * Limit OTP requests to prevent spam.
+ * Keys on destination (email/phone) so Railway IPv6 addresses don't bypass limits.
+ * Uses ipKeyGenerator as fallback — required by express-rate-limit v7+ to suppress
+ * ERR_ERL_KEY_GEN_IPV6 validation error.
  */
 export const otpLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
   max: 10,
   keyGenerator: (req) => {
-    // Key purely on destination — never fall back to req.ip (causes ERR_ERL_KEY_GEN_IPV6 on Railway)
-    return (req.body && req.body.destination) ? req.body.destination : 'global';
-  },
-  skip: (req) => {
-    // Skip rate limiting if no destination in body (let the controller handle validation)
-    return !(req.body && req.body.destination);
+    // Prefer destination (email/phone) as the rate-limit key — most accurate for OTP abuse
+    if (req.body && req.body.destination) {
+      return req.body.destination;
+    }
+    // Fall back to IP (using ipKeyGenerator to handle IPv6 correctly)
+    return ipKeyGenerator(req);
   },
   message: {
     success: false,
@@ -56,7 +58,7 @@ export const otpLimiter = rateLimit({
  */
 export const passwordResetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit to 50 password reset attempts per 15 minutes
+  max: 50,
   message: {
     success: false,
     message: 'Too many password reset attempts. Please try again after 15 minutes.',
