@@ -229,24 +229,6 @@ export default function LandingPage() {
             transform: scale(0.98);
           }
 
-          @media (prefers-reduced-motion: reduce) {
-            .orbit-ring-outer,
-            .orbit-ring-inner,
-            .emblem-glow {
-              animation: none !important;
-              transform: none !important;
-              opacity: 1 !important;
-            }
-            .animate-fade-up {
-              transform: none !important;
-              animation-name: fadeInSimple !important;
-              animation-duration: 400ms !important;
-            }
-            .btn-enter-platform:hover,
-            .btn-enter-platform:active {
-              transform: none !important;
-            }
-          }
         `}</style>
 
         {/* Glowing aura circles in background */}
@@ -356,16 +338,6 @@ export default function LandingPage() {
           transform: translateY(0) scale(1);
         }
         
-        @media (prefers-reduced-motion: reduce) {
-          .reveal-on-scroll {
-            transform: none !important;
-            transition: opacity 300ms ease-out !important;
-          }
-          .animate-pulse, .animate-ping, .scan-line-anim {
-            animation: none !important;
-          }
-        }
-
         /* Glassmorphism Styles */
         .glass-nav {
           background-color: var(--color-system-background);
