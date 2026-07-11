@@ -1,30 +1,34 @@
 /**
  * utils/sendEmail.js
  *
- * Primary: Resend HTTP API (HTTPS — never blocked by Railway/GCP).
- * Gmail SMTP (port 465 or 587) is silently dropped by GCP's outbound firewall
- * when connecting to Gmail servers — this is a known GCP anti-spam policy.
+ * Primary: SMTP via Brevo (formerly Sendinblue).
+ * Brevo works reliably on Railway/GCP — unlike Gmail SMTP (blocked by GCP)
+ * and Resend free tier (restricted to account owner's email without domain).
  *
- * Required Railway env var:
- *   RESEND_API_KEY = re_xxxxxxxxxxxx   ← already configured in Railway
+ * Required Railway env vars:
+ *   SMTP_HOST = smtp-relay.brevo.com
+ *   SMTP_PORT = 587
+ *   SMTP_USER = your-brevo-account-email@gmail.com
+ *   SMTP_PASS = your-brevo-smtp-key  (from Brevo dashboard → SMTP & API → SMTP)
+ *
+ * Free tier: 300 emails/day, no domain verification required.
+ * Sign up: https://brevo.com
  */
 
-import { Resend } from 'resend';
+import transporter from '../config/mailer.js';
 import { generateOtpEmail } from '../templates/otp.template.js';
 import { generateResetPasswordEmail } from '../templates/resetPassword.template.js';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * sendEmail({ to, subject, text, html, replyTo })
  *
- * Core dispatch function. Falls back to console-log if RESEND_API_KEY not set.
+ * Core dispatch. Falls back to console-log if SMTP_USER not set.
  */
 export async function sendEmail({ to, subject, text, html, replyTo }) {
-  // ── Development / no-API-key fallback ───────────────────────────────────────
-  if (!process.env.RESEND_API_KEY) {
+  // ── Dev / no-config fallback ─────────────────────────────────────────────────
+  if (!process.env.SMTP_USER) {
     console.log('\n========================================');
-    console.log('📧 EMAIL (no RESEND_API_KEY configured — console only)');
+    console.log('📧 EMAIL (no SMTP_USER configured — console only)');
     console.log('----------------------------------------');
     console.log(`To:      ${to}`);
     console.log(`Subject: ${subject}`);
@@ -33,24 +37,19 @@ export async function sendEmail({ to, subject, text, html, replyTo }) {
     return { success: true, messageId: `console_${Date.now()}`, mode: 'console' };
   }
 
-  // ── Real send via Resend ─────────────────────────────────────────────────────
+  // ── Real send via SMTP (Brevo) ───────────────────────────────────────────────
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'Krishna Pharmacy <onboarding@resend.dev>',
-      to: [to],
+    const info = await transporter.sendMail({
+      from: `"Krishna Pharmacy" <${process.env.SMTP_USER}>`,
+      to,
       subject,
-      text: text || '',
-      html: html || '',
-      ...(replyTo && { reply_to: replyTo }),
+      ...(text && { text }),
+      ...(html && { html }),
+      ...(replyTo && { replyTo }),
     });
 
-    if (error) {
-      console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${error.message}`);
-      return { success: false, error: error.message };
-    }
-
-    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | ID: ${data.id}`);
-    return { success: true, messageId: data.id };
+    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | ID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
 
   } catch (error) {
     console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${error.message}`);
@@ -86,30 +85,19 @@ export default sendEmail;
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SMTP NODEMAILER IMPLEMENTATION (kept for reference)
-// NOTE: Gmail SMTP is blocked on Railway/GCP infrastructure. To use SMTP,
-// switch to a non-Gmail provider (e.g. Brevo: smtp-relay.brevo.com port 587).
+// RESEND IMPLEMENTATION (kept for reference)
+// Limitation: free tier only sends to account owner's email without domain verify
 // ═══════════════════════════════════════════════════════════════════════════════
 //
-// import transporter from '../config/mailer.js';
-//
+// import { Resend } from 'resend';
+// const resend = new Resend(process.env.RESEND_API_KEY);
 // export async function sendEmail({ to, subject, text, html, replyTo }) {
-//   if (!process.env.SMTP_USER) {
-//     console.log('📧 EMAIL (no SMTP_USER — console only):', { to, subject });
-//     return { success: true, messageId: `console_${Date.now()}`, mode: 'console' };
-//   }
-//   try {
-//     const info = await transporter.sendMail({
-//       from: `"Krishna Pharmacy" <${process.env.SMTP_USER}>`,
-//       to, subject,
-//       ...(text && { text }),
-//       ...(html && { html }),
-//       ...(replyTo && { replyTo }),
-//     });
-//     console.log(`[Email] ✅ Delivered → ${to} | ID: ${info.messageId}`);
-//     return { success: true, messageId: info.messageId };
-//   } catch (error) {
-//     console.error(`[Email] ❌ Failed → ${to} | ${error.message}`);
-//     return { success: false, error: error.message };
-//   }
+//   const { data, error } = await resend.emails.send({
+//     from: 'Krishna Pharmacy <onboarding@resend.dev>',
+//     to: [to], subject,
+//     text: text || '', html: html || '',
+//     ...(replyTo && { reply_to: replyTo }),
+//   });
+//   if (error) throw new Error(error.message);
+//   return { success: true, messageId: data.id };
 // }
