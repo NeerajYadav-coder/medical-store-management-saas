@@ -21,7 +21,7 @@ export const createPurchase = async (req, res, next) => {
     }
 
     // Validate supplier belongs to this store
-    const supplier = await Supplier.findOne({ _id: supplierId, medicalStoreId });
+    const supplier = await Supplier.findOne({ _id: supplierId, medicalStoreId }).lean();
     if (!supplier) {
       return res.status(404).json({ success: false, message: "Supplier not found" });
     }
@@ -43,7 +43,7 @@ export const createPurchase = async (req, res, next) => {
       const { medicineId, batchNumber, expiryDate, purchasePrice, sellingPrice, quantity } = item;
 
       // Validate medicine belongs to store
-      const medicine = await Medicine.findOne({ _id: medicineId, medicalStoreId });
+      const medicine = await Medicine.findOne({ _id: medicineId, medicalStoreId }).lean();
       if (!medicine) continue; // skip invalid medicine
 
       // Create batch for this purchase
@@ -89,7 +89,8 @@ export const getAllPurchases = async (req, res, next) => {
 
     const purchases = await Purchase.find({ medicalStoreId })
       .populate("supplierId", "name phone email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -110,7 +111,8 @@ export const getSinglePurchase = async (req, res, next) => {
     const purchaseId = req.params.id;
 
     const purchase = await Purchase.findOne({ _id: purchaseId, medicalStoreId })
-      .populate("supplierId", "name phone email");
+      .populate("supplierId", "name phone email")
+      .lean();
 
     if (!purchase) {
       return res.status(404).json({
@@ -120,7 +122,8 @@ export const getSinglePurchase = async (req, res, next) => {
     }
 
     const items = await PurchaseItem.find({ purchaseId: purchase._id })
-      .populate("medicineId", "name dosage form");
+      .populate("medicineId", "name dosage form")
+      .lean();
 
     res.status(200).json({
       success: true,
