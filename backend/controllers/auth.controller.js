@@ -719,7 +719,7 @@ export const getMe = async (req, res, next) => {
  */
 export const logout = async (req, res, next) => {
   try {
-    const rawRefreshToken = req.cookies?.refreshToken || req.body.refreshToken;
+    const rawRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
     if (rawRefreshToken) {
       const tokenHash = hashToken(rawRefreshToken);
