@@ -1,27 +1,31 @@
 /**
  * utils/sendEmail.js
  *
- * Production email via Resend HTTP API (replaces nodemailer SMTP).
- * Railway blocks outbound SMTP ports — Resend uses HTTPS which always works.
- * Sign up at https://resend.com (free: 3,000 emails/month).
+ * Production email via SMTP (Nodemailer + Gmail App Password).
+ * Uses config/mailer.js transporter — all credentials come from env vars.
+ *
+ * Required env vars:
+ *   SMTP_HOST   = smtp.gmail.com
+ *   SMTP_PORT   = 465
+ *   SMTP_USER   = your-gmail@gmail.com
+ *   SMTP_PASS   = your-16-char-app-password (spaces are stripped automatically)
  */
 
-import { Resend } from 'resend';
+import transporter from '../config/mailer.js';
 import { generateOtpEmail } from '../templates/otp.template.js';
 import { generateResetPasswordEmail } from '../templates/resetPassword.template.js';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 /**
- * sendEmail({ to, subject, text, html })
+ * sendEmail({ to, subject, text, html, replyTo })
  *
- * Core dispatch function. Falls back to console-log if RESEND_API_KEY not set.
+ * Core dispatch function — all helpers route through here.
+ * Falls back to console-log in dev if SMTP_USER is not configured.
  */
 export async function sendEmail({ to, subject, text, html, replyTo }) {
-  // ── Development / no-API-key fallback ───────────────────────────────────────
-  if (!process.env.RESEND_API_KEY) {
+  // ── Development / no-config fallback ────────────────────────────────────────
+  if (!process.env.SMTP_USER) {
     console.log('\n========================================');
-    console.log('📧 EMAIL (no RESEND_API_KEY configured — console only)');
+    console.log('📧 EMAIL (no SMTP_USER configured — console only)');
     console.log('----------------------------------------');
     console.log(`To:      ${to}`);
     console.log(`Subject: ${subject}`);
@@ -30,24 +34,21 @@ export async function sendEmail({ to, subject, text, html, replyTo }) {
     return { success: true, messageId: `console_${Date.now()}`, mode: 'console' };
   }
 
-  // ── Real send via Resend ─────────────────────────────────────────────────────
+  // ── Real send via SMTP ───────────────────────────────────────────────────────
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'Krishna Pharmacy <onboarding@resend.dev>',
-      to: [to],
+    const mailOptions = {
+      from: `"Krishna Pharmacy" <${process.env.SMTP_USER}>`,
+      to,
       subject,
-      text: text || '',
-      html: html || '',
-      reply_to: replyTo,
-    });
+      ...(text && { text }),
+      ...(html && { html }),
+      ...(replyTo && { replyTo }),
+    };
 
-    if (error) {
-      console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${error.message}`);
-      return { success: false, error: error.message };
-    }
+    const info = await transporter.sendMail(mailOptions);
 
-    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | ID: ${data.id}`);
-    return { success: true, messageId: data.id };
+    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | ID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
 
   } catch (error) {
     console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${error.message}`);
@@ -81,3 +82,36 @@ export async function sendPasswordResetEmail(email, resetUrl) {
 
 export default sendEmail;
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESEND IMPLEMENTATION (kept for reference — uncomment to switch back)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// import { Resend } from 'resend';
+// const resend = new Resend(process.env.RESEND_API_KEY);
+//
+// export async function sendEmail({ to, subject, text, html, replyTo }) {
+//   if (!process.env.RESEND_API_KEY) {
+//     console.log('📧 EMAIL (no RESEND_API_KEY — console only):', { to, subject });
+//     return { success: true, messageId: `console_${Date.now()}`, mode: 'console' };
+//   }
+//   try {
+//     const { data, error } = await resend.emails.send({
+//       from: 'Krishna Pharmacy <onboarding@resend.dev>',
+//       to: [to],
+//       subject,
+//       text: text || '',
+//       html: html || '',
+//       reply_to: replyTo,
+//     });
+//     if (error) {
+//       console.error(`[Email] ❌ Failed → ${to} | ${error.message}`);
+//       return { success: false, error: error.message };
+//     }
+//     console.log(`[Email] ✅ Delivered → ${to} | ID: ${data.id}`);
+//     return { success: true, messageId: data.id };
+//   } catch (error) {
+//     console.error(`[Email] ❌ Failed → ${to} | ${error.message}`);
+//     return { success: false, error: error.message };
+//   }
+// }
