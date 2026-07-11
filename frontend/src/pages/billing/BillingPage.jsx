@@ -649,10 +649,9 @@ export default function BillingPage() {
     const isSpeedMode = localSettings.speedMode;
 
     if (isSpeedMode) {
-      printDirectly({
-        ...saleData,
-        createdAt: new Date().toISOString(),
-      });
+      // Auto-print removed: invoice is stored and available via "Reprint Last Bill"
+      const speedBillData = { ...saleData, createdAt: new Date().toISOString() };
+      setLastBill(speedBillData);
 
       (async () => {
         try {
@@ -701,10 +700,6 @@ export default function BillingPage() {
 
       setLastBill(billData);
       toast.success(`Sale Completed! Bill #${billData.billNumber} generated.`);
-
-      if (localSettings.autoConnectPrinter) {
-        printDirectly(billData);
-      }
 
       resetForm();
       generateBillNumber();
