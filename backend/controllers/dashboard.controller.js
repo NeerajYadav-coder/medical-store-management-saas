@@ -5,6 +5,7 @@ import MedicineBatch from "../models/MedicineBatch.js";
 import StockAlert from "../models/StockAlert.js";
 import Purchase from "../models/Purchase.js";
 import User from "../models/User.js";
+import StoreAnalytics from "../models/StoreAnalytics.js";
 
 /**
  * GET DASHBOARD SNAPSHOT
@@ -50,8 +51,13 @@ export const getDashboardSnapshot = async (req, res, next) => {
     const statsStartDate = useSlidingWindow ? startDateLimit : startOfMonth;
     const statsEndDate = useSlidingWindow ? new Date() : endOfMonth;
 
-    // 1. Daily Stats (Optimized)
-    const dailyStats = await Sale.aggregate([
+    // 1. Daily Stats (Optimized: Check if today, if so live query, otherwise look up materialized view)
+    let dailySales = 0;
+    let dailyProfit = 0;
+    let dailyBills = 0;
+
+    // Today is always a live query, historical days are O(1) lookups
+    const liveDailyStats = await Sale.aggregate([
       { 
         $match: { 
           medicalStoreId, 
@@ -68,25 +74,39 @@ export const getDashboardSnapshot = async (req, res, next) => {
         }
       }
     ]);
+    
+    dailySales = liveDailyStats[0]?.totalSales || 0;
+    dailyProfit = liveDailyStats[0]?.totalProfit || 0;
+    dailyBills = liveDailyStats[0]?.count || 0;
 
-    // 2. Monthly Stats (Optimized)
-    const monthlyStats = await Sale.aggregate([
-      { 
-        $match: { 
-          medicalStoreId, 
-          createdAt: { $gte: statsStartDate, $lte: statsEndDate },
-          status: { $ne: 'VOID' } 
-        } 
+    // 2. Monthly Stats (Optimized: Materialized view + today's live stats)
+    let monthlySales = dailySales;
+    let monthlyProfit = dailyProfit;
+    let monthlyBills = dailyBills;
+
+    const historicalMonthStats = await StoreAnalytics.aggregate([
+      {
+        $match: {
+          medicalStoreId,
+          period: 'DAILY',
+          date: { $gte: statsStartDate, $lt: startOfDay }
+        }
       },
       {
         $group: {
           _id: null,
-          totalSales: { $sum: "$grandTotal" },
-          totalProfit: { $sum: "$netProfit" },
-          count: { $sum: 1 }
+          totalSales: { $sum: "$totalSales" },
+          totalProfit: { $sum: "$totalProfit" },
+          count: { $sum: "$totalBills" }
         }
       }
     ]);
+
+    if (historicalMonthStats.length > 0) {
+      monthlySales += historicalMonthStats[0].totalSales;
+      monthlyProfit += historicalMonthStats[0].totalProfit;
+      monthlyBills += historicalMonthStats[0].count;
+    }
 
     // 3. Sales & Profit Trend (For Chart)
     const trendStartDate = useSlidingWindow ? startDateLimit : ninetyDaysAgo;
@@ -199,9 +219,9 @@ export const getDashboardSnapshot = async (req, res, next) => {
         success: true,
         data: {
           daily: {
-            sales: dailyStats[0]?.totalSales || 0,
+            sales: dailySales,
             profit: 0, // HIDDEN
-            bills: dailyStats[0]?.count || 0
+            bills: dailyBills
           },
           // User: "What staff CANNOT see: Monthly / yearly analytics" -> Hiding monthly summary
           monthly: {
@@ -238,14 +258,14 @@ export const getDashboardSnapshot = async (req, res, next) => {
       success: true,
       data: {
         daily: {
-          sales: dailyStats[0]?.totalSales || 0,
-          profit: dailyStats[0]?.totalProfit || 0,
-          bills: dailyStats[0]?.count || 0
+          sales: dailySales,
+          profit: dailyProfit,
+          bills: dailyBills
         },
         monthly: {
-          sales: monthlyStats[0]?.totalSales || 0,
-          profit: monthlyStats[0]?.totalProfit || 0,
-          bills: monthlyStats[0]?.count || 0
+          sales: monthlySales,
+          profit: monthlyProfit,
+          bills: monthlyBills
         },
         trends: salesTrend, // Array of { _id: date, sales, profit }
         topMedicines,

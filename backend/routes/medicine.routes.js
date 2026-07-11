@@ -10,6 +10,7 @@ import { protect } from '../middleware/auth.middleware.js';
 import { hasPermission } from '../middleware/permission.middleware.js';
 import { auditAction } from '../middleware/audit.middleware.js';
 import { PERMISSIONS } from '../constants/permissions.js';
+import { cache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ const router = express.Router();
 router.use(protect);
 
 // Get all medicines with live stock summary
-router.get('/', async (req, res, next) => {
+router.get('/', cache(300), async (req, res, next) => {
   try {
     const {
       page = 1,
@@ -131,7 +132,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // Search medicines
-router.get('/search', async (req, res, next) => {
+router.get('/search', cache(60), async (req, res, next) => {
   try {
     const { q } = req.query;
     

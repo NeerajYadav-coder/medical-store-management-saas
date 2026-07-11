@@ -16,8 +16,12 @@ import { AuthProvider } from '@context/AuthContext'
 import { StoreProvider } from '@context/StoreContext'
 import { UIProvider } from '@context/UIContext'
 import { Toaster } from 'react-hot-toast'
+import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import '@styles/global.css'
+
+// Register Service Worker for offline app shell
+registerSW({ immediate: true })
 
 // Create query client with default options
 const queryClient = new QueryClient({

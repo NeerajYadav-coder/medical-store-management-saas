@@ -45,6 +45,7 @@ import Button from '@components/common/Button'
 import { Spinner } from '@components/common/Loader'
 import { useQuery } from '@tanstack/react-query'
 import { reportsApi } from '@api/reports.api'
+import OfflineIndicator from '@components/common/OfflineIndicator'
 
 // Icon mapping
 const ICONS = {
@@ -318,6 +319,10 @@ export default function DashboardLayout() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
+            
+            <div className="hidden md:block mr-2">
+              <OfflineIndicator />
+            </div>
             {/* Quick Actions */}
             {user?.role !== 'STAFF' && (
               <Button

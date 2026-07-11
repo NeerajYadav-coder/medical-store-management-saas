@@ -413,21 +413,51 @@ export default function Purchase() {
     }
   }
 
+  const compressImage = (file, maxWidth = 1600) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target.result
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+
+          if (width > maxWidth) {
+            height = height * (maxWidth / width)
+            width = maxWidth
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, width, height)
+          
+          // Compress to JPEG with 0.7 quality to save bandwidth on rural connections
+          resolve(canvas.toDataURL('image/jpeg', 0.7))
+        }
+        img.onerror = reject
+      }
+      reader.onerror = reject
+    })
+  }
+
   const handleOcrUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     setIsOcrLoading(true)
     try {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onloadend = async () => {
-        const base64String = reader.result
-        try {
-          const res = await purchaseApi.parseInvoice({
-            image: base64String,
-            filename: file.name
-          })
+      const base64String = await compressImage(file)
+      
+      try {
+        const res = await purchaseApi.parseInvoice({
+          image: base64String,
+          filename: file.name
+        })
 
           const resData = res;
           const hasItems = resData && Array.isArray(resData.items);
@@ -491,7 +521,6 @@ export default function Purchase() {
         } finally {
           setIsOcrLoading(false)
         }
-      }
     } catch (err) {
       console.error(err)
       toast.error('Failed to read image file')

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Button from '../../components/ui/Button';
+import OfflineIndicator from '../../components/common/OfflineIndicator';
 import SymptomSelector from '../../components/billing/SymptomSelector';
 import DoctorSelector from '../../components/billing/DoctorSelector';
 import CustomerSelector from '../../components/billing/CustomerSelector';
@@ -1052,17 +1053,7 @@ export default function BillingPage() {
           <div className="hidden sm:block h-4 w-px bg-separator-apple/10"></div>
 
           {/* Connection status indicator */}
-          <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-semibold text-label-secondary">
-            {isOnline ? (
-              <span className="flex items-center gap-1 text-system-green" title="Cloud Synced">
-                <Wifi className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline font-mono">Synced</span>
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-system-red animate-pulse" title="Offline Mode (Saving Locally)">
-                <WifiOff className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline font-mono">Offline</span>
-              </span>
-            )}
-          </div>
+          <OfflineIndicator />
         </div>
 
         {/* Center title area */}

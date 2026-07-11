@@ -47,7 +47,37 @@ const saleApi = {
 
   // Create sale (billing)
   create: async (data) => {
-    return await api.post('/sales', data);
+    if (!navigator.onLine) {
+      // Offline mode: Queue transaction
+      const { enqueueSync } = await import('../lib/offlineQueue');
+      const record = await enqueueSync('/sales', data, 'POST');
+      return { 
+        data: { 
+          success: true, 
+          message: "Sale queued offline", 
+          pendingSync: true,
+          saleId: record.id
+        } 
+      };
+    }
+
+    try {
+      return await api.post('/sales', data);
+    } catch (error) {
+      if (!error.response) { // Network error
+        const { enqueueSync } = await import('../lib/offlineQueue');
+        const record = await enqueueSync('/sales', data, 'POST');
+        return { 
+          data: { 
+            success: true, 
+            message: "Sale queued offline due to network failure", 
+            pendingSync: true,
+            saleId: record.id
+          } 
+        };
+      }
+      throw error;
+    }
   },
 
   // Generate bill number

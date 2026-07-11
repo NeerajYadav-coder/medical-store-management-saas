@@ -59,7 +59,13 @@ export const getAllCustomers = async (req, res, next) => {
   try {
     const medicalStoreId = req.user.medicalStoreId;
 
-    const customers = await Customer.find({ medicalStoreId }).sort({ name: 1 }).lean();
+    // Field level projection to reduce payload size
+    const projection = req.query.fields ? req.query.fields.split(',').join(' ') : 'name phone email category outstandingBalance totalPurchaseAmount';
+    
+    const customers = await Customer.find({ medicalStoreId })
+      .select(projection)
+      .sort({ name: 1 })
+      .lean();
 
     res.status(200).json({
       success: true,

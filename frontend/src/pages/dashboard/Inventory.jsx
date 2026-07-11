@@ -34,6 +34,7 @@ import { ROUTES } from '@config/routes.config'
 import Button from '@components/common/Button'
 import { Input, Select, SearchInput } from '@components/common/Input'
 import { Table, TablePagination } from '@components/common/Table'
+import { VirtualTable } from '@components/common/VirtualTable'
 import { Modal, DeleteModal } from '@components/common/Modal'
 import { Skeleton, SkeletonTableRows } from '@components/common/Loader'
 import { useDebouncedSearch } from '@hooks/useDebounce'
@@ -640,7 +641,7 @@ export default function Inventory() {
       </div>
 
       {/* Table */}
-      <Table
+      <VirtualTable
         columns={columns}
         data={medicines}
         isLoading={isLoading}
@@ -650,9 +651,7 @@ export default function Inventory() {
             : 'No medicines found. Add medicines via Purchase (Inward) to see stock here.'
         }
         emptyIcon={<Package className="h-12 w-12" />}
-        selectable
-        selectedRows={selectedMedicines}
-        onSelectRows={setSelectedMedicines}
+        rowHeight={64}
         pagination={{
           currentPage: page,
           totalPages: pagination.pages,
@@ -660,7 +659,6 @@ export default function Inventory() {
           itemsPerPage: 20,
         }}
         onPageChange={setPage}
-        hoverable
       />
 
       {/* Bulk actions */}

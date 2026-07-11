@@ -43,7 +43,12 @@ export const getAllSuppliers = async (req, res, next) => {
   try {
     const medicalStoreId = req.user.medicalStoreId;
 
-    const suppliers = await Supplier.find({ medicalStoreId }).sort({ name: 1 }).lean();
+    const projection = req.query.fields ? req.query.fields.split(',').join(' ') : 'name phone email creditDays outstandingBalance gstNumber';
+
+    const suppliers = await Supplier.find({ medicalStoreId })
+      .select(projection)
+      .sort({ name: 1 })
+      .lean();
 
     res.status(200).json({
       success: true,
