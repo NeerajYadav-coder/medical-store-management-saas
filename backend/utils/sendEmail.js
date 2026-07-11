@@ -1,34 +1,26 @@
 /**
  * utils/sendEmail.js
  *
- * Primary: SMTP via Brevo (formerly Sendinblue).
- * Brevo works reliably on Railway/GCP — unlike Gmail SMTP (blocked by GCP)
- * and Resend free tier (restricted to account owner's email without domain).
+ * Primary: Brevo HTTP API (HTTPS port 443 — NEVER BLOCKED by Railway).
+ * Railway's free tier blocks ALL SMTP ports (25, 465, 587), so Nodemailer
+ * will always time out. We must use an HTTP-based email provider.
  *
  * Required Railway env vars:
- *   SMTP_HOST = smtp-relay.brevo.com
- *   SMTP_PORT = 587
+ *   BREVO_API_KEY = xkeysib-...  (Get this from Brevo -> SMTP & API -> API Keys tab)
  *   SMTP_USER = your-brevo-account-email@gmail.com
- *   SMTP_PASS = your-brevo-smtp-key  (from Brevo dashboard → SMTP & API → SMTP)
- *
- * Free tier: 300 emails/day, no domain verification required.
- * Sign up: https://brevo.com
  */
 
-import transporter from '../config/mailer.js';
 import { generateOtpEmail } from '../templates/otp.template.js';
 import { generateResetPasswordEmail } from '../templates/resetPassword.template.js';
 
-/**
- * sendEmail({ to, subject, text, html, replyTo })
- *
- * Core dispatch. Falls back to console-log if SMTP_USER not set.
- */
 export async function sendEmail({ to, subject, text, html, replyTo }) {
   // ── Dev / no-config fallback ─────────────────────────────────────────────────
-  if (!process.env.SMTP_USER) {
+  const apiKey = process.env.BREVO_API_KEY || process.env.SMTP_PASS; // fallback just in case
+  const senderEmail = process.env.SMTP_USER || 'support@krishnapharmacy.com';
+
+  if (!apiKey || apiKey === 'YOUR_BREVO_API_KEY') {
     console.log('\n========================================');
-    console.log('📧 EMAIL (no SMTP_USER configured — console only)');
+    console.log('📧 EMAIL (no BREVO_API_KEY configured — console only)');
     console.log('----------------------------------------');
     console.log(`To:      ${to}`);
     console.log(`Subject: ${subject}`);
@@ -37,19 +29,39 @@ export async function sendEmail({ to, subject, text, html, replyTo }) {
     return { success: true, messageId: `console_${Date.now()}`, mode: 'console' };
   }
 
-  // ── Real send via SMTP (Brevo) ───────────────────────────────────────────────
+  // ── Real send via Brevo HTTP API (Bypasses Railway SMTP block) ───────────────
   try {
-    const info = await transporter.sendMail({
-      from: `"Krishna Pharmacy" <${process.env.SMTP_USER}>`,
-      to,
-      subject,
-      ...(text && { text }),
-      ...(html && { html }),
-      ...(replyTo && { replyTo }),
+    const payload = {
+      sender: {
+        name: 'Krishna Pharmacy',
+        email: senderEmail,
+      },
+      to: [{ email: to }],
+      subject: subject,
+      ...(html && { htmlContent: html }),
+      ...(text && { textContent: text }),
+      ...(replyTo && { replyTo: { email: replyTo } }),
+    };
+
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+      },
+      body: JSON.stringify(payload),
     });
 
-    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | ID: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${JSON.stringify(data)}`);
+      return { success: false, error: data.message || JSON.stringify(data) };
+    }
+
+    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | ID: ${data.messageId}`);
+    return { success: true, messageId: data.messageId };
 
   } catch (error) {
     console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${error.message}`);
@@ -82,22 +94,3 @@ export async function sendPasswordResetEmail(email, resetUrl) {
 }
 
 export default sendEmail;
-
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// RESEND IMPLEMENTATION (kept for reference)
-// Limitation: free tier only sends to account owner's email without domain verify
-// ═══════════════════════════════════════════════════════════════════════════════
-//
-// import { Resend } from 'resend';
-// const resend = new Resend(process.env.RESEND_API_KEY);
-// export async function sendEmail({ to, subject, text, html, replyTo }) {
-//   const { data, error } = await resend.emails.send({
-//     from: 'Krishna Pharmacy <onboarding@resend.dev>',
-//     to: [to], subject,
-//     text: text || '', html: html || '',
-//     ...(replyTo && { reply_to: replyTo }),
-//   });
-//   if (error) throw new Error(error.message);
-//   return { success: true, messageId: data.id };
-// }
