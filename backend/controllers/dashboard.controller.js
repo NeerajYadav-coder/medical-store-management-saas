@@ -122,7 +122,8 @@ export const getDashboardSnapshot = async (req, res, next) => {
       totalProfit: { $gt: 0 }
     })
     .sort({ totalProfit: -1 })
-    .limit(5);
+    .limit(5)
+    .lean();
 
     const topMedicines = topMeds.map(m => ({
       name: m.name,
@@ -152,7 +153,8 @@ export const getDashboardSnapshot = async (req, res, next) => {
       isResolved: false,
     })
       .sort({ priority: -1, createdAt: -1 }) // CRITICAL first
-      .limit(5);
+      .limit(5)
+      .lean();
 
     // 7. Recent Sales Activity
     const recentSales = await Sale.find({
@@ -161,7 +163,8 @@ export const getDashboardSnapshot = async (req, res, next) => {
     })
     .sort({ createdAt: -1 })
     .limit(5)
-    .populate('customerId', 'name');
+    .populate('customerId', 'name')
+    .lean();
 
     // 6. Dead Stock Analysis (Items > 90 days old with no sales recently)
     // Simplified heuristic: Old batches with significant stock

@@ -43,7 +43,7 @@ export const getAllSuppliers = async (req, res, next) => {
   try {
     const medicalStoreId = req.user.medicalStoreId;
 
-    const suppliers = await Supplier.find({ medicalStoreId }).sort({ name: 1 });
+    const suppliers = await Supplier.find({ medicalStoreId }).sort({ name: 1 }).lean();
 
     res.status(200).json({
       success: true,
@@ -66,7 +66,7 @@ export const getSingleSupplier = async (req, res, next) => {
     const supplier = await Supplier.findOne({
       _id: supplierId,
       medicalStoreId,
-    });
+    }).lean();
 
     if (!supplier) {
       return res.status(404).json({

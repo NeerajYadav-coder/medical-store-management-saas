@@ -107,6 +107,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import compression from 'compression';
 import mongoSanitize from './middleware/mongoSanitize.middleware.js';
 import sanitizeBody from './middleware/sanitize.middleware.js';
 
@@ -136,9 +137,12 @@ app.set('trust proxy', 1);
 // Set security HTTP headers
 app.use(helmet());
 
+// Compress responses
+app.use(compression());
+
 // Parse JSON bodies
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ limit: '5mb', extended: true }));
 
 // Parse cookies
 app.use(cookieParser());

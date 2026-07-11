@@ -59,7 +59,7 @@ export const getAllCustomers = async (req, res, next) => {
   try {
     const medicalStoreId = req.user.medicalStoreId;
 
-    const customers = await Customer.find({ medicalStoreId }).sort({ name: 1 });
+    const customers = await Customer.find({ medicalStoreId }).sort({ name: 1 }).lean();
 
     res.status(200).json({
       success: true,
@@ -82,7 +82,7 @@ export const getSingleCustomer = async (req, res, next) => {
     const customer = await Customer.findOne({
       _id: customerId,
       medicalStoreId,
-    });
+    }).lean();
 
     if (!customer) {
       return res.status(404).json({

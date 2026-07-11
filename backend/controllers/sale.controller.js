@@ -136,7 +136,8 @@ export const getAllSales = async (req, res, next) => {
 
     const sales = await Sale.find({ medicalStoreId })
       .populate("customerId", "name category")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -157,7 +158,8 @@ export const getSingleSale = async (req, res, next) => {
     const saleId = req.params.id;
 
     const sale = await Sale.findOne({ _id: saleId, medicalStoreId })
-      .populate("customerId", "name category");
+      .populate("customerId", "name category")
+      .lean();
 
     if (!sale) {
       return res.status(404).json({
@@ -167,7 +169,8 @@ export const getSingleSale = async (req, res, next) => {
     }
 
     const items = await SaleItem.find({ saleId: sale._id })
-      .populate("medicineId", "name dosage form");
+      .populate("medicineId", "name dosage form")
+      .lean();
 
     res.status(200).json({
       success: true,
