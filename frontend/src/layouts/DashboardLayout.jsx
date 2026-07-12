@@ -8,7 +8,7 @@
  * - Breadcrumbs and page structure
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -468,8 +468,15 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
-          <Outlet />
+        <main className="flex-1 overflow-auto p-4 lg:p-6 relative">
+          <Suspense fallback={
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/50 backdrop-blur-sm z-50">
+              <Spinner size="lg" className="text-brand-600" />
+              <p className="mt-4 text-sm font-medium text-muted-foreground animate-pulse">Loading module...</p>
+            </div>
+          }>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>
