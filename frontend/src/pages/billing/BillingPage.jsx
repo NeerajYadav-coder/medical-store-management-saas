@@ -207,38 +207,61 @@ export default function BillingPage() {
         setLocalSettings(prev => ({ ...prev, speedMode: speedModeSetting.value }));
       }
 
+      // FIRST: Instantly load whatever we have in IndexedDB to unblock the UI
+      const offlineMeds = await getAllItems('medicines');
+      const offlineCusts = await getAllItems('customers');
+      
+      if (offlineMeds.length > 0) {
+        setLocalMedicines(offlineMeds);
+        setLocalCustomers(offlineCusts);
+        setLoadingMedicines(false); // Stop loading spinner immediately!
+      }
+
       if (navigator.onLine) {
-        // Fetch medicines
-        const medsRes = await medicineApi.getAll({ limit: 10000 });
-        const meds = Array.isArray(medsRes) ? medsRes : (medsRes?.data || []);
-        await saveBulk('medicines', meds);
-        setLocalMedicines(meds);
+        // SECOND: Check cache age
+        const lastLoadedItem = await getItem('settings', 'lastLoaded');
+        const lastLoaded = lastLoadedItem ? lastLoadedItem.value : 0;
+        const cacheAge = Date.now() - lastLoaded;
+        const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-        // Fetch customers
-        const custsRes = await customerApi.getAll({ limit: 10000 });
-        const custs = Array.isArray(custsRes) ? custsRes : (custsRes?.data || []);
-        await saveBulk('customers', custs);
-        setLocalCustomers(custs);
+        // Only sync from network if cache is expired OR we have no data locally
+        if (cacheAge > CACHE_TTL || offlineMeds.length === 0) {
+          (async () => {
+            try {
+              const medsRes = await medicineApi.getAll({ limit: 10000 });
+              const meds = Array.isArray(medsRes) ? medsRes : (medsRes?.data || []);
+              await saveBulk('medicines', meds);
+              setLocalMedicines(meds);
 
-        // Fetch doctors
-        const docsRes = await doctorApi.getAll({ limit: 10000 });
-        const docs = Array.isArray(docsRes) ? docsRes : (docsRes?.data || []);
-        setLocalDoctors(docs);
+              const custsRes = await customerApi.getAll({ limit: 10000 });
+              const custs = Array.isArray(custsRes) ? custsRes : (custsRes?.data || []);
+              await saveBulk('customers', custs);
+              setLocalCustomers(custs);
 
-        // Fetch symptoms
-        const symsRes = await symptomApi.getAll();
-        const syms = Array.isArray(symsRes) ? symsRes : (symsRes?.data || []);
-        setLocalSymptoms(syms);
+              const docsRes = await doctorApi.getAll({ limit: 10000 });
+              const docs = Array.isArray(docsRes) ? docsRes : (docsRes?.data || []);
+              setLocalDoctors(docs);
 
-        // Save timestamp
-        await saveItem('settings', { key: 'lastLoaded', value: Date.now() });
-        syncOfflineSales();
+              const symsRes = await symptomApi.getAll();
+              const syms = Array.isArray(symsRes) ? symsRes : (symsRes?.data || []);
+              setLocalSymptoms(syms);
+
+              // Save timestamp
+              await saveItem('settings', { key: 'lastLoaded', value: Date.now() });
+              syncOfflineSales();
+            } catch (bgErr) {
+              console.error('Background sync failed:', bgErr);
+            } finally {
+              setLoadingMedicines(false); // Failsafe
+            }
+          })();
+        } else {
+          // Cache is fresh, just sync offline sales if any
+          syncOfflineSales();
+          setLoadingMedicines(false);
+        }
       } else {
-        // Load offline
-        const meds = await getAllItems('medicines');
-        const custs = await getAllItems('customers');
-        setLocalMedicines(meds);
-        setLocalCustomers(custs);
+        setLoadingMedicines(false);
       }
     } catch (err) {
       if (!err?.isCancelled) {
@@ -248,7 +271,6 @@ export default function BillingPage() {
       const custs = await getAllItems('customers');
       setLocalMedicines(meds);
       setLocalCustomers(custs);
-    } finally {
       setLoadingMedicines(false);
     }
   };
