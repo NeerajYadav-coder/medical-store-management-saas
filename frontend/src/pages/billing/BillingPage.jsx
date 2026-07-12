@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search, Plus, Minus, Trash2, Receipt, Printer,
   Send, CreditCard, Banknote, Smartphone, ShoppingCart,
@@ -35,6 +36,7 @@ const PAYMENT_MODES = [
 ];
 
 export default function BillingPage() {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { store, storeName, storeAddress, storePhone, drugLicense, gstNumber, storeOwner } = useStore();
   const searchInputRef = useRef(null);
@@ -1115,7 +1117,7 @@ export default function BillingPage() {
 
           {user?.role === 'OWNER' && (
             <button
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => navigate('/dashboard')}
               className="p-1.5 sm:p-2 bg-secondary-background hover:bg-secondary-background/80 border border-separator-apple/10 rounded-lg transition-apple-micro active-apple-press text-label-secondary cursor-pointer"
               title="Dashboard Home"
             >
