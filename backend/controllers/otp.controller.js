@@ -23,7 +23,12 @@ const MAX_VERIFICATION_ATTEMPTS = 3;
  */
 export const sendOtp = async (req, res, next) => {
   try {
-    const { type, destination, purpose = 'signup' } = req.body;
+    let { type, destination, purpose = 'signup' } = req.body;
+    
+    // Normalize email to prevent case-sensitivity/space issues
+    if (type === 'email' && destination) {
+      destination = destination.toLowerCase().trim();
+    }
 
     // Validation
     if (!type || !destination) {
@@ -175,7 +180,12 @@ export const sendOtp = async (req, res, next) => {
  */
 export const verifyOtp = async (req, res, next) => {
   try {
-    const { type, destination, otp, purpose = 'signup' } = req.body;
+    let { type, destination, otp, purpose = 'signup' } = req.body;
+    
+    // Normalize email to prevent case-sensitivity/space issues
+    if (type === 'email' && destination) {
+      destination = destination.toLowerCase().trim();
+    }
 
     // Validation
     if (!type || !destination || !otp) {
@@ -213,7 +223,8 @@ export const verifyOtp = async (req, res, next) => {
     }
 
     // Verify OTP
-    const isValid = verifyOTPHash(otp, otpRecord.code);
+    const cleanOtp = otp.toString().trim();
+    const isValid = verifyOTPHash(cleanOtp, otpRecord.code);
 
     if (!isValid) {
       // Increment attempt count
@@ -256,7 +267,12 @@ export const verifyOtp = async (req, res, next) => {
  */
 export const checkVerification = async (req, res, next) => {
   try {
-    const { type, destination, purpose = 'signup' } = req.query;
+    let { type, destination, purpose = 'signup' } = req.query;
+    
+    // Normalize email to prevent case-sensitivity/space issues
+    if (type === 'email' && destination) {
+      destination = destination.toLowerCase().trim();
+    }
 
     if (!type || !destination) {
       return res.status(400).json({
