@@ -1,28 +1,25 @@
 /**
  * utils/sendEmail.js
  *
- * Primary: Mailjet HTTP API v3.1 (HTTPS port 443 — NEVER BLOCKED by Railway).
+ * Primary: Google Apps Script Web App Proxy (HTTPS port 443 — NEVER BLOCKED by Railway).
  * Railway's free tier blocks ALL SMTP ports (25, 465, 587).
- * We use Mailjet because it has zero IP restrictions and a generous free tier.
+ * Free API tiers (Mailjet, Brevo, Resend) often block accounts sending OTPs without custom domains.
+ * This script sends emails directly from the user's Gmail outbox, making it 100% reliable and free.
  *
  * Required Railway env vars:
- *   MAILJET_API_KEY = (Public API Key)
- *   MAILJET_SECRET_KEY = (Private API Key)
- *   SMTP_USER = support.krishnapharmacy@gmail.com (Must be verified in Mailjet)
+ *   GOOGLE_SCRIPT_URL = https://script.google.com/macros/s/.../exec
  */
 
 import { generateOtpEmail } from '../templates/otp.template.js';
 import { generateResetPasswordEmail } from '../templates/resetPassword.template.js';
 
-export async function sendEmail({ to, subject, text, html, replyTo }) {
-  const apiKey = process.env.MAILJET_API_KEY;
-  const apiSecret = process.env.MAILJET_SECRET_KEY;
-  const senderEmail = process.env.SMTP_USER || 'support@krishnapharmacy.com';
+export async function sendEmail({ to, subject, text, html }) {
+  const scriptUrl = process.env.GOOGLE_SCRIPT_URL;
 
   // ── Dev / no-config fallback ─────────────────────────────────────────────────
-  if (!apiKey || !apiSecret) {
+  if (!scriptUrl) {
     console.log('\n========================================');
-    console.log('📧 EMAIL (no MAILJET_API_KEY configured — console only)');
+    console.log('📧 EMAIL (no GOOGLE_SCRIPT_URL configured — console only)');
     console.log('----------------------------------------');
     console.log(`To:      ${to}`);
     console.log(`Subject: ${subject}`);
@@ -31,56 +28,31 @@ export async function sendEmail({ to, subject, text, html, replyTo }) {
     return { success: true, messageId: `console_${Date.now()}`, mode: 'console' };
   }
 
-  // ── Real send via Mailjet HTTP API (Bypasses Railway SMTP block) ─────────────
+  // ── Real send via Google Apps Script (Bypasses all API blocks & IP bans) ────
   try {
-    const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
-
-    const payload = {
-      Messages: [
-        {
-          From: {
-            Email: senderEmail,
-            Name: "Krishna Pharmacy"
-          },
-          To: [
-            {
-              Email: to
-            }
-          ],
-          Subject: subject,
-          ...(text && { TextPart: text }),
-          ...(html && { HTMLPart: html }),
-          ...(replyTo && { ReplyTo: { Email: replyTo } })
-        }
-      ]
-    };
-
-    const response = await fetch('https://api.mailjet.com/v3.1/send', {
+    // Note: Google Apps Script Web Apps prefer text/plain for POST requests to avoid preflight CORS issues
+    const response = await fetch(scriptUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${auth}`
+        'Content-Type': 'text/plain;charset=utf-8'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        to,
+        subject,
+        html: html || text // Fallback to text if no HTML provided
+      })
     });
 
     const data = await response.json();
 
-    if (!response.ok || !data.Messages || data.Messages[0].Status !== 'success') {
-      let errorMessage = 'Unknown Mailjet error';
-      if (data.ErrorMessage) {
-        errorMessage = data.ErrorMessage;
-      } else if (data.Messages && data.Messages[0] && data.Messages[0].Errors) {
-        errorMessage = JSON.stringify(data.Messages[0].Errors);
-      }
-        
+    if (!response.ok || !data.success) {
+      const errorMessage = data.error || 'Unknown Apps Script error';
       console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${errorMessage}`);
       return { success: false, error: errorMessage };
     }
 
-    const messageId = data.Messages[0].To[0].MessageUUID;
-    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | ID: ${messageId}`);
-    return { success: true, messageId };
+    console.log(`[Email] ✅ Delivered → ${to} | Subject: "${subject}" | AppsScript`);
+    return { success: true, messageId: `gas_${Date.now()}` };
 
   } catch (error) {
     console.error(`[Email] ❌ Failed → ${to} | Subject: "${subject}" | ${error.message}`);
